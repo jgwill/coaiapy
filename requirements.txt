@@ -3,3 +3,4 @@ certifi
 charset-normalizer
 idna
 redis
+markdown
