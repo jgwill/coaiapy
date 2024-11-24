@@ -3,7 +3,9 @@ import json
 import os
 import markdown
 import redis
+import sys
 
+sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
 
 # version in pyrec prod
 config=None
