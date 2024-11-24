@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='coaiapy',
-    version = "0.1.6",
+    version = "0.1.7",
     author='Jean GUillaume ISabelle',
     author_email='jgi@jgwill.com',
     description='A Python package for audio transcription, synthesis, and tagging using Boto3.',
@@ -12,7 +12,7 @@ setup(
     packages=find_packages(
         include=["coaiapy", "test-*.py"], exclude=["test*log", "*test*csv", "*test*png"]
     ),
-    package_dir={'': 'src'},
+    #package_dir={'': 'coaiapy'},
     install_requires=[
         'boto3',
         'mutagen',
