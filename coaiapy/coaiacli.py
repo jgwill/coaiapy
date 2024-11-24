@@ -7,6 +7,20 @@ sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
 
 from coaiamodule import read_config, transcribe_audio, summarizer, tash
 
+SYNOPSIS="""
+coaiacli is a command line interface for audio transcription, summarization, and stashing to Redis.
+
+setup these environment variables:
+OPENAI_API_KEY
+AWS_KEY_ID
+AWS_SECRET_KEY
+AWS_REGION
+REDIS_HOST
+REDIS_PORT
+REDIS_PASSWORD
+REDIS_SSL
+"""
+
 def tash_key_val(key, value):
     tash(key, value)
     print(f"Key: {key}, Value: {value} stashed successfully.")

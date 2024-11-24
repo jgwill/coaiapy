@@ -31,6 +31,21 @@ To see the available commands and options, use the `--help` flag:
 coaia --help
 ```
 
+#### Setup
+
+Set these environment variables to use the AWS transcription service:
+
+```bash
+OPENAI_API_KEY
+AWS_KEY_ID
+AWS_SECRET_KEY
+AWS_REGION
+REDIS_HOST
+REDIS_PORT
+REDIS_PASSWORD
+REDIS_SSL
+```
+
 #### Transcribe Audio
 
 To transcribe an audio file to text:

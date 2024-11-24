@@ -13,6 +13,7 @@ config=None
 
 def find_existing_config():
   possible_locations = [
+    os.path.join(os.getenv('HOME'), 'coaia.json'),
     '../../shared/etc/config.json',
     '../shared/etc/config.json',
     '../../etc/config.json',
@@ -26,15 +27,12 @@ def find_existing_config():
   for location in possible_locations:
     if os.path.exists(location):
       return location
+  
   if config is None:
     #try load from $HOME
     _home=os.getenv('HOME')
     if _home is not None:
       _cnf=os.path.join(_home,'.config','jgwill','config.json')
-      if os.path.exists(_cnf):
-        return _cnf
-      #ifnstill not found, try in $HOME/coaia.json
-      _cnf=os.path.join(_home,'coaia.json')
       if os.path.exists(_cnf):
         return _cnf
   return None
