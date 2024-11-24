@@ -63,7 +63,7 @@ def main():
             print("Error: You must provide a value or use the --f flag to read from a file.")
     elif args.command == 'transcribe':
         transcribed_text = transcribe_audio(args.file_path)
-        print(f"Transcribed Text: {transcribed_text}")
+        print(f"{transcribed_text}")
     elif args.command == 'summarize':
         if args.f:
             if not os.path.isfile(args.f):
@@ -74,7 +74,7 @@ def main():
         else:
             text = args.text
         summary = summarizer(text)
-        print(f"Summary: {summary}")
+        print(f"{summary}")
     else:
         parser.print_help()
 
