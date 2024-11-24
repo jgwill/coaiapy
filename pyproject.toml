@@ -7,7 +7,7 @@ package-dir = { "" = "src" }
 
 [project]
 name = "coaiapy"
-version = "0.1.5"
+version = "0.1.6"
 description = "A Python package for audio transcription, synthesis, and tagging using Boto3."
 readme = "README.md"
 requires-python = ">=3.6"
