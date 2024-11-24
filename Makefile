@@ -19,4 +19,4 @@ upload: build
     twine upload dist/*
 
 clean:
-    rm -rf build/ dist/ *.egg-info
+    rm -rf build/ dist/ *.egg-info **/*.egg-info

@@ -9,7 +9,9 @@ setup(
     long_description=open('README.md').read(),
     long_description_content_type='text/markdown',
     url='https://github.com/jgwill/coaiapy',
-    packages=find_packages(where='src'),
+    packages=find_packages(
+        include=["coaiapy", "test-*.py"], exclude=["test*log", "*test*csv", "*test*png"]
+    ),
     package_dir={'': 'src'},
     install_requires=[
         'boto3',
