@@ -34,7 +34,7 @@ def find_existing_config():
       if os.path.exists(_cnf):
         return _cnf
       #ifnstill not found, try in $HOME/coaia.json
-      _cnf=os.path.join(_home,'.config','coaia.json')
+      _cnf=os.path.join(_home,'coaia.json')
       if os.path.exists(_cnf):
         return _cnf
   return None
