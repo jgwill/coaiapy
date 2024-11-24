@@ -7,7 +7,7 @@ sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
 
 from coaiamodule import read_config, transcribe_audio, summarizer, tash
 
-SYNOPSIS="""
+EPILOG="""
 coaiacli is a command line interface for audio transcription, summarization, and stashing to Redis.
 
 setup these environment variables:
@@ -34,7 +34,7 @@ def tash_key_val_from_file(key, file_path):
     tash_key_val(key, value)
 
 def main():
-    parser = argparse.ArgumentParser(description="CLI tool for audio transcription, summarization, and stashing to Redis.")
+    parser = argparse.ArgumentParser(description="CLI tool for audio transcription, summarization, and stashing to Redis.", epilog=EPILOG,prog="coaia")
     subparsers = parser.add_subparsers(dest='command')
 
     # Subparser for 'tash' command

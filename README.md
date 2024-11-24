@@ -45,7 +45,6 @@ REDIS_PORT
 REDIS_PASSWORD
 REDIS_SSL
 ```
-
 #### Transcribe Audio
 
 To transcribe an audio file to text:
