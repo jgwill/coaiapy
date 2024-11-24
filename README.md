@@ -1,6 +1,4 @@
-# CoAiA Py
-
-
+# CoAiAPy
 
 CoAiAPy is a Python package that provides functionality for audio transcription, synthesis, and tagging of MP3 files using Boto3 and the Mutagen library. This package is designed to facilitate the processing of audio files for various applications.
 
@@ -9,6 +7,7 @@ CoAiAPy is a Python package that provides functionality for audio transcription,
 - **Audio Transcription**: Convert audio files to text using AWS services.
 - **Audio Synthesis**: Generate audio files from text input.
 - **MP3 Tagging**: Add metadata tags to MP3 files for better organization and identification.
+- **Redis Stashing**: Stash key-value pairs to a Redis service.
 
 ## Installation
 
@@ -16,18 +15,93 @@ To install the package, you can use pip:
 
 ```bash
 pip install coaiapy
-
-
 ```
 
+## Usage
 
+### CLI Tool
 
+CoAiAPy provides a CLI tool for audio transcription, summarization, and stashing to Redis.
 
- ## Plan
+#### Help
 
+To see the available commands and options, use the `--help` flag:
 
-* --@STCGoal Centralized Access to this Small Project that attempt to build creative tooling using LLM
-* --@STCMastery Prompt engineering
-* --@STCMastery Distribute and Share your prompts
-* --@STCIssue Prompts engineered are sparsed in many projects and forked explorations
-* --@STCissue Pythonista coaiamodule is stuck in iCloudDrive and have interesting simple OpenAI API Wrapper and an interesting foundation for ways to define assistant and define their various prompt templating (in fact, it contains a way a template for the data structure with prefix and suffix attributes to define the properties of an assistant, therefore you can define a new assistant in seconds with 2 nested data structure in the config.json and add them to a Pythonista UI button just by initializing the UI Component with the 'prefix' of the assistant defined in the config (hopefully, you would be able to create a UI Component without an assistant to exist in the configuration and it would triggers a 'new assistant' design session and publish its definition when the user has completed to define its purpose.
+```bash
+coaia --help
+```
+
+#### Transcribe Audio
+
+To transcribe an audio file to text:
+
+```bash
+coaia transcribe <file_path>
+```
+
+Example:
+
+```bash
+coaia transcribe path/to/audio/file.mp3
+```
+
+#### Summarize Text
+
+To summarize a text:
+
+```bash
+coaia summarize <text>
+```
+
+Example:
+
+```bash
+coaia summarize "This is a long text that needs to be summarized."
+```
+
+To summarize text from a file:
+
+```bash
+coaia summarize --f <file_path>
+```
+
+Example:
+
+```bash
+coaia summarize --f path/to/text/file.txt
+```
+
+#### Stash Key-Value Pair to Redis
+
+To stash a key-value pair to Redis:
+
+```bash
+coaia tash <key> <value>
+```
+
+Example:
+
+```bash
+coaia tash my_key "This is the value to stash."
+```
+
+To stash a key-value pair from a file:
+
+```bash
+coaia tash <key> --f <file_path>
+```
+
+Example:
+
+```bash
+coaia tash my_key --f path/to/value/file.txt
+```
+
+## Contributing
+
+Contributions are welcome! Please open an issue or submit a pull request for any improvements or bug fixes.
+
+## License
+
+This project is licensed under the MIT License. See the LICENSE file for more details.
+
