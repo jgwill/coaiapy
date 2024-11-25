@@ -19,6 +19,12 @@ REDIS_HOST
 REDIS_PORT
 REDIS_PASSWORD
 REDIS_SSL
+
+To add a new process tag, define "TAG_instruction" and "TAG_temperature" in config.json.
+
+Usage:
+    coaia p TAG "My user input"
+    cat myfile.txt | coaia p TAG
 """
 
 def tash_key_val(key, value):
@@ -56,8 +62,8 @@ def main():
     parser_summarize.add_argument('filename', type=str, nargs='?', help="Optional filename containing text to summarize.")
 
     # Subparser for 'p' command
-    parser_p = subparsers.add_parser('p', help='Process input message with abstract_process_send.')
-    parser_p.add_argument('process_name', type=str, help="The process tag for abstract_process_send.")
+    parser_p = subparsers.add_parser('p', help='Process input message with a custom process tag.')
+    parser_p.add_argument('process_name', type=str, help="The process tag defined in the config.")
     parser_p.add_argument('input_message', type=str, nargs='?', help="The input message to process.")
 
     args = parser.parse_args()
