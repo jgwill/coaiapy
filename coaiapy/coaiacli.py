@@ -92,8 +92,8 @@ def main():
         else:
             print(f"{result}")
     elif args.command == 'tash':
-        if args.f:
-            tash_key_val_from_file(args.key, args.f)
+        if args.file:
+            tash_key_val_from_file(args.key, args.file)
         elif args.value:
             tash_key_val(args.key, args.value)
         else:
