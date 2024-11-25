@@ -74,11 +74,15 @@ def main():
     parser_p.add_argument('process_name', type=str, help="The process tag defined in the config.")
     parser_p.add_argument('input_message', type=str, nargs='?', help="The input message to process.")
     parser_p.add_argument('-O','--output', type=str, help="Filename to save the output.")
+    parser_p.add_argument('-F', '--file', type=str, help="Read the input message from a file.")
 
     args = parser.parse_args()
 
     if args.command == 'p':
-        if not sys.stdin.isatty():
+        if args.file:
+            with open(args.file, 'r') as f:
+                input_message = f.read()
+        elif not sys.stdin.isatty():
             input_message = sys.stdin.read()
         elif args.input_message:
             input_message = args.input_message
@@ -97,7 +101,7 @@ def main():
         elif args.value:
             tash_key_val(args.key, args.value)
         else:
-            print("Error: You must provide a value or use the --f flag to read from a file.")
+            print("Error: You must provide a value or use the --file flag to read from a file.")
     elif args.command == 'transcribe':
         transcribed_text = transcribe_audio(args.file_path)
         if args.output:
