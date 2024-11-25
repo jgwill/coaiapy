@@ -59,7 +59,7 @@ def main():
     parser_tash.add_argument('value', type=str, nargs='?', help="The value to stash.")
     parser_tash.add_argument('-F','--file', type=str, help="Read the value from a file.")
     #--ttl
-    parser_tash.add_argument('-T','--ttl', type=int, help="Time to live in seconds.")
+    parser_tash.add_argument('-T','--ttl', type=int, help="Time to live in seconds.",default=5555)
 
     # Subparser for 'transcribe' command
     parser_transcribe = subparsers.add_parser('transcribe',aliases="t", help='Transcribe an audio file to text.')
