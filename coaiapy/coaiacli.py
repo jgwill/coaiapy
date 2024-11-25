@@ -7,25 +7,22 @@ sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
 
 from coaiamodule import read_config, transcribe_audio, summarizer, tash, abstract_process_send
 
-EPILOG="""
-coaiacli is a command line interface for audio transcription, summarization, and stashing to Redis.
-
-setup these environment variables:
-OPENAI_API_KEY
-AWS_KEY_ID
-AWS_SECRET_KEY
-AWS_REGION
-REDIS_HOST
-REDIS_PORT
-REDIS_PASSWORD
-REDIS_SSL
-
-To add a new process tag, define "TAG_instruction" and "TAG_temperature" in config.json.
-
-Usage:
-    coaia p TAG "My user input"
-    cat myfile.txt | coaia p TAG
-"""
+EPILOG = (
+        "coaiacli is a command line interface for audio transcription, summarization, and stashing to Redis.\n\n"
+        "setup these environment variables:\n"
+        "OPENAI_API_KEY\n"
+        "AWS_KEY_ID\n"
+        "AWS_SECRET_KEY\n"
+        "AWS_REGION\n"
+        "REDIS_HOST\n"
+        "REDIS_PORT\n"
+        "REDIS_PASSWORD\n"
+        "REDIS_SSL\n\n"
+        "To add a new process tag, define \"TAG_instruction\" and \"TAG_temperature\" in config.json.\n\n"
+        "Usage:\n"
+        "    coaia p TAG \"My user input\"\n"
+        "    cat myfile.txt | coaia p TAG\n"
+    )
 
 def tash_key_val(key, value):
     tash(key, value)
