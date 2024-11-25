@@ -106,7 +106,7 @@ def main():
         if args.file:
             tash_key_val_from_file(args.key, args.file)
         elif args.value:
-            tash_key_val(args.key, args.value)
+            tash_key_val(args.key, args.value,args.ttl)
         else:
             print("Error: You must provide a value or use the --file flag to read from a file.")
     elif args.command == 'transcribe' or args.command == 't':
