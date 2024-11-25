@@ -48,6 +48,7 @@ def main():
         description="CLI tool for audio transcription, summarization, stashing to Redis and other processTag.", 
         epilog=EPILOG,
         prog="coaia",
+        formatter_class=argparse.RawDescriptionHelpFormatter
     )
     subparsers = parser.add_subparsers(dest='command')
 
