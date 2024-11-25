@@ -582,7 +582,8 @@ def tash(k:str,v:str,ttl=-1):
     print(e)
     print('init error')
   if _r is not None:
-    result=_taleadd(_r,k,v,True,ttl)
+    ttl_seconds = ttl * 60 if ttl > 0 else None
+    result=_taleadd(_r,k,v,True,ttl_seconds)
     if result is not None:
       print('Stashed success:'+k)
     else:
