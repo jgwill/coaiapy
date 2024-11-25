@@ -560,9 +560,9 @@ def _newjtaler(jtalecnf):
     print('error creating newjtaler')
     return None
 
-def _taleadd(_r,k,c,quiet=False):
+def _taleadd(_r:redis.Redis,k:str,c:str,quiet=False,ttl=-1):
   try:
-    _r.set(k, c)
+    _r.set(k, c, ex=ttl)
     _kv=_r.get(k)
     if not quiet:
       print(_kv)
@@ -571,7 +571,7 @@ def _taleadd(_r,k,c,quiet=False):
     print(e)
     return None
 
-def tash(k,v):
+def tash(k:str,v:str,ttl=-1):
   
   _r=None
   try:
@@ -582,7 +582,7 @@ def tash(k,v):
     print(e)
     print('init error')
   if _r is not None:
-    result=_taleadd(_r,k,v,True)
+    result=_taleadd(_r,k,v,True,ttl)
     if result is not None:
       print('Stashed success:'+k)
     else:
