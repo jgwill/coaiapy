@@ -560,9 +560,12 @@ def _newjtaler(jtalecnf):
     print('error creating newjtaler')
     return None
 
-def _taleadd(_r:redis.Redis,k:str,c:str,quiet=False,ttl=-1):
+def _taleadd(_r:redis.Redis,k:str,c:str,quiet=False,ttl=None):
   try:
-    _r.set(k, c, ex=ttl)
+    if ttl:
+      _r.set(k, c, ex=ttl)
+    else:
+      _r.set(k, c)
     _kv=_r.get(k)
     if not quiet:
       print(_kv)
