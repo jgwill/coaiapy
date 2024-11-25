@@ -47,10 +47,9 @@ def main():
     parser_transcribe = subparsers.add_parser('transcribe', help='Transcribe an audio file to text.')
     parser_transcribe.add_argument('file_path', type=str, help="The path to the audio file.")
 
-    # Subparser for 'summarize' command
-    parser_summarize = subparsers.add_parser('summarize', help='Summarize a text.')
-    parser_summarize.add_argument('text', type=str, help="The text to summarize.")
-    parser_summarize.add_argument('--f', type=str, help="Read the text from a file.")
+    # Update 'summarize' subparser
+    parser_summarize = subparsers.add_parser('summarize', help='Summarize text from stdin or a file.')
+    parser_summarize.add_argument('filename', type=str, nargs='?', help="Optional filename containing text to summarize.")
 
     args = parser.parse_args()
 
@@ -65,14 +64,17 @@ def main():
         transcribed_text = transcribe_audio(args.file_path)
         print(f"{transcribed_text}")
     elif args.command == 'summarize':
-        if args.f:
-            if not os.path.isfile(args.f):
-                print(f"Error: File '{args.f}' does not exist.")
+        if not sys.stdin.isatty():
+            text = sys.stdin.read()
+        elif args.filename:
+            if not os.path.isfile(args.filename):
+                print(f"Error: File '{args.filename}' does not exist.")
                 return
-            with open(args.f, 'r') as file:
+            with open(args.filename, 'r') as file:
                 text = file.read()
         else:
-            text = args.text
+            print("Error: No input provided.")
+            return
         summary = summarizer(text)
         print(f"{summary}")
     else:
