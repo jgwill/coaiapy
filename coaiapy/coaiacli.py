@@ -47,6 +47,7 @@ def main():
     parser = argparse.ArgumentParser(
         description="CLI tool for audio transcription, summarization, stashing to Redis and other processTag.", 
         epilog=EPILOG,
+        usage="coaia <command> [<args>]",
         prog="coaia",
         formatter_class=argparse.RawDescriptionHelpFormatter
     )
