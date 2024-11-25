@@ -44,7 +44,12 @@ def process_send(process_name, input_message):
     print(f"{result}")
 
 def main():
-    parser = argparse.ArgumentParser(description="CLI tool for audio transcription, summarization, and stashing to Redis.", epilog=EPILOG,prog="coaia")
+    parser = argparse.ArgumentParser(
+        description="CLI tool for audio transcription, summarization, stashing to Redis and other processTag.", 
+        epilog=EPILOG,
+        prog="coaia",
+        formatter_class=argparse.RawDescriptionHelpFormatter
+    )
     subparsers = parser.add_subparsers(dest='command')
 
     # Subparser for 'tash' command
