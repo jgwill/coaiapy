@@ -574,7 +574,7 @@ def _taleadd(_r:redis.Redis,k:str,c:str,quiet=False,ttl=None):
     print(e)
     return None
 
-def tash(k:str,v:str,ttl=-1):
+def tash(k:str,v:str,ttl=-1,quiet=False):
   
   _r=None
   try:
@@ -586,7 +586,7 @@ def tash(k:str,v:str,ttl=-1):
     print('init error')
   if _r is not None:
     ttl_seconds = ttl * 60 if ttl > 0 else None
-    result=_taleadd(_r,k,v,True,ttl_seconds)
+    result=_taleadd(_r,k,v,quiet,ttl_seconds)
     if result is not None:
       print('Stashed success:'+k)
     else:

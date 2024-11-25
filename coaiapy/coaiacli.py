@@ -28,8 +28,8 @@ Usage:
 """
 
 def tash_key_val(key, value,ttl=-1):
-    tash(key, value)
-    print(f"Key: {key}, Value: {value} stashed successfully.")
+    tash(key, value,ttl)
+    print(f"Key: {key}  stashed successfully.")
 
 def tash_key_val_from_file(key, file_path,ttl=-1):
     if not os.path.isfile(file_path):
