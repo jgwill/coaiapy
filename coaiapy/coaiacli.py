@@ -27,11 +27,11 @@ Usage:
     cat myfile.txt | coaia p TAG
 """
 
-def tash_key_val(key, value,ttl=-1):
+def tash_key_val(key, value,ttl=None):
     tash(key, value,ttl)
     print(f"Key: {key}  stashed successfully.")
 
-def tash_key_val_from_file(key, file_path,ttl=-1):
+def tash_key_val_from_file(key, file_path,ttl=None):
     if not os.path.isfile(file_path):
         print(f"Error: File '{file_path}' does not exist.")
         return
@@ -104,7 +104,7 @@ def main():
             print(f"{result}")
     elif args.command == 'tash' or args.command == 'm':
         if args.file:
-            tash_key_val_from_file(args.key, args.file)
+            tash_key_val_from_file(args.key, args.file,args.ttl)
         elif args.value:
             tash_key_val(args.key, args.value,args.ttl)
         else:

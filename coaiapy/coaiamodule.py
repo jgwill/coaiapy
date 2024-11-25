@@ -574,7 +574,7 @@ def _taleadd(_r:redis.Redis,k:str,c:str,quiet=False,ttl=None):
     print(e)
     return None
 
-def tash(k:str,v:str,ttl=-1,quiet=False):
+def tash(k:str,v:str,ttl=None,quiet=False):
   
   _r=None
   try:
