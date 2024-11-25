@@ -5,7 +5,7 @@ import sys
 
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
 
-from coaiamodule import read_config, transcribe_audio, summarizer, tash
+from coaiamodule import read_config, transcribe_audio, summarizer, tash, abstract_process_send
 
 EPILOG="""
 coaiacli is a command line interface for audio transcription, summarization, and stashing to Redis.
@@ -33,6 +33,10 @@ def tash_key_val_from_file(key, file_path):
         value = file.read()
     tash_key_val(key, value)
 
+def process_send(process_name, input_message):
+    result = abstract_process_send(process_name, input_message)
+    print(f"{result}")
+
 def main():
     parser = argparse.ArgumentParser(description="CLI tool for audio transcription, summarization, and stashing to Redis.", epilog=EPILOG,prog="coaia")
     subparsers = parser.add_subparsers(dest='command')
@@ -51,9 +55,23 @@ def main():
     parser_summarize = subparsers.add_parser('summarize', help='Summarize text from stdin or a file.')
     parser_summarize.add_argument('filename', type=str, nargs='?', help="Optional filename containing text to summarize.")
 
+    # Subparser for 'p' command
+    parser_p = subparsers.add_parser('p', help='Process input message with abstract_process_send.')
+    parser_p.add_argument('process_name', type=str, help="The process tag for abstract_process_send.")
+    parser_p.add_argument('input_message', type=str, nargs='?', help="The input message to process.")
+
     args = parser.parse_args()
 
-    if args.command == 'tash':
+    if args.command == 'p':
+        if not sys.stdin.isatty():
+            input_message = sys.stdin.read()
+        elif args.input_message:
+            input_message = args.input_message
+        else:
+            print("Error: No input provided.")
+            return
+        process_send(args.process_name, input_message)
+    elif args.command == 'tash':
         if args.f:
             tash_key_val_from_file(args.key, args.f)
         elif args.value:
