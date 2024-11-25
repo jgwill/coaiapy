@@ -5,7 +5,7 @@ import sys
 
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
 
-from coaiamodule import read_config, transcribe_audio, summarizer, tash, abstract_process_send
+from coaiamodule import read_config, transcribe_audio, summarizer, tash, abstract_process_send, initial_setup
 
 EPILOG = """
 coaiacli is a command line interface for audio transcription, summarization, and stashing to Redis.
@@ -76,9 +76,14 @@ def main():
     parser_p.add_argument('-O','--output', type=str, help="Filename to save the output.")
     parser_p.add_argument('-F', '--file', type=str, help="Read the input message from a file.")
 
+    # Subparser for 'init' command
+    parser_init = subparsers.add_parser('init', help='Create a sample config file in $HOME/coaia.json.')
+
     args = parser.parse_args()
 
-    if args.command == 'p':
+    if args.command == 'init':
+        initial_setup()
+    elif args.command == 'p':
         if args.file:
             with open(args.file, 'r') as f:
                 input_message = f.read()

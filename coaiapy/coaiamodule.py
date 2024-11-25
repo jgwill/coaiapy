@@ -584,3 +584,85 @@ def tash(k,v):
 		else:
 			print('Stashing failed')
 		return result
+
+def initial_setup():
+    sample_config = {
+        "username": "SSH_USER",
+        "user_id": "USER_ID",
+        "openai_api_key": "__API_KEY__",
+        "model": "gpt-4o-mini",
+        "model2": "gpt-3.5-turbo",
+        "pollyconf": {
+            "key": "__AWS_KEY_ID__",
+            "secret": "__AWS_SECRET_KEY__",
+            "region": "us-east-1"
+        },
+        "dalle_api_endpoint": "https://api.openai.com/v1/images/generations",
+        "pyapp_dalle_api_2405": "__API_KEY__",
+        "default_size": "1024x1024",
+        "openai_api_url": "https://api.openai.com/v1/chat/completions",
+        "openai_transcription_api_url": "https://api.openai.com/v1/audio/transcriptions",
+        "default_temperature": 0.35,
+        "default_preprompt_instruction": "",
+        "default_preprompt_instruction1": "consider these instructions before what to do:  'Creativity is not a requirement for creating.  Creating is an orientation and creativity is different and relate to the character traits of someone.  Many professionals who studied creators are just not capable to comprehend that the creativity of someone will not make she/he, a creator.  If anything, the capacity of that character traits will deform itself into defect of character when in reaction to past, present or future circumstances.  Hardly said, if you describe yourself as having creativity in your character, mastering your creative process will demand you more work to unbuilt what you learned in the traditional learning system.  Our traditional learning system does not educate us in order to become masters of our own creative process, rather,  education is teaching us to give the correct responses to circumstances.  That in itself is enough for creativity for a tragic unfolding of neuronal connections that are just not part of the creative process but a mental database of constructs making you better in responding, limiting your potential for creating what you want.'  Prompt: ",
+        "d2s_default_temperature": 0.25,
+        "d2s_temperature": 0.25,
+        "d2s_instruction": "You do : Receive a text that requires to put details into shapes. you group elements of different nature and summarize them. REMEMBER: Dont introduce nor conclude, just output results. No comments.",
+        "dictkore_default_temperature": 0.2,
+        "dictkore_temperature": 0.2,
+        "dictkore_instruction": "You do : Receive a dictated text that requires correction and clarification.\n\n# Corrections\n\n- In the dictated text, spoken corrections are made. You make them and remove the text related to that to keep the essence of what is discussed.\n\n# Output\n\n- You keep all the essence of the text (same length).\n- You keep the same style.\n- You ensure annotated dictation errors in the text are fixed.",
+        "stcrev_instruction": "you generate a new version from the received review and corrections using the original text supplied",
+        "stcrev_pre_prompt": "consider review and correct bellow to generate a new version of the original text:\n\n## Review and corrections:\n\n\n\"\"\"",
+        "stcrev_temperature": 0.25,
+        "stcrev_default_temperature": 0.25,
+        "csv2json_instruction": "transform this CSV content into json (encapsulate output and don't comment it) :",
+        "csv2json_temperature": 0.35,
+        "summarizer_instruction": "You Summarize the content bellow in its native language with coherence and integrity even if the summary is longer.",
+        "summarizer_temperature": 0.2,
+        "faction_instruction": "from the supplied input you create a clear list of actions with their description after their title. You output just that list. REMEMBER: Dont introduce nor conclude, just output results. No comments.",
+        "faction_temperature": 0.11,
+        "contentreducer_instruction": "you reduce the amount of characters in the following text without changing the notions (you can get rid of what the teachers says that are irrelevant to the core understanding).  simply output the resulting generated text. REMEMBER: Dont introduce nor conclude, just output results. No comments.",
+        "contentreducer_temperature": 0.2,
+        "stcmasterywrap_instruction": "you are wrapping with sufficient details the input content which is part of something we want to master.  REMEMBER: Dont introduce nor conclude, just output results. No comments.",
+        "stcmasterywrap_temperature": 0.2,
+        "nutrifact_instruction": "extract and clean nutritional value from text extracted from image bellow and output as structured data in json  format '{per_nb_grams: X, nutrition_facts: {...}}' (no comments, just outputs): ",
+        "nutrifact_temperature": 0.2,
+        "mkfn_instruction": "you are an assistant in making a safe file naming  from the input text.  Maximum 24 characters, underscore and 'CaML' markup.  No extension, just a 'basename'.  Clean out any irrelevant content from the input  .  (just output result, no comments )",
+        "mktn_temperature": 0.2,
+        "compact_temperature": 0.2,
+        "compact_instruction": "You compact the input text bellow to the lowest amout of content to keep its essence and have an overview of what it speaks in the original input language. (just output result, no comments )",
+        "ca_instruction": "you are a useful assistant using the creative process.(just output results, no comments):",
+        "ca_temperature": 0.3,
+        "ca_mns": "coaia",
+        "mns": {
+            "ocoaia": "ft:gpt-4o-mini-2024-07-18:jgwill:coaia240822b:9zDtl5Dq",
+            "coaia": "ft:gpt-4o-2024-08-06:jgwill:coaia240830d:A1vOInwF",
+            "tht": "ft:gpt-3.5-turbo-1106:jgwill:tht240904g:A3sF4S2j"
+        },
+        "jtaleconf": {
+            "host": "adapting-hyena-26846.upstash.io",
+            "port": 6379,
+            "password": "__UPSTASH_PASSWORD__",
+            "ssl": True,
+            "notes": "it is using the upstash service not the redis cloud for which I dont yet see the differences."
+        }
+    }
+    home = os.getenv('HOME')
+    config_path = os.path.join(home, 'coaia.json')
+    if not os.path.exists(config_path):
+        with open(config_path, 'w') as config_file:
+            json.dump(sample_config, config_file, indent=4)
+        print(f"Sample config created at {config_path}")
+    else:
+        print(f"Config already exists at {config_path}")
+
+def read_config():
+    global config
+    home = os.getenv('HOME')
+    config_path = os.path.join(home, 'coaia.json')
+    if not os.path.exists(config_path):
+        print("Config file not found. Please run with --init to create a sample config.")
+        sys.exit(1)
+    with open(config_path) as config_file:
+        config = json.load(config_file)
+    return config
