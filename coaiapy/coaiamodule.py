@@ -39,7 +39,7 @@ def find_existing_config():
       if os.path.exists(_cnf):
         return _cnf
   if not os.path.exists(_cnf):
-    print("Config file not found. Please run with init to create a sample config.")
+    print("Config file not found. Please run \"coaia init\" to create config.")
     sys.exit(1)
   return None
 
