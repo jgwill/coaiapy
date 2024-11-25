@@ -51,20 +51,23 @@ def main():
     parser_tash = subparsers.add_parser('tash', help='Stash a key/value pair to Redis.')
     parser_tash.add_argument('key', type=str, help="The key to stash.")
     parser_tash.add_argument('value', type=str, nargs='?', help="The value to stash.")
-    parser_tash.add_argument('--f', type=str, help="Read the value from a file.")
+    parser_tash.add_argument('-F','--file', type=str, help="Read the value from a file.")
 
     # Subparser for 'transcribe' command
     parser_transcribe = subparsers.add_parser('transcribe', help='Transcribe an audio file to text.')
     parser_transcribe.add_argument('file_path', type=str, help="The path to the audio file.")
+    parser_transcribe.add_argument('-O','--output', type=str, help="Filename to save the output.")
 
     # Update 'summarize' subparser
     parser_summarize = subparsers.add_parser('summarize', help='Summarize text from stdin or a file.')
     parser_summarize.add_argument('filename', type=str, nargs='?', help="Optional filename containing text to summarize.")
+    parser_summarize.add_argument('-O','--output', type=str, help="Filename to save the output.")
 
     # Subparser for 'p' command
     parser_p = subparsers.add_parser('p', help='Process input message with a custom process tag.')
     parser_p.add_argument('process_name', type=str, help="The process tag defined in the config.")
     parser_p.add_argument('input_message', type=str, nargs='?', help="The input message to process.")
+    parser_p.add_argument('-O','--output', type=str, help="Filename to save the output.")
 
     args = parser.parse_args()
 
@@ -76,7 +79,12 @@ def main():
         else:
             print("Error: No input provided.")
             return
-        process_send(args.process_name, input_message)
+        result = abstract_process_send(args.process_name, input_message)
+        if args.output:
+            with open(args.output, 'w') as f:
+                f.write(result)
+        else:
+            print(f"{result}")
     elif args.command == 'tash':
         if args.f:
             tash_key_val_from_file(args.key, args.f)
@@ -86,7 +94,11 @@ def main():
             print("Error: You must provide a value or use the --f flag to read from a file.")
     elif args.command == 'transcribe':
         transcribed_text = transcribe_audio(args.file_path)
-        print(f"{transcribed_text}")
+        if args.output:
+            with open(args.output, 'w') as f:
+                f.write(transcribed_text)
+        else:
+            print(f"{transcribed_text}")
     elif args.command == 'summarize':
         if not sys.stdin.isatty():
             text = sys.stdin.read()
@@ -100,7 +112,11 @@ def main():
             print("Error: No input provided.")
             return
         summary = summarizer(text)
-        print(f"{summary}")
+        if args.output:
+            with open(args.output, 'w') as f:
+                f.write(summary)
+        else:
+            print(f"{summary}")
     else:
         parser.print_help()
 
