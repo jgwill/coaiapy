@@ -2,6 +2,9 @@ import argparse
 import os
 
 import sys
+import warnings
+#ignore : RequestsDependencyWarning: Unable to find acceptable character detection dependency (chardet or charset_normalizer).
+warnings.filterwarnings("ignore", message="Unable to find acceptable character detection dependency")
 
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
 
