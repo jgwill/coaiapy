@@ -4,3 +4,5 @@ charset-normalizer
 idna
 redis
 markdown
+chardet
+charset-normalizer
