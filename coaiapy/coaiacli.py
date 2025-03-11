@@ -20,18 +20,11 @@ from cofuse import (
     add_trace
 )
 
-EPILOG = """
+EPILOG1 = """
 coaiacli is a command line interface for audio transcription, summarization, and stashing to Redis.
 
 setup these environment variables:
-OPENAI_API_KEY
-AWS_KEY_ID
-AWS_SECRET_KEY
-AWS_REGION
-REDIS_HOST
-REDIS_PORT
-REDIS_PASSWORD
-REDIS_SSL
+OPENAI_API_KEY AWS_KEY_ID AWS_SECRET_KEY AWS_REGION REDIS_HOST REDIS_PORT REDIS_PASSWORD REDIS_SSL
 
 To add a new process tag, define "TAG_instruction" and "TAG_temperature" in config.json.
 
@@ -39,6 +32,7 @@ Usage:
     coaia p TAG "My user input"
     cat myfile.txt | coaia p TAG
 """
+EPILOG = "SEE: https://github.com/jgwill/coaiapy/wiki  (not happy about its content, contribute to it)"
 
 def tash_key_val(key, value,ttl=None):
     tash(key, value,ttl)
