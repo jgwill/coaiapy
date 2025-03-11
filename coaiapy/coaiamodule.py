@@ -56,13 +56,13 @@ def read_config():
             config = json.load(config_file)
 
         # Check for placeholder values and replace with environment variables if needed
-        config['openai_api_key'] = os.getenv('OPENAI_API_KEY', config['openai_api_key'])
-        config['pollyconf']['key'] = os.getenv('AWS_KEY_ID', config['pollyconf']['key'])
-        config['pollyconf']['secret'] = os.getenv('AWS_SECRET_KEY', config['pollyconf']['secret'])
-        config['pollyconf']['region'] = os.getenv('AWS_REGION', config['pollyconf']['region'])
-        config['jtaleconf']['host'] = os.getenv('REDIS_HOST', config['jtaleconf']['host'])
-        config['jtaleconf']['port'] = int(os.getenv('REDIS_PORT', config['jtaleconf']['port']))
-        config['jtaleconf']['password'] = os.getenv('REDIS_PASSWORD', config['jtaleconf']['password'])
+        config["openai_api_key"] = os.getenv("OPENAI_API_KEY", config["openai_api_key"])
+        config["pollyconf"]["key"] = os.getenv("AWS_KEY_ID", config["pollyconf"]["key"])
+        config["pollyconf"]["secret"] = os.getenv("AWS_SECRET_KEY", config["pollyconf"]["secret"])
+        config["pollyconf"]["region"] = os.getenv("AWS_REGION", config["pollyconf"]["region"])
+        config["jtaleconf"]["host"] = os.getenv("REDIS_HOST", config["jtaleconf"]["host"])
+        config["jtaleconf"]["port"] = int(os.getenv("REDIS_PORT", config["jtaleconf"]["port"]))
+        config["jtaleconf"]["password"] = os.getenv("REDIS_PASSWORD", config["jtaleconf"]["password"])
 
     return config
 

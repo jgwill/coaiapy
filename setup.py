@@ -24,6 +24,8 @@ setup(
         'markdown',
         'chardet',
         'charset-normalizer',
+        'async_timeout',
+        'PyYAML',
     ],
     classifiers=[
         'Programming Language :: Python :: 3',

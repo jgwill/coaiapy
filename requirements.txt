@@ -6,3 +6,5 @@ redis
 markdown
 chardet
 charset-normalizer
+async_timeout
+PyYAML
