@@ -2,7 +2,7 @@ boto3
 certifi
 charset-normalizer
 idna
-redis
+redis==5.1.1
 markdown
 chardet
 charset-normalizer
