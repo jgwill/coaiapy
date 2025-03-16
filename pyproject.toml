@@ -7,7 +7,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "coaiapy"
-version = "0.2.15"
+version = "0.2.16"
 description = "A Python package for audio transcription, synthesis, and tagging using Boto3."
 readme = "README.md"
 requires-python = ">=3.6"
@@ -23,7 +23,8 @@ dependencies = [
     "idna",
     "redis==5.1.1",
     "requests",
-    "markdown"
+    "markdown",
+    "PyYAML",
 ]
 classifiers = [
     "Programming Language :: Python :: 3",
