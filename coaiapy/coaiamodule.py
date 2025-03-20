@@ -60,9 +60,16 @@ def read_config():
         config["pollyconf"]["key"] = os.getenv("AWS_KEY_ID", config["pollyconf"]["key"])
         config["pollyconf"]["secret"] = os.getenv("AWS_SECRET_KEY", config["pollyconf"]["secret"])
         config["pollyconf"]["region"] = os.getenv("AWS_REGION", config["pollyconf"]["region"])
+        
         config["jtaleconf"]["host"] = os.getenv("REDIS_HOST", config["jtaleconf"]["host"])
+        if config["jtaleconf"]["host"] == config["jtaleconf"]["host"] or os.getenv("REDIS_HOST") is None:
+          config["jtaleconf"]["host"] = os.getenv("UPSTASH_HOST", config["jtaleconf"]["host"])
+
         config["jtaleconf"]["port"] = int(os.getenv("REDIS_PORT", config["jtaleconf"]["port"]))
+        
         config["jtaleconf"]["password"] = os.getenv("REDIS_PASSWORD", config["jtaleconf"]["password"])
+        if config["jtaleconf"]["password"] == config["jtaleconf"]["password"] or os.getenv("REDIS_PASSWORD") is None:
+          config["jtaleconf"]["password"] = os.getenv("UPSTASH_PASSWORD", config["jtaleconf"]["password"])
 
     return config
 
