@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='coaiapy',
-    version = "0.2.18",
+    version = "0.2.19",
     author='Jean GUillaume ISabelle',
     author_email='jgi@jgwill.com',
     description='A Python package for audio transcription, synthesis, and tagging using Boto3.',
@@ -19,11 +19,10 @@ setup(
         'certifi',
         'charset-normalizer',
         'idna',
-        'redis==5.1.1',
+        'redis=<4.6.0',
         'requests',
         'markdown',
         'chardet',
-        'charset-normalizer',
         'async_timeout',
         'PyYAML',
     ],
