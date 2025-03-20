@@ -1,7 +1,0 @@
-[7::Bug Report: Tash Key/Value Unclear Failure](https://github.com/jgwill/coaiapy/issues/7)
-[6::Langsmith Tracing](https://github.com/jgwill/coaiapy/issues/6)
-[5::instructions from YAML File](https://github.com/jgwill/coaiapy/issues/5)
-[4::chardet or chartset_normalizer](https://github.com/jgwill/coaiapy/issues/4)
-[3::GMTF_creation_instructions](https://github.com/jgwill/coaiapy/issues/3)
-[2::Explore : AIConfig, AI application development framework](https://github.com/jgwill/coaiapy/issues/2)
-[1::Migrate](https://github.com/jgwill/coaiapy/issues/1)
