@@ -19,7 +19,7 @@ setup(
         'certifi',
         'charset-normalizer',
         'idna',
-        'redis=<4.6.0',
+        'redis<=4.6.0',
         'requests',
         'markdown',
         'chardet',
