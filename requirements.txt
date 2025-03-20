@@ -3,6 +3,7 @@ certifi
 charset-normalizer
 idna
 redis<=4.6.0
+six<=1.16.0
 markdown
 chardet
 charset-normalizer
