@@ -20,6 +20,7 @@ from cofuse import (
     add_trace
 )
 
+EPILOG = """see: https://github.com/jgwill/coaiapy/wiki for more details."""
 EPILOG1 = """
 coaiacli is a command line interface for audio transcription, summarization, and stashing to Redis.
 
