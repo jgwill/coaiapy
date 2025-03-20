@@ -13,14 +13,14 @@ config=None
 
 def find_existing_config():
   possible_locations = [
-    '../../shared/etc/config.json',
-    '../shared/etc/config.json',
-    '../../etc/config.json',
-    '../etc/config.json',
-    '../config.json',
-    '../config/config.json',
-    './config.json',
-    './etc/config.json'
+    '../../shared/etc/coaia.json',
+    '../shared/etc/coaia.json',
+    '../../etc/coaia.json',
+    '../etc/coaia.json',
+    '../coaia.json',
+    '../config/coaia.json',
+    './coaia.json',
+    './etc/coaia.json'
   ]
 
   for location in possible_locations:
@@ -31,7 +31,7 @@ def find_existing_config():
     #try load from $HOME
     _home=os.getenv('HOME')
     if _home is not None:
-      _cnf=os.path.join(_home,'.config','jgwill','config.json')
+      _cnf=os.path.join(_home,'.config','jgwill','coaia.json')
       if os.path.exists(_cnf):
         return _cnf
       #ifnstill not found, try in $HOME/coaia.json
@@ -105,7 +105,7 @@ def remove_placeholder_lines(text):
 def transcribe_audio(file_path):
     global config
     read_config()
-    # Read OpenAI API key from config.json
+    # Read OpenAI API key from coaia.json
     
     openai_api_key = config.get('openai_api_key')
 
@@ -465,8 +465,8 @@ def send_openai_request_v4(input_message, use_config=False, temperature=None, pr
 
     # Send the request to the OpenAI API
     headers = {
-        'Authorization': f'Bearer {openai_api_key}',
-        'Content-Type': 'application/json'
+        'Authorization': f"Bearer {openai_api_key}",
+        'Content-Type': "application/json"
     }
     response = requests.post(openai_api_url, json=payload, headers=headers)
 

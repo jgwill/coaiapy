@@ -34,7 +34,6 @@ Usage:
     coaia p TAG "My user input"
     cat myfile.txt | coaia p TAG
 """
-EPILOG = "SEE: https://github.com/jgwill/coaiapy/wiki  (not happy about its content, contribute to it)"
 
 def tash_key_val(key, value,ttl=None):
     tash(key, value,ttl)
