@@ -25,9 +25,10 @@ EPILOG1 = """
 coaiacli is a command line interface for audio transcription, summarization, and stashing to Redis.
 
 setup these environment variables:
-OPENAI_API_KEY AWS_KEY_ID AWS_SECRET_KEY AWS_REGION REDIS_HOST REDIS_PORT REDIS_PASSWORD REDIS_SSL
+OPENAI_API_KEY,AWS_KEY_ID,AWS_SECRET_KEY,AWS_REGION
+REDIS_HOST,REDIS_PORT,REDIS_PASSWORD,REDIS_SSL
 
-To add a new process tag, define "TAG_instruction" and "TAG_temperature" in config.json.
+To add a new process tag, define "TAG_instruction" and "TAG_temperature" in coaia.json.
 
 Usage:
     coaia p TAG "My user input"
