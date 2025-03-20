@@ -113,7 +113,7 @@ coaia tash my_key --f path/to/value/file.txt
 
 #### Process Custom Tags
 
-Enable custom quick addons for assistants or bots using process tags. To add a new process tag to `config.json`, include entries like:
+Enable custom quick addons for assistants or bots using process tags. To add a new process tag to `coaia.json`, include entries like:
 ```
 	"dictkore_temperature":0.2,
 	"dictkore_instruction": "You do : Receive a dictated text that requires correction and clarification.\n\n# Corrections\n\n- In the dictated text, spoken corrections are made. You make them and remove the text related to that to keep the essence of what is discussed.\n\n# Output\n\n- You keep all the essence of the text (same length).\n- You keep the same style.\n- You ensure annotated dictation errors in the text are fixed.",
