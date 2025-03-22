@@ -42,6 +42,7 @@ def find_existing_config():
     _cnf=os.path.join(_home,'Documents','coaia.json')
     if os.path.exists(_cnf):
         return _cnf
+  _cnf = None # Initialize _cnf to None
   if not os.path.exists(_cnf):
     print("Config file not found. Please run \"coaia init\" to create config.")
     sys.exit(1)
