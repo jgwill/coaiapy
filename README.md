@@ -111,6 +111,32 @@ Example:
 coaia tash my_key --f path/to/value/file.txt
 ```
 
+#### Fetch Value from Redis
+
+To fetch a value from Redis by key:
+
+```bash
+coaia fetch <key>
+```
+
+Example:
+
+```bash
+coaia fetch my_key
+```
+
+To fetch a value from Redis and save it to a file:
+
+```bash
+coaia fetch <key> --output <file_path>
+```
+
+Example:
+
+```bash
+coaia fetch my_key --output path/to/output/file.txt
+```
+
 #### Process Custom Tags
 
 Enable custom quick addons for assistants or bots using process tags. To add a new process tag to `coaia.json`, include entries like:
@@ -129,4 +155,3 @@ Contributions are welcome! Please open an issue or submit a pull request for any
 ## License
 
 This project is licensed under the MIT License. See the LICENSE file for more details.
-
