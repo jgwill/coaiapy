@@ -91,7 +91,7 @@ def remove_placeholder_lines(text):
   # Split the text into lines
   lines = text.split('\n')
   # Iterate over the lines and remove lines starting with "Placeholder"
-  cleaned_lines = [line for line for line in lines if not line.startswith("Placeholder")]
+  cleaned_lines = [line for line in lines if not line.startswith("Placeholder")]
   
   # Join the cleaned lines back into a string
   cleaned_text = '\n'.join(cleaned_lines)
