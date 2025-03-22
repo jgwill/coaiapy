@@ -91,7 +91,7 @@ def remove_placeholder_lines(text):
   # Split the text into lines
   lines = text.split('\n')
   # Iterate over the lines and remove lines starting with "Placeholder"
-  cleaned_lines = [line for line in lines if not line.startswith("Placeholder")]
+  cleaned_lines = [line for line for line in lines if not line.startswith("Placeholder")]
   
   # Join the cleaned lines back into a string
   cleaned_text = '\n'.join(cleaned_lines)
@@ -261,7 +261,7 @@ def d2s_send(input_message, temperature=None,pre=''):
   
   temperature = config['d2s_default_temperature'] if temperature is None else temperature
     
-  system_instruction = config.get('d2s_instruction', 'You do : Receive a text that requires to put details into shapes. you keep the essence of what is discussed foreach elements you observe and able yo group in the inout text.') 
+  system_instruction = config.get('d2s_instruction', 'You do : Receive a text that requires to put details into shapes. you group elements of different nature and summarize them. REMEMBER: Dont introduce nor conclude, just output results. No comments.') 
   
   
   # Concatenate preprompt_instruction with input_message
@@ -603,6 +603,31 @@ def tash(k:str,v:str,ttl=None,quiet=False):
     else:
       print('Stashing failed')
     return result
+
+def fetch_key_val(key, output_file=None):
+    try:
+        jtalecnf = read_config()['jtaleconf']
+        _r = _newjtaler(jtalecnf)
+        if _r is None:
+            print("Error: Redis connection failed.")
+            sys.exit(2)
+        value = _r.get(key)
+        if value is None:
+            print(f"Error: Key '{key}' not found in Redis memory.")
+            sys.exit(1)
+        value = value.decode('utf-8')
+        if output_file:
+            with open(output_file, 'w') as file:
+                file.write(value)
+            print(f"Key: {key}  fetched and saved to {output_file}")
+        else:
+            print(value)
+    except redis.ConnectionError:
+        print("Error: Redis connection failed.")
+        sys.exit(2)
+    except Exception as e:
+        print(f"Error: {str(e)}")
+        sys.exit(1)
 
 def initial_setup():
     sample_config = {
