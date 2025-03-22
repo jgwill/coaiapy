@@ -23,7 +23,9 @@ def mock_broken_redis(monkeypatch):
 
 def test_fetch_stdout_key_found(mock_redis):
     mock_redis.get.return_value = b'This is a memory snippet.'
-    with patch('sys.stdout', new_callable=io.StringIO) as mock_stdout:
+    with patch('sys.stdout', new_callable=io.StringIO) as mock_stdout, \
+            patch('coaiapy.coaiamodule._newjtaler') as mock_newjtaler:
+        mock_newjtaler.return_value = mock_redis
         fetch_key_val('mykey')
         assert mock_stdout.getvalue().strip() == 'This is a memory snippet.'
 
