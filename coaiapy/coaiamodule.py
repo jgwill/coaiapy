@@ -42,7 +42,6 @@ def find_existing_config():
     _cnf=os.path.join(_home,'Documents','coaia.json')
     if os.path.exists(_cnf):
         return _cnf
-  _cnf = None # Initialize _cnf to None
   if not os.path.exists(_cnf):
     print("Config file not found. Please run \"coaia init\" to create config.")
     sys.exit(1)
@@ -92,7 +91,7 @@ def remove_placeholder_lines(text):
   # Split the text into lines
   lines = text.split('\n')
   # Iterate over the lines and remove lines starting with "Placeholder"
-  cleaned_lines = [line for line in lines if not line.startswith("Placeholder")]
+  cleaned_lines = [line for line for line in lines if not line.startswith("Placeholder")]
   
   # Join the cleaned lines back into a string
   cleaned_text = '\n'.join(cleaned_lines)
