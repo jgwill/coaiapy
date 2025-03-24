@@ -37,7 +37,7 @@ Usage:
 
 def tash_key_val(key, value,ttl=None):
     tash(key, value,ttl)
-    print(f"Key: {key}  stashed successfully.")
+    print(f"Key: {key}  was just saved to memory.")
 
 def tash_key_val_from_file(key, file_path,ttl=None):
     if not os.path.isfile(file_path):
