@@ -8,7 +8,7 @@ warnings.filterwarnings("ignore", message="Unable to find acceptable character d
 
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
 
-from coaiamodule import read_config, transcribe_audio, summarizer, tash, abstract_process_send, initial_setup
+from coaiamodule import read_config, transcribe_audio, summarizer, tash, abstract_process_send, initial_setup, fetch_key_val
 from cofuse import (
     get_comments, post_comment,
     create_session_and_save, add_trace_node_and_save,
@@ -157,6 +157,11 @@ def main():
     parser_ds_items_create.add_argument('-e','--expected', help="Expected output")
     parser_ds_items_create.add_argument('-m','--metadata', help="Optional metadata as JSON string")
 
+    # Subparser for 'fetch' command
+    parser_fetch = subparsers.add_parser('fetch', help='Fetch a value from Redis by key.')
+    parser_fetch.add_argument('key', type=str, help="The key to fetch.")
+    parser_fetch.add_argument('-O', '--output', type=str, help="Filename to save the fetched value.")
+
     args = parser.parse_args()
 
     if args.command == 'init':
@@ -210,6 +215,8 @@ def main():
                 f.write(summary)
         else:
             print(f"{summary}")
+    elif args.command == 'fetch':
+        fetch_key_val(args.key, args.output)
     elif args.command == 'fuse':
         if args.fuse_command == 'comments':
             if args.action == 'list':
