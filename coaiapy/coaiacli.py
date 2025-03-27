@@ -35,17 +35,27 @@ Usage:
     cat myfile.txt | coaia p TAG
 """
 
-def tash_key_val(key, value,ttl=None):
-    tash(key, value,ttl)
-    print(f"Key: {key}  was just saved to memory.")
+def tash_key_val(key, value, ttl=None):
+    tash(key, value, ttl)
+    output = {
+        "status": "success",
+        "message": f"Key: {key} was just saved to memory.",
+        "details": [
+            {
+                "key": key,
+                "status": "saved"
+            }
+        ]
+    }
+    print(json.dumps(output, indent=2))
 
-def tash_key_val_from_file(key, file_path,ttl=None):
+def tash_key_val_from_file(key, file_path, ttl=None):
     if not os.path.isfile(file_path):
         print(f"Error: File '{file_path}' does not exist.")
         return
     with open(file_path, 'r') as file:
         value = file.read()
-    tash_key_val(key, value,ttl)
+    tash_key_val(key, value, ttl)
 
 def process_send(process_name, input_message):
     result = abstract_process_send(process_name, input_message)
@@ -185,9 +195,9 @@ def main():
             print(f"{result}")
     elif args.command == 'tash' or args.command == 'm':
         if args.file:
-            tash_key_val_from_file(args.key, args.file,args.ttl)
+            tash_key_val_from_file(args.key, args.file, args.ttl)
         elif args.value:
-            tash_key_val(args.key, args.value,args.ttl)
+            tash_key_val(args.key, args.value, args.ttl)
         else:
             print("Error: You must provide a value or use the --file flag to read from a file.")
     elif args.command == 'transcribe' or args.command == 't':
