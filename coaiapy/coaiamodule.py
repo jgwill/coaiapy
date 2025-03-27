@@ -605,6 +605,12 @@ def tash(k:str,v:str,ttl=None,quiet=True):
       if not quiet: print('Stashing failed')
     return result
 
+def lock_key(_r: redis.Redis, key: str, ttl: int):
+    try:
+        _r.set(key + "_lock", "locked", ex=ttl)
+    except Exception as e:
+        print(f"Error locking key: {str(e)}")
+
 def fetch_key_val(key, output_file=None):
     try:
         jtalecnf = read_config()['jtaleconf']
@@ -612,6 +618,7 @@ def fetch_key_val(key, output_file=None):
         if _r is None:
             print("Error: Redis connection failed.")
             sys.exit(2)
+        lock_key(_r, key, 10)  # Lock the key for 10 seconds
         value = _r.get(key)
         if value is None:
             print(f"Error: Key '{key}' not found in Redis memory.")
@@ -623,6 +630,7 @@ def fetch_key_val(key, output_file=None):
             print(f"Key: {key}  fetched and saved to {output_file}")
         else:
             print(value)
+        print(f"Key: {key} is present in Redis memory.")
     except redis.ConnectionError:
         print("Error: Redis connection failed.")
         sys.exit(2)
@@ -700,4 +708,3 @@ def initial_setup():
         print(f"Sample config created at {config_path}")
     else:
         print(f"Config already exists at {config_path}")
-

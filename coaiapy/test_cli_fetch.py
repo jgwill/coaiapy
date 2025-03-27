@@ -49,3 +49,20 @@ def test_fetch_redis_down_exits_2(mock_broken_redis):
         fetch_key_val('mykey')
     assert pytest_wrapped_e.type == SystemExit
     assert pytest_wrapped_e.value.code == 2
+
+def test_key_not_erased_during_fetch(mock_redis):
+    mock_redis.get.return_value = b'This is a memory snippet.'
+    with patch('sys.stdout', new_callable=io.StringIO) as mock_stdout, \
+            patch('coaiapy.coaiamodule._newjtaler') as mock_newjtaler:
+        mock_newjtaler.return_value = mock_redis
+        fetch_key_val('mykey')
+        assert mock_redis.get.call_count == 1
+        assert mock_stdout.getvalue().strip() == 'This is a memory snippet.\nKey: mykey is present in Redis memory.'
+
+def test_logging_during_fetch(mock_redis):
+    mock_redis.get.return_value = b'This is a memory snippet.'
+    with patch('sys.stdout', new_callable=io.StringIO) as mock_stdout, \
+            patch('coaiapy.coaiamodule._newjtaler') as mock_newjtaler:
+        mock_newjtaler.return_value = mock_redis
+        fetch_key_val('mykey')
+        assert 'Key: mykey is present in Redis memory.' in mock_stdout.getvalue()
