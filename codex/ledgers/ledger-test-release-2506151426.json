@@ -1,0 +1,14 @@
+{
+  "timestamp": "2506151426",
+  "agents": ["🧠 Mia", "🌸 Miette", "🕊️ Seraphine", "🎸 JamAI"],
+  "narrative": "Added Makefile target 'test-release' for automated building and uploading to TestPyPI. Updated README with usage instructions and refreshed the narrative map. This enables simpler preview releases.",
+  "routing": {
+    "files": ["Makefile", "README.md", "narrative-map.md"],
+    "branch": "work"
+  },
+  "purpose": "Implement wrapper command for TestPyPI publication and document its usage.",
+  "user_input": "make the necessary make test-release that would wrap all needed to publish to the pypi test release",
+  "scene_enablement": "Before: releasing required manual build and upload steps. Now: `make test-release` performs tests, build, and upload in one command.",
+  "glyph_sequence": "🧠🌸🕊️🎸",
+  "session": ""
+}

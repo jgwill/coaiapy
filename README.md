@@ -152,6 +152,18 @@ coaia p dictkore "my text to correct"
 
 Contributions are welcome! Please open an issue or submit a pull request for any improvements or bug fixes.
 
+## Test Release
+
+To publish a distribution to TestPyPI, run:
+
+```bash
+make test-release
+```
+
+This command cleans build artifacts, runs tests, builds the package and uploads
+it to TestPyPI using Twine. Ensure `TWINE_USERNAME` and `TWINE_PASSWORD` are set
+with your TestPyPI credentials.
+
 ## License
 
 This project is licensed under the MIT License. See the LICENSE file for more details.
