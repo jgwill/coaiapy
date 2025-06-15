@@ -12,40 +12,40 @@ config=None
 
 
 def find_existing_config():
-  possible_locations = [
-    '../../shared/etc/coaia.json',
-    '../shared/etc/coaia.json',
-    '../../etc/coaia.json',
-    '../etc/coaia.json',
-    '../coaia.json',
-    '../config/coaia.json',
-    './coaia.json',
-    './etc/coaia.json'
-  ]
+    """Locate an existing coaia.json configuration file.
 
-  for location in possible_locations:
-    if os.path.exists(location):
-      return location
-  
-  if config is None:
-    #try load from $HOME
-    _home=os.getenv('HOME')
-    if _home is not None:
-      _cnf=os.path.join(_home,'.config','jgwill','coaia.json')
-      if os.path.exists(_cnf):
-        return _cnf
-      #ifnstill not found, try in $HOME/coaia.json
-      _cnf=os.path.join(_home,'coaia.json')
-      if os.path.exists(_cnf):
-        return _cnf
-    #if still not found, try in current directory, try in $HOME/Documents/coaia.json (for iOS Shell Mini)
-    _cnf=os.path.join(_home,'Documents','coaia.json')
-    if os.path.exists(_cnf):
-        return _cnf
-  if not os.path.exists(_cnf):
+    The search checks common project locations followed by a few paths under the
+    user's HOME directory.  If no configuration file is found, the program exits
+    with an error message.
+    """
+    possible_locations = [
+        "../../shared/etc/coaia.json",
+        "../shared/etc/coaia.json",
+        "../../etc/coaia.json",
+        "../etc/coaia.json",
+        "../coaia.json",
+        "../config/coaia.json",
+        "./coaia.json",
+        "./etc/coaia.json",
+    ]
+
+    for location in possible_locations:
+        if os.path.exists(location):
+            return location
+
+    home = os.getenv("HOME")
+    if home:
+        home_locations = [
+            os.path.join(home, ".config", "jgwill", "coaia.json"),
+            os.path.join(home, "coaia.json"),
+            os.path.join(home, "Documents", "coaia.json"),
+        ]
+        for loc in home_locations:
+            if os.path.exists(loc):
+                return loc
+
     print("Config file not found. Please run \"coaia init\" to create config.")
     sys.exit(1)
-  return None
 
 def read_config():
     global config
@@ -91,7 +91,7 @@ def remove_placeholder_lines(text):
   # Split the text into lines
   lines = text.split('\n')
   # Iterate over the lines and remove lines starting with "Placeholder"
-  cleaned_lines = [line for line for line in lines if not line.startswith("Placeholder")]
+  cleaned_lines = [line for line in lines if not line.startswith("Placeholder")]
   
   # Join the cleaned lines back into a string
   cleaned_text = '\n'.join(cleaned_lines)
@@ -560,13 +560,12 @@ def send_openai_request_v3(input_message, temperature=0.7, preprompt_instruction
 def _newjtaler(jtalecnf):
   try:
     _r = redis.Redis(
-    host=jtalecnf['host'],
-    port=int(jtalecnf['port']),
-    password=jtalecnf['password'],
-    ssl=jtalecnf['ssl'])
-    print('newjtaler servide created')
+        host=jtalecnf['host'],
+        port=int(jtalecnf['port']),
+        password=jtalecnf['password'],
+        ssl=jtalecnf['ssl'])
     return _r
-  except Exception as e :
+  except Exception as e:
     print(e)
     print('error creating newjtaler')
     return None
