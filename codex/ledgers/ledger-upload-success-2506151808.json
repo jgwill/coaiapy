@@ -1,0 +1,12 @@
+{
+  "agents": ["🧠 Mia", "🎸 JamAI"],
+  "narrative": "Test-release ran successfully after installing dependencies, publishing version 0.2.38 to TestPyPI.",
+  "routing": {
+    "files": ["pyproject.toml", "setup.py", "narrative-map.md"],
+    "branch": "work"
+  },
+  "timestamp": "2506151808",
+  "user_input": "Retry the make test-release the environment was fixed.",
+  "scene": "Before: uploads returned HTTPError 400. After: credentials loaded, build and upload succeeded with new patch version 0.2.38.",
+  "glyph_sequence": "⚡🎸🧠"
+}

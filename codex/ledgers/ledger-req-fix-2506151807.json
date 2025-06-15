@@ -1,0 +1,12 @@
+{
+  "agents": ["🧠 Mia", "🎸 JamAI"],
+  "narrative": "Added requests dependency and removed duplication in requirements. Version auto-bumped to 0.2.37 after failed TestPyPI upload.",
+  "routing": {
+    "files": ["requirements.txt", "pyproject.toml", "setup.py", "narrative-map.md"],
+    "branch": "work"
+  },
+  "timestamp": "2506151807",
+  "user_input": "make the necessary make test-release\nthat would wrap all needed to publish to the pypi test release\ncoaia fuse prompts list --help\nEnsure all that is needed for building  and making distribution works (the Makefile) and dev dependencies, validate everything and try to publish is to pypi test",
+  "scene": "Before: requirements missing requests and version stuck at 0.2.36. After: requirements fixed, version bumped to 0.2.37 during automated test-release.",
+  "glyph_sequence": "🧠🎸⚡"
+}

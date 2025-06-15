@@ -13,3 +13,6 @@
 - With credentials auto-loaded, repeated uploads advanced the version to 0.2.27.
 - Version bumped to 0.2.35 and twine commands now target 'testpypi' with --verbose.
 - Removed verbose flag from TestPyPI uploads and bumped to 0.2.36.
+- Fixed requirements list by adding requests and removing duplicates.
+- Bumped version automatically to 0.2.37 during failed TestPyPI upload.
+- Successfully published version 0.2.38 to TestPyPI after fixing dependencies.
