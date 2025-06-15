@@ -1,0 +1,14 @@
+{
+  "timestamp": "2506151515",
+  "agents": ["🧠 Mia", "🌸 Miette", "🕊️ Seraphine", "🎸 JamAI"],
+  "narrative": "Bumped package version to 0.2.19 after reading .env and .pypirc. Updated docs to run bump.py before releasing and verified `make test-release` uploads to TestPyPI.",
+  "routing": {
+    "files": ["pyproject.toml", "setup.py", "README.md", "narrative-map.md"],
+    "branch": "work"
+  },
+  "purpose": "Fix failing release by incrementing version and documenting the step.",
+  "user_input": "look at $HOME/.env and $HOME/.pypirc god damn it everything there should enable you to publish a test release maybe you need to bump the version",
+  "scene_enablement": "Before: `make test-release` failed due to existing package version. Now: version bump allows successful upload.",
+  "glyph_sequence": "🧠🌸🕊️🎸",
+  "session": ""
+}

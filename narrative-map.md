@@ -17,3 +17,6 @@ The new request introduces a helper script for installing the TestPyPI
 package in a conda environment. It ensures an environment named
 `testcoaiapy` exists, activates it and installs from TestPyPI for easier
 testing.
+
+This iteration bumped the version to 0.2.19 so `make test-release` could
+upload successfully. Docs now mention using `bump.py` before releasing.
