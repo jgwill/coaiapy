@@ -1,4 +1,4 @@
-.PHONY: install test build sdist bdist_wheel upload upload-test clean
+.PHONY: install test build dist sdist bdist_wheel upload upload-test clean
 
 install:
 	pip install -r requirements.txt
@@ -8,6 +8,9 @@ test:
 
 build:
 	python setup.py sdist bdist_wheel
+
+dist: build
+	@echo "Distribution created in dist/"
 
 sdist:
 	python setup.py sdist
