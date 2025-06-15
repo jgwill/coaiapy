@@ -160,9 +160,10 @@ To publish a distribution to TestPyPI, run:
 make test-release
 ```
 
-This command cleans build artifacts, runs tests, builds the package and uploads
-it to TestPyPI using Twine. Ensure `TWINE_USERNAME` and `TWINE_PASSWORD` are set
-with your TestPyPI credentials.
+This command cleans build artifacts, installs build tools, runs tests,
+builds the package and uploads it to TestPyPI using Twine. Ensure
+`TWINE_USERNAME` and `TWINE_PASSWORD` are set with your TestPyPI
+credentials.
 
 ## License
 

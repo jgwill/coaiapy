@@ -12,4 +12,7 @@ This round introduces a `make test-release` command that runs tests, builds the
 package and uploads it to TestPyPI. Documentation was updated to describe the
 workflow.
 
+The latest fix installs build tools automatically so `make test-release`
+works without additional setup.
+
 Glyph sequence for this phase: 🧠🌸🕊️🎸

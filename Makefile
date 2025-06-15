@@ -21,5 +21,8 @@ upload: build
 clean:
 	rm -rf build/ dist/ *.egg-info **/*.egg-info
 
-test-release: clean test build
+test-release: clean
+	pip install --quiet build wheel twine
+	$(MAKE) test
+	python -m build
 	twine upload --repository testpypi dist/*
