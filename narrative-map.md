@@ -5,14 +5,10 @@
 - `29175ca` – Add test-release target
 - `6ae8cda` – Fix configuration lookup and CLI tests
 - `584e086` – stuff
+- `9e4cb80` – Apply previous commit (build tools & docs for test-release)
 
-The last update repaired configuration discovery, removed stray debug prints, and confirmed that CLI help output matches documentation. A validation report notes the existence of an additional `fetch` command.
+The latest series improved configuration discovery, cleaned output, and confirmed CLI help alignment. We introduced `make test-release` to automate building and uploading to TestPyPI. After a minor fix, the target now installs build tools automatically.
 
-This round introduces a `make test-release` command that runs tests, builds the
-package and uploads it to TestPyPI. Documentation was updated to describe the
-workflow.
-
-The latest fix installs build tools automatically so `make test-release`
-works without additional setup.
+This session re-ran `make test-release` after credentials were configured, successfully publishing version 0.2.16 to TestPyPI.
 
 Glyph sequence for this phase: 🧠🌸🕊️🎸
