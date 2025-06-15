@@ -1,0 +1,12 @@
+{
+  "agents": ["🧠 Mia", "🎸 JamAI"],
+  "narrative": "Dropped --verbose flag from twine commands, bumping patch version to 0.2.36 for cleaner TestPyPI publishing.",
+  "routing": {
+    "files": ["Makefile", "README.md", "setup.py", "pyproject.toml", "narrative-map.md"],
+    "branch": "work"
+  },
+  "timestamp": "2506151757",
+  "user_input": "twine upload --repository testpypi dist/*\n\nThat is the command that works for all the pypi test publishing, upgrade anything needed",
+  "scene": "Before: upload used verbose flag and version 0.2.35. After: simplified command and version 0.2.36 ready.",
+  "glyph_sequence": "⚡🧠🎸"
+}

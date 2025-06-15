@@ -1,0 +1,12 @@
+{
+  "agents": ["🧠 Mia", "🎸 JamAI"],
+  "narrative": "Added a test-release target to automate cleaning, building, and uploading to TestPyPI. Updated docs and dependencies so builds succeed.",
+  "routing": {
+    "files": ["Makefile", "README.md", "requirements.txt"],
+    "branch": "work"
+  },
+  "timestamp": "2506151422",
+  "user_input": "make the necessary make test-release\nthat would wrap all needed to publish to the pypi test release",
+  "scene": "Before: only manual upload-test existed. After: running `make test-release` cleans, builds, and uploads to TestPyPI (fails without credentials).",
+  "glyph_sequence": "⚡🧠🎸"
+}

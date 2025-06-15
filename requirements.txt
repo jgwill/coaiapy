@@ -5,6 +5,8 @@ idna
 redis==5.1.1
 markdown
 chardet
-charset-normalizer
 async_timeout
 PyYAML
+requests
+twine
+wheel

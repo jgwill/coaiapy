@@ -1,0 +1,12 @@
+{
+  "agents": ["🧠 Mia", "🎸 JamAI"],
+  "narrative": "Bumped package version and exported credentials to publish to TestPyPI. Update README with export tip.",
+  "routing": {
+    "files": ["setup.py", "pyproject.toml", "README.md", "narrative-map.md"],
+    "branch": "work"
+  },
+  "timestamp": "2506151514",
+  "user_input": "look at $HOME/.env and $HOME/.pypirc god damn it everything there should enable you to publish a test release maybe you need to bump the version",
+  "scene": "Before: test-release failed due to missing twine and previous version. After: version 0.2.18 built and uploaded successfully to TestPyPI.",
+  "glyph_sequence": "⚡🧠🎸"
+}

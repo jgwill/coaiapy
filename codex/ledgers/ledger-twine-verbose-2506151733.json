@@ -1,0 +1,12 @@
+{
+  "agents": ["🧠 Mia", "🎸 JamAI"],
+  "narrative": "Adjusted twine command to use repository alias and verbose flag, bumping version to 0.2.35 for clean TestPyPI publishing.",
+  "routing": {
+    "files": ["Makefile", "README.md", "pyproject.toml", "setup.py", "narrative-map.md"],
+    "branch": "work"
+  },
+  "timestamp": "2506151733",
+  "user_input": "twine upload --repository testpypi dist/* --verbose\n\nthat is the command to publish a test, make sure that your Makefile is adjusted accordingly.\nBump version to 0.2.35",
+  "scene": "Before: uploads used explicit URL and version 0.2.27. After: Makefile calls twine with repository alias and verbose output, version now 0.2.35.",
+  "glyph_sequence": "⚡🧠🎸"
+}

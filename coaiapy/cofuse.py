@@ -23,9 +23,40 @@ def post_comment(text):
 def list_prompts():
     c = read_config()
     auth = HTTPBasicAuth(c['langfuse_public_key'], c['langfuse_secret_key'])
-    url = f"{c['langfuse_base_url']}/api/public/v2/prompts"
-    r = requests.get(url, auth=auth)
-    return r.text
+    base = f"{c['langfuse_base_url']}/api/public/v2/prompts"
+    page = 1
+    all_prompts = []
+    while True:
+        url = f"{base}?page={page}"
+        r = requests.get(url, auth=auth)
+        if r.status_code != 200:
+            break
+        try:
+            data = r.json()
+        except ValueError:
+            break
+
+        prompts = data.get('data') if isinstance(data, dict) else data
+        if not prompts:
+            break
+        if isinstance(prompts, list):
+            all_prompts.extend(prompts)
+        else:
+            all_prompts.append(prompts)
+
+        if isinstance(data, dict):
+            if data.get('hasNextPage'):
+                page += 1
+                continue
+            if data.get('nextPage'):
+                page = data['nextPage']
+                continue
+            if data.get('totalPages') and page < data['totalPages']:
+                page += 1
+                continue
+        break
+
+    return json.dumps(all_prompts, indent=2)
 
 def get_prompt(prompt_name):
     c = read_config()

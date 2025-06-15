@@ -148,6 +148,27 @@ Enable custom quick addons for assistants or bots using process tags. To add a n
 coaia p dictkore "my text to correct"
 ```
 
+### Building and Publishing
+
+Use the provided `Makefile` to build and distribute the package. Typical tasks:
+
+```bash
+make build        # create sdist and wheel
+make dist         # alias for make build
+make upload-test  # upload the distribution to Test PyPI
+make test-release # bump patch version, clean, build, and upload to Test PyPI
+```
+
+Both upload tasks use:
+`twine upload --repository testpypi dist/*`
+`make test-release` automatically sources `$HOME/.env` so `TWINE_USERNAME` and `TWINE_PASSWORD` are available.
+If you need the variables in your shell, run:
+```bash
+export $(grep -v '^#' $HOME/.env | xargs)
+```
+It also bumps the patch version using `bump.py` before uploading.
+
+
 ## Contributing
 
 Contributions are welcome! Please open an issue or submit a pull request for any improvements or bug fixes.

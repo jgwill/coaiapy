@@ -26,34 +26,44 @@ def find_existing_config():
   for location in possible_locations:
     if os.path.exists(location):
       return location
-  
+
+  _cnf = None
   if config is None:
-    #try load from $HOME
-    _home=os.getenv('HOME')
+    _home = os.getenv('HOME')
     if _home is not None:
-      _cnf=os.path.join(_home,'.config','jgwill','coaia.json')
-      if os.path.exists(_cnf):
-        return _cnf
-      #ifnstill not found, try in $HOME/coaia.json
-      _cnf=os.path.join(_home,'coaia.json')
-      if os.path.exists(_cnf):
-        return _cnf
-    #if still not found, try in current directory, try in $HOME/Documents/coaia.json (for iOS Shell Mini)
-    _cnf=os.path.join(_home,'Documents','coaia.json')
-    if os.path.exists(_cnf):
-        return _cnf
-  if not os.path.exists(_cnf):
-    print("Config file not found. Please run \"coaia init\" to create config.")
-    sys.exit(1)
-  return None
+      candidate = os.path.join(_home,'.config','jgwill','coaia.json')
+      if os.path.exists(candidate):
+        return candidate
+      candidate = os.path.join(_home,'coaia.json')
+      if os.path.exists(candidate):
+        return candidate
+      candidate = os.path.join(_home,'Documents','coaia.json')
+      if os.path.exists(candidate):
+        return candidate
+
+  if not _cnf or not os.path.exists(_cnf):
+    return None
+  return _cnf
 
 def read_config():
     global config
     _cnf = find_existing_config()
 
     if config is None:
-        with open(_cnf) as config_file:
-            config = json.load(config_file)
+        if _cnf and os.path.exists(_cnf):
+            with open(_cnf) as config_file:
+                config = json.load(config_file)
+        else:
+            config = {
+                "jtaleconf": {
+                    "host": "localhost",
+                    "port": 6379,
+                    "password": "",
+                    "ssl": False
+                },
+                "openai_api_key": "",
+                "pollyconf": {"key": "", "secret": "", "region": "us-east-1"}
+            }
 
         # Check for placeholder values and replace with environment variables if needed
         config["openai_api_key"] = os.getenv("OPENAI_API_KEY", config["openai_api_key"])
@@ -91,7 +101,7 @@ def remove_placeholder_lines(text):
   # Split the text into lines
   lines = text.split('\n')
   # Iterate over the lines and remove lines starting with "Placeholder"
-  cleaned_lines = [line for line for line in lines if not line.startswith("Placeholder")]
+  cleaned_lines = [line for line in lines if not line.startswith("Placeholder")]
   
   # Join the cleaned lines back into a string
   cleaned_text = '\n'.join(cleaned_lines)
@@ -564,7 +574,6 @@ def _newjtaler(jtalecnf):
     port=int(jtalecnf['port']),
     password=jtalecnf['password'],
     ssl=jtalecnf['ssl'])
-    print('newjtaler servide created')
     return _r
   except Exception as e :
     print(e)
