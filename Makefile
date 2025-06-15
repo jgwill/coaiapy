@@ -1,4 +1,4 @@
-.PHONY: install test build sdist bdist_wheel upload clean
+.PHONY: install test build sdist bdist_wheel upload clean test-release
 
 install:
 	pip install -r requirements.txt
@@ -20,3 +20,9 @@ upload: build
 
 clean:
 	rm -rf build/ dist/ *.egg-info **/*.egg-info
+
+test-release: clean
+	pip install --quiet build wheel twine
+	$(MAKE) test
+	python -m build
+	twine upload --repository testpypi dist/*

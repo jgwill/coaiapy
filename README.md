@@ -152,6 +152,38 @@ coaia p dictkore "my text to correct"
 
 Contributions are welcome! Please open an issue or submit a pull request for any improvements or bug fixes.
 
+## Test Release
+
+To publish a distribution to TestPyPI, run:
+
+```bash
+make test-release
+```
+This command cleans build artifacts, installs build tools, runs tests,
+builds the package and uploads it to TestPyPI using Twine. Internally it
+runs:
+
+```bash
+twine upload --repository testpypi dist/*
+```
+
+Ensure
+`TWINE_USERNAME` and `TWINE_PASSWORD` are set with your TestPyPI
+credentials.
+Before running, bump the version using `python bump.py <new_version>` so the
+upload is accepted.
+
+### Install from TestPyPI
+
+You can install the latest test release into a conda environment using
+`scripts/install_test_release.sh`. The script creates an environment
+named `testcoaiapy` if it does not exist, activates it and installs the
+package from TestPyPI:
+
+```bash
+scripts/install_test_release.sh
+```
+
 ## License
 
 This project is licensed under the MIT License. See the LICENSE file for more details.
