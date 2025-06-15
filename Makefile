@@ -1,4 +1,4 @@
-.PHONY: install test build dist sdist bdist_wheel upload upload-test test-release clean
+.PHONY: install test build dist sdist bdist_wheel upload upload-test test-release bump clean
 
 install:
 	pip install -r requirements.txt
@@ -24,8 +24,11 @@ upload: build
 upload-test: build
 	twine upload --repository-url https://test.pypi.org/legacy/ dist/*
 
-test-release: clean build
+test-release: bump clean build
 	twine upload --repository-url https://test.pypi.org/legacy/ dist/*
+
+bump:
+	python bump.py
 
 clean:
 	rm -rf build/ dist/ *.egg-info **/*.egg-info

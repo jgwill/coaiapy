@@ -156,7 +156,7 @@ Use the provided `Makefile` to build and distribute the package. Typical tasks:
 make build        # create sdist and wheel
 make dist         # alias for make build
 make upload-test  # upload the distribution to Test PyPI
-make test-release # clean, build, and upload to Test PyPI
+make test-release # bump patch version, clean, build, and upload to Test PyPI
 ```
 
 Both upload tasks use:
@@ -166,6 +166,7 @@ If these variables are not exported, run:
 ```bash
 export $(grep -v '^#' $HOME/.env | xargs)
 ```
+Running `make test-release` automatically bumps the patch version using `bump.py` before uploading.
 
 
 ## Contributing
