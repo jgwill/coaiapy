@@ -1,0 +1,12 @@
+{
+  "agents": ["\ud83e\udde0 Mia", "\ud83c\udfb8 JamAI"],
+  "narrative": "Bumped version to 1.0.0 and published to TestPyPI via make test-release which now runs twine upload --repository testpypi dist/*.",
+  "routing": {
+    "files": ["pyproject.toml", "setup.py", "Makefile"],
+    "branch": "work"
+  },
+  "timestamp": "2506151731",
+  "user_input": "twine upload --repository testpypi dist/* \nbump the version to major and try to publish the test release",
+  "scene": "Before: latest release 0.2.19 on TestPyPI. After: version 1.0.0 uploaded successfully with full release command.",
+  "glyph_sequence": "\uD83D\uDD25\uD83E\uDD1D"
+}

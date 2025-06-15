@@ -21,3 +21,5 @@ testing.
 This iteration bumped the version to 0.2.19 so `make test-release` could
 upload successfully. Docs now mention using `bump.py` before releasing.
 - `42e5c3a` – Document repository state and installation instructions
+
+- `b9cb391` – Bump version to 1.0.0 and publish to TestPyPI using make test-release which invokes twine upload
