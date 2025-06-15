@@ -23,8 +23,8 @@
   coaia fuse comments post "Your comment here"
 
 ### prompts
-• List prompts:
-  coaia fuse prompts list  
+• List prompts (all pages):
+  coaia fuse prompts list
 • Get a specific prompt:
   coaia fuse prompts get myPrompt  
 • Create a prompt:

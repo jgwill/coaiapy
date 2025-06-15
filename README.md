@@ -148,6 +148,16 @@ Enable custom quick addons for assistants or bots using process tags. To add a n
 coaia p dictkore "my text to correct"
 ```
 
+### Building and Publishing
+
+Use the provided `Makefile` to build and distribute the package. Typical tasks:
+
+```bash
+make build        # create sdist and wheel
+make upload-test  # upload the distribution to Test PyPI
+```
+
+
 ## Contributing
 
 Contributions are welcome! Please open an issue or submit a pull request for any improvements or bug fixes.

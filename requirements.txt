@@ -8,3 +8,4 @@ chardet
 charset-normalizer
 async_timeout
 PyYAML
+twine
