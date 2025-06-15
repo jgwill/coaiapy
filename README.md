@@ -162,6 +162,10 @@ make test-release # clean, build, and upload to Test PyPI
 Both upload tasks use:
 `twine upload --repository-url https://test.pypi.org/legacy/ dist/*`
 Ensure `$HOME/.env` is sourced with `TWINE_USERNAME` and `TWINE_PASSWORD`.
+If these variables are not exported, run:
+```bash
+export $(grep -v '^#' $HOME/.env | xargs)
+```
 
 
 ## Contributing
