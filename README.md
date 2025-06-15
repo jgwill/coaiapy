@@ -160,7 +160,7 @@ make test-release # bump patch version, clean, build, and upload to Test PyPI
 ```
 
 Both upload tasks use:
-`twine upload --repository-url https://test.pypi.org/legacy/ dist/*`
+`twine upload --repository testpypi dist/* --verbose`
 `make test-release` automatically sources `$HOME/.env` so `TWINE_USERNAME` and `TWINE_PASSWORD` are available.
 If you need the variables in your shell, run:
 ```bash
