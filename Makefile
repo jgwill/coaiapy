@@ -22,10 +22,10 @@ upload: build
 	twine upload dist/*
 
 upload-test: build
-	twine upload --repository testpypi dist/*
+	twine upload --repository-url https://test.pypi.org/legacy/ dist/*
 
 test-release: clean build
-	twine upload --repository testpypi dist/*
+	twine upload --repository-url https://test.pypi.org/legacy/ dist/*
 
 clean:
 	rm -rf build/ dist/ *.egg-info **/*.egg-info

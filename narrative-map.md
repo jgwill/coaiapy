@@ -6,3 +6,4 @@
 - Added `dist` Makefile target and documented distribution steps.
 - Introduced `test-release` Makefile target for full build and TestPyPI upload.
 - Retried test-release build; upload failed 400 Bad Request (missing TestPyPI credentials).
+- Updated Makefile with explicit repository URL and retried upload; still fails with 400 Bad Request.
