@@ -9,3 +9,4 @@ charset-normalizer
 async_timeout
 PyYAML
 twine
+wheel

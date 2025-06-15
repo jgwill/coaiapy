@@ -1,4 +1,4 @@
-.PHONY: install test build dist sdist bdist_wheel upload upload-test clean
+.PHONY: install test build dist sdist bdist_wheel upload upload-test test-release clean
 
 install:
 	pip install -r requirements.txt
@@ -22,6 +22,9 @@ upload: build
 	twine upload dist/*
 
 upload-test: build
+	twine upload --repository testpypi dist/*
+
+test-release: clean build
 	twine upload --repository testpypi dist/*
 
 clean:
