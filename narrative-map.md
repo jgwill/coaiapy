@@ -12,3 +12,4 @@
 - Updated `test-release` to source `.env` automatically and confirmed upload of version 0.2.23.
 - With credentials auto-loaded, repeated uploads advanced the version to 0.2.27.
 - Version bumped to 0.2.35 and twine commands now target 'testpypi' with --verbose.
+- Removed verbose flag from TestPyPI uploads and bumped to 0.2.36.

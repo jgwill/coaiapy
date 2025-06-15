@@ -22,11 +22,11 @@ upload: build
 	twine upload dist/*
 
 upload-test: build
-	twine upload --repository testpypi dist/* --verbose
+	twine upload --repository testpypi dist/*
 
 test-release: bump clean build
 	@set -a; [ -f $(HOME)/.env ] && . $(HOME)/.env; set +a; \
-	twine upload --repository testpypi dist/* --verbose
+	twine upload --repository testpypi dist/*
 
 bump:
 	python bump.py
