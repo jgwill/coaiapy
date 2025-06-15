@@ -9,3 +9,5 @@
 - Updated Makefile with explicit repository URL and retried upload; still fails with 400 Bad Request.
 - Bumped version to 0.2.18 and successfully uploaded to TestPyPI.
 - Added automation: `make test-release` bumps patch version before building and uploading.
+- Updated `test-release` to source `.env` automatically and confirmed upload of version 0.2.23.
+- With credentials auto-loaded, repeated uploads advanced the version to 0.2.27.

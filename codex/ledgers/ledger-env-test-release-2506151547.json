@@ -1,0 +1,12 @@
+{
+  "agents": ["🧠 Mia", "🎸 JamAI"],
+  "narrative": "Installed missing build tools and updated test-release to source credentials automatically. Upload to TestPyPI succeeded with version bump.",
+  "routing": {
+    "files": ["Makefile", "README.md", "narrative-map.md"],
+    "branch": "work"
+  },
+  "timestamp": "2506151547",
+  "user_input": "twine upload --repository testpypi dist/*\n\nYOU NEED TO MAKE SURE TO SOURCE $HOME/.env the twine username and password is there and ensure the version bump automated works",
+  "scene": "Before: test-release required manual env exports. After: Makefile loads .env automatically and upload of 0.2.25 succeeds.",
+  "glyph_sequence": "⚡🧠🎸"
+}

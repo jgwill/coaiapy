@@ -25,6 +25,7 @@ upload-test: build
 	twine upload --repository-url https://test.pypi.org/legacy/ dist/*
 
 test-release: bump clean build
+	@set -a; [ -f $(HOME)/.env ] && . $(HOME)/.env; set +a; \
 	twine upload --repository-url https://test.pypi.org/legacy/ dist/*
 
 bump:
