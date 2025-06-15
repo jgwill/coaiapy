@@ -12,3 +12,8 @@ The latest series improved configuration discovery, cleaned output, and confirme
 This session re-ran `make test-release` after credentials were configured, successfully publishing version 0.2.16 to TestPyPI.
 
 Glyph sequence for this phase: 🧠🌸🕊️🎸
+
+The new request introduces a helper script for installing the TestPyPI
+package in a conda environment. It ensures an environment named
+`testcoaiapy` exists, activates it and installs from TestPyPI for easier
+testing.
