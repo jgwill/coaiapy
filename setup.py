@@ -14,8 +14,8 @@ setup(
     ),
     #package_dir={'': 'coaiapy'},
     install_requires=[
-        'boto3',
-        'mutagen',
+        'boto3<=1.26.137',
+        'mutagen<=1.45.1',
         'certifi',
         'charset-normalizer',
         'idna',
@@ -29,5 +29,5 @@ setup(
         'License :: OSI Approved :: MIT License',
         'Operating System :: OS Independent',
     ],
-    python_requires='>=3.9',
+    python_requires='>=3.6',
 )

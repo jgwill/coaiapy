@@ -10,14 +10,14 @@ name = "coaiapy"
 version = "0.2.38"
 description = "A Python package for audio transcription, synthesis, and tagging using Boto3."
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.6"
 license = { file = "LICENSE" }
 authors = [
     { name = "Jean GUillaume ISabelle", email = "jgi@jgwill.com" }
 ]
 dependencies = [
-    "boto3",
-    "mutagen",
+    "boto3<=1.26.137",
+    "mutagen<=1.45.1",
     "certifi",
     "charset-normalizer",
     "idna",

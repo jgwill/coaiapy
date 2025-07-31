@@ -1,5 +1,5 @@
-boto3
-mutagen
+boto3<=1.26.137
+mutagen<=1.45.1
 certifi
 charset-normalizer
 idna
