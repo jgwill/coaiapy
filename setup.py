@@ -22,9 +22,6 @@ setup(
         'redis==5.1.1',
         'requests',
         'markdown',
-        'chardet',
-        'charset-normalizer',
-        'async_timeout',
         'PyYAML',
     ],
     classifiers=[

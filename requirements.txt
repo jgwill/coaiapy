@@ -1,12 +1,9 @@
 boto3
+mutagen
 certifi
 charset-normalizer
 idna
 redis==5.1.1
-markdown
-chardet
-async_timeout
-PyYAML
 requests
-twine
-wheel
+markdown
+PyYAML
