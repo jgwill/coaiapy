@@ -1,12 +1,9 @@
-boto3
+boto3<=1.26.137
+mutagen<=1.45.1
 certifi
 charset-normalizer
 idna
 redis==5.1.1
-markdown
-chardet
-async_timeout
-PyYAML
 requests
-twine
-wheel
+markdown
+PyYAML
