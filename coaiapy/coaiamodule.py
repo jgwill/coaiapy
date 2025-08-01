@@ -12,38 +12,44 @@ config=None
 
 
 def find_existing_config():
-  possible_locations = [
+  # Priority order: current directory first, then HOME, then other locations
+  priority_locations = [
+    './coaia.json',  # Current directory - HIGHEST PRIORITY
+  ]
+  
+  # Check priority locations first
+  for location in priority_locations:
+    if os.path.exists(location):
+      return location
+  
+  # Check HOME directory locations second
+  _home = os.getenv('HOME')
+  if _home is not None:
+    home_locations = [
+      os.path.join(_home, 'coaia.json'),
+      os.path.join(_home, '.config', 'jgwill', 'coaia.json'),
+      os.path.join(_home, 'Documents', 'coaia.json')
+    ]
+    for location in home_locations:
+      if os.path.exists(location):
+        return location
+  
+  # Finally check other relative paths
+  other_locations = [
     '../../shared/etc/coaia.json',
     '../shared/etc/coaia.json',
     '../../etc/coaia.json',
     '../etc/coaia.json',
     '../coaia.json',
     '../config/coaia.json',
-    './coaia.json',
     './etc/coaia.json'
   ]
 
-  for location in possible_locations:
+  for location in other_locations:
     if os.path.exists(location):
       return location
 
-  _cnf = None
-  if config is None:
-    _home = os.getenv('HOME')
-    if _home is not None:
-      candidate = os.path.join(_home,'.config','jgwill','coaia.json')
-      if os.path.exists(candidate):
-        return candidate
-      candidate = os.path.join(_home,'coaia.json')
-      if os.path.exists(candidate):
-        return candidate
-      candidate = os.path.join(_home,'Documents','coaia.json')
-      if os.path.exists(candidate):
-        return candidate
-
-  if not _cnf or not os.path.exists(_cnf):
-    return None
-  return _cnf
+  return None
 
 def read_config():
     global config
