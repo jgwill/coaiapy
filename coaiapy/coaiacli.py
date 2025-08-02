@@ -14,7 +14,7 @@ from cofuse import (
     create_session_and_save, add_trace_node_and_save,
     load_session_file,
     create_score, apply_score_to_trace,
-    list_prompts, get_prompt, create_prompt,
+    list_prompts, get_prompt, create_prompt, format_prompts_table,
     list_datasets, get_dataset, create_dataset,
     list_traces, list_projects, create_dataset_item,
     add_trace
@@ -101,6 +101,7 @@ def main():
     parser_fuse_prompts.add_argument('action', choices=['list','get','create'], help="Action to perform.")
     parser_fuse_prompts.add_argument('name', nargs='?', help="Prompt name.")
     parser_fuse_prompts.add_argument('content', nargs='?', help="Prompt text.")
+    parser_fuse_prompts.add_argument('--json', action='store_true', help="Output in JSON format (default: table format)")
 
     parser_fuse_ds = sub_fuse.add_parser('datasets', help="Manage datasets in Langfuse (list, get, create)")
     parser_fuse_ds.add_argument('action', choices=['list','get','create'], help="Action to perform.")
@@ -228,7 +229,11 @@ def main():
                 print(post_comment(args.comment))
         elif args.fuse_command == 'prompts':
             if args.action == 'list':
-                print(list_prompts())
+                prompts_data = list_prompts()
+                if args.json:
+                    print(prompts_data)
+                else:
+                    print(format_prompts_table(prompts_data))
             elif args.action == 'get':
                 if not args.name:
                     print("Error: prompt name missing.")

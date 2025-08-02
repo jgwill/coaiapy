@@ -51,25 +51,64 @@ def find_existing_config():
 
   return None
 
+def merge_configs(base_config, override_config):
+    """Deep merge two configuration dictionaries"""
+    merged = base_config.copy()
+    for key, value in override_config.items():
+        if key in merged and isinstance(merged[key], dict) and isinstance(value, dict):
+            merged[key] = merge_configs(merged[key], value)
+        else:
+            merged[key] = value
+    return merged
+
 def read_config():
     global config
-    _cnf = find_existing_config()
-
+    
     if config is None:
-        if _cnf and os.path.exists(_cnf):
-            with open(_cnf) as config_file:
-                config = json.load(config_file)
-        else:
-            config = {
-                "jtaleconf": {
-                    "host": "localhost",
-                    "port": 6379,
-                    "password": "",
-                    "ssl": False
-                },
-                "openai_api_key": "",
-                "pollyconf": {"key": "", "secret": "", "region": "us-east-1"}
-            }
+        # Default configuration
+        config = {
+            "jtaleconf": {
+                "host": "localhost",
+                "port": 6379,
+                "password": "",
+                "ssl": False
+            },
+            "openai_api_key": "",
+            "pollyconf": {"key": "", "secret": "", "region": "us-east-1"}
+        }
+        
+        # Load HOME config first (base configuration)
+        _home = os.getenv('HOME')
+        if _home is not None:
+            home_config_path = os.path.join(_home, 'coaia.json')
+            if os.path.exists(home_config_path):
+                try:
+                    with open(home_config_path) as config_file:
+                        home_config = json.load(config_file)
+                        config = merge_configs(config, home_config)
+                except Exception as e:
+                    print(f"Warning: Error loading HOME config: {e}")
+        
+        # Load current directory config for overrides
+        current_config_path = './coaia.json'
+        if os.path.exists(current_config_path):
+            try:
+                with open(current_config_path) as config_file:
+                    current_config = json.load(config_file)
+                    config = merge_configs(config, current_config)
+            except Exception as e:
+                print(f"Warning: Error loading current directory config: {e}")
+        
+        # If no configs found, try find_existing_config for backward compatibility
+        if not os.path.exists(os.path.join(_home, 'coaia.json') if _home else '') and not os.path.exists('./coaia.json'):
+            _cnf = find_existing_config()
+            if _cnf and os.path.exists(_cnf):
+                try:
+                    with open(_cnf) as config_file:
+                        fallback_config = json.load(config_file)
+                        config = merge_configs(config, fallback_config)
+                except Exception as e:
+                    print(f"Warning: Error loading fallback config: {e}")
 
         # Check for placeholder values and replace with environment variables if needed
         config["openai_api_key"] = os.getenv("OPENAI_API_KEY", config["openai_api_key"])

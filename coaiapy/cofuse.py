@@ -58,6 +58,51 @@ def list_prompts():
 
     return json.dumps(all_prompts, indent=2)
 
+def format_prompts_table(prompts_json):
+    """Format prompts data as a readable table"""
+    try:
+        prompts = json.loads(prompts_json) if isinstance(prompts_json, str) else prompts_json
+        if not prompts:
+            return "No prompts found."
+        
+        # Table headers
+        headers = ["Name", "Version", "Created", "Tags/Labels"]
+        
+        # Calculate column widths
+        max_name = max([len(p.get('name', '')) for p in prompts] + [len(headers[0])])
+        max_version = max([len(str(p.get('version', ''))) for p in prompts] + [len(headers[1])])
+        max_created = max([len(p.get('createdAt', '')[:10]) for p in prompts] + [len(headers[2])])
+        max_tags = max([len(', '.join(p.get('labels', []))) for p in prompts] + [len(headers[3])])
+        
+        # Minimum widths
+        max_name = max(max_name, 15)
+        max_version = max(max_version, 8)  
+        max_created = max(max_created, 10)
+        max_tags = max(max_tags, 12)
+        
+        # Format table
+        separator = f"+{'-' * (max_name + 2)}+{'-' * (max_version + 2)}+{'-' * (max_created + 2)}+{'-' * (max_tags + 2)}+"
+        header_row = f"| {headers[0]:<{max_name}} | {headers[1]:<{max_version}} | {headers[2]:<{max_created}} | {headers[3]:<{max_tags}} |"
+        
+        table_lines = [separator, header_row, separator]
+        
+        for prompt in prompts:
+            name = prompt.get('name', 'N/A')[:max_name]
+            version = str(prompt.get('version', 'N/A'))[:max_version]
+            created = prompt.get('createdAt', 'N/A')[:10]  # Just date part
+            labels = ', '.join(prompt.get('labels', []))[:max_tags] or 'None'
+            
+            row = f"| {name:<{max_name}} | {version:<{max_version}} | {created:<{max_created}} | {labels:<{max_tags}} |"
+            table_lines.append(row)
+        
+        table_lines.append(separator)
+        table_lines.append(f"Total prompts: {len(prompts)}")
+        
+        return '\n'.join(table_lines)
+        
+    except Exception as e:
+        return f"Error formatting prompts table: {str(e)}\n\nRaw JSON:\n{prompts_json}"
+
 def get_prompt(prompt_name):
     c = read_config()
     auth = HTTPBasicAuth(c['langfuse_public_key'], c['langfuse_secret_key'])
