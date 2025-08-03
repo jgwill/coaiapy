@@ -106,7 +106,7 @@ def main():
     parser_fuse_prompts.add_argument('--label', type=str, help="Specify a label to fetch.")
     parser_fuse_prompts.add_argument('--prod', action='store_true', help="Shortcut to fetch the 'production' label.")
     parser_fuse_prompts.add_argument('-c', '--content-only', action='store_true', help="Output only the prompt content.")
-    parser_fuse_prompts.add_argument('--escaped', action='store_true', help="Output the prompt content as a single, escaped line.")
+    parser_fuse_prompts.add_argument('-e', '--escaped', action='store_true', help="Output the prompt content as a single, escaped line.")
 
     parser_fuse_ds = sub_fuse.add_parser('datasets', help="Manage datasets in Langfuse (list, get, create)")
     parser_fuse_ds.add_argument('action', choices=['list','get','create'], help="Action to perform.")
