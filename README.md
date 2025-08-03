@@ -169,6 +169,81 @@ export $(grep -v '^#' $HOME/.env | xargs)
 It also bumps the patch version using `bump.py` before uploading.
 
 
+## Langfuse Integration (`fuse`)
+
+CoAiAPy integrates with Langfuse to manage prompts, datasets, and traces.
+
+### Listing Prompts
+
+To see a formatted table of all available prompts:
+```bash
+coaia fuse prompts list
+```
+
+### Getting a Specific Prompt
+
+Retrieve a prompt by name. By default, it fetches the version with the `latest` label.
+```bash
+coaia fuse prompts get <prompt_name>
+```
+
+**Options:**
+- `--label <label>`: Fetch the version with a specific label (e.g., `dev`, `staging`).
+- `--prod`: A convenient shortcut for `--label production`.
+- `--json`: Output the raw JSON response.
+- `-c`, `--content-only`: Output only the raw prompt content, ideal for scripting.
+- `-e`, `--escaped`: Output the prompt content as a single, JSON-escaped line. This is useful for embedding the content in other scripts or commands. Using `-e` implies `-c`.
+
+**Examples:**
+```bash
+# Get the latest version of a prompt
+coaia fuse prompts get MyPrompt
+
+# Get the production version of a prompt
+coaia fuse prompts get MyPrompt --prod
+
+# Get only the content of a prompt
+coaia fuse prompts get MyPrompt -c
+
+# Get the content as an escaped, single line
+coaia fuse prompts get MyPrompt -e
+```
+
+### Managing Datasets
+
+#### Listing Datasets
+To see a formatted table of all available datasets:
+```bash
+coaia fuse datasets list
+```
+
+#### Getting a Specific Dataset and its Items
+Retrieve a dataset's metadata and all of its items in a formatted display.
+```bash
+coaia fuse datasets get <dataset_name>
+```
+
+**Options:**
+- `--json`: Output the raw JSON for the dataset and its items.
+- `-oft`, `--openai-ft`: Format the dataset for OpenAI fine-tuning (JSONL).
+- `-gft`, `--gemini-ft`: Format the dataset for Gemini fine-tuning (JSONL).
+- `--system-instruction "<text>"`: Customize the system instruction for fine-tuning formats. The default is "You are a helpful assistant".
+
+**Examples:**
+```bash
+# Get a formatted view of a dataset and its items
+coaia fuse datasets get MyDataset
+
+# Get the raw JSON for a dataset
+coaia fuse datasets get MyDataset --json
+
+# Export a dataset for OpenAI fine-tuning
+coaia fuse datasets get MyDataset -oft > training_data.jsonl
+
+# Export for Gemini with a custom system instruction
+coaia fuse datasets get MyDataset -gft --system-instruction "You are a creative writing assistant."
+```
+
 ## Contributing
 
 Contributions are welcome! Please open an issue or submit a pull request for any improvements or bug fixes.
