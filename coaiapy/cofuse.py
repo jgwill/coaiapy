@@ -425,6 +425,115 @@ def create_dataset(dataset_name):
     r = requests.post(url, json=data, auth=auth)
     return r.text
 
+def list_dataset_items(dataset_name, debug=False):
+    c = read_config()
+    auth = HTTPBasicAuth(c['langfuse_public_key'], c['langfuse_secret_key'])
+    base = f"{c['langfuse_base_url']}/api/public/dataset-items"
+    page = 1
+    all_items = []
+    
+    while True:
+        params = {'name': dataset_name, 'page': page}
+        if debug:
+            print(f"Fetching page {page} for dataset {dataset_name}: {base} with params {params}")
+            
+        r = requests.get(base, auth=auth, params=params)
+        if r.status_code != 200:
+            if debug:
+                print(f"Request failed with status {r.status_code}: {r.text}")
+            break
+            
+        try:
+            data = r.json()
+        except ValueError as e:
+            if debug:
+                print(f"JSON parsing error: {e}")
+            break
+
+        items = data.get('data') if isinstance(data, dict) else data
+        if not items:
+            if debug:
+                print("No items found, breaking")
+            break
+            
+        all_items.extend(items)
+
+        meta = data.get('meta', {})
+        if meta.get('page', page) >= meta.get('totalPages', 1):
+            break
+        page += 1
+
+    return json.dumps(all_items, indent=2)
+
+def format_dataset_display(dataset_json, items_json):
+    """Format a single dataset and its items as a beautiful display"""
+    try:
+        dataset = json.loads(dataset_json)
+        items = json.loads(items_json)
+
+        if 'message' in dataset and 'error' in dataset:
+            return f"Error fetching dataset: {dataset['message']} ({dataset['error']})"
+
+        # Build display
+        display_lines = []
+        
+        # Header with dataset name
+        name = dataset.get('name', 'Unnamed Dataset')
+        header = f"📦 DATASET: {name}"
+        display_lines.append("=" * len(header))
+        display_lines.append(header)
+        display_lines.append("=" * len(header))
+        display_lines.append(f"   Description: {dataset.get('description') or 'N/A'}")
+        display_lines.append(f"   Created: {dataset.get('createdAt', 'N/A')[:19]}")
+        display_lines.append(f"   Updated: {dataset.get('updatedAt', 'N/A')[:19]}")
+        display_lines.append("")
+
+        # Items table
+        display_lines.append("📋 DATASET ITEMS:")
+        if not items:
+            display_lines.append("   (No items found in this dataset)")
+            return '\n'.join(display_lines)
+
+        headers = ["ID", "Input", "Expected Output"]
+        
+        # Truncate content for display
+        def truncate(text, length):
+            if not text:
+                return "N/A"
+            text = str(text).replace('\n', ' ')
+            return text if len(text) <= length else text[:length-3] + "..."
+
+        rows = [
+            [
+                item.get('id'),
+                truncate(item.get('input'), 50),
+                truncate(item.get('expectedOutput'), 50)
+            ] for item in items
+        ]
+
+        max_id = max([len(r[0]) for r in rows] + [len(headers[0])])
+        max_input = max([len(r[1]) for r in rows] + [len(headers[1])])
+        max_output = max([len(r[2]) for r in rows] + [len(headers[2])])
+
+        separator = f"+{'-' * (max_id + 2)}+{'-' * (max_input + 2)}+{'-' * (max_output + 2)}+"
+        header_row = f"| {headers[0]:<{max_id}} | {headers[1]:<{max_input}} | {headers[2]:<{max_output}} |"
+        
+        display_lines.append(separator)
+        display_lines.append(header_row)
+        display_lines.append(separator)
+
+        for row_data in rows:
+            row = f"| {row_data[0]:<{max_id}} | {row_data[1]:<{max_input}} | {row_data[2]:<{max_output}} |"
+            display_lines.append(row)
+        
+        display_lines.append(separator)
+        display_lines.append(f"Total items: {len(items)}")
+
+        return '\n'.join(display_lines)
+
+    except Exception as e:
+        return f"Error formatting dataset display: {str(e)}"
+
 def add_trace(trace_id, user_id=None, session_id=None, name=None):
     c = read_config()
     auth = HTTPBasicAuth(c['langfuse_public_key'], c['langfuse_secret_key'])

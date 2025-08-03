@@ -16,6 +16,7 @@ from cofuse import (
     create_score, apply_score_to_trace,
     list_prompts, get_prompt, create_prompt, format_prompts_table, format_prompt_display,
     list_datasets, get_dataset, create_dataset, format_datasets_table,
+    list_dataset_items, format_dataset_display,
     list_traces, list_projects, create_dataset_item, format_traces_table,
     add_trace
 )
@@ -294,7 +295,17 @@ def main():
                 if not args.name:
                     print("Error: dataset name missing.")
                     return
-                print(get_dataset(args.name))
+                
+                dataset_json = get_dataset(args.name)
+                items_json = list_dataset_items(args.name)
+
+                if args.json:
+                    dataset_data = json.loads(dataset_json)
+                    items_data = json.loads(items_json)
+                    dataset_data['items'] = items_data
+                    print(json.dumps(dataset_data, indent=2))
+                else:
+                    print(format_dataset_display(dataset_json, items_json))
             elif args.action == 'create':
                 if not args.name:
                     print("Error: dataset name missing.")
