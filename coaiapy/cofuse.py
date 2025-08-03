@@ -382,13 +382,16 @@ def format_prompt_display(prompt_json):
     except Exception as e:
         return f"Error formatting prompt display: {str(e)}\n\nRaw JSON:\n{prompt_json}"
 
-def get_prompt(prompt_name):
+def get_prompt(prompt_name, label=None):
     c = read_config()
     auth = HTTPBasicAuth(c['langfuse_public_key'], c['langfuse_secret_key'])
     
-    # Gets latest version by default
     url = f"{c['langfuse_base_url']}/api/public/v2/prompts/{prompt_name}"
-    r = requests.get(url, auth=auth)
+    params = {}
+    if label:
+        params['label'] = label
+    
+    r = requests.get(url, auth=auth, params=params)
     
     return r.text
 

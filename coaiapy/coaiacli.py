@@ -103,6 +103,8 @@ def main():
     parser_fuse_prompts.add_argument('content', nargs='?', help="Prompt text.")
     parser_fuse_prompts.add_argument('--json', action='store_true', help="Output in JSON format (default: table format)")
     parser_fuse_prompts.add_argument('--debug', action='store_true', help="Show debug information for pagination")
+    parser_fuse_prompts.add_argument('--label', type=str, help="Specify a label to fetch.")
+    parser_fuse_prompts.add_argument('--prod', action='store_true', help="Shortcut to fetch the 'production' label.")
 
     parser_fuse_ds = sub_fuse.add_parser('datasets', help="Manage datasets in Langfuse (list, get, create)")
     parser_fuse_ds.add_argument('action', choices=['list','get','create'], help="Action to perform.")
@@ -241,7 +243,14 @@ def main():
                 if not args.name:
                     print("Error: prompt name missing.")
                     return
-                prompt_data = get_prompt(args.name)
+                
+                label = 'latest' # Default to latest
+                if args.prod:
+                    label = 'production'
+                if args.label:
+                    label = args.label
+
+                prompt_data = get_prompt(args.name, label=label)
                 if args.json:
                     print(prompt_data)
                 else:
