@@ -534,6 +534,48 @@ def format_dataset_display(dataset_json, items_json):
     except Exception as e:
         return f"Error formatting dataset display: {str(e)}"
 
+def format_dataset_for_finetuning(items_json, format_type, system_instruction):
+    """Formats dataset items for fine-tuning."""
+    try:
+        items = json.loads(items_json)
+        output_lines = []
+
+        for item in items:
+            input_content = item.get('input')
+            output_content = item.get('expectedOutput')
+
+            if not input_content or not output_content:
+                continue
+
+            if format_type == 'openai':
+                record = {
+                    "messages": [
+                        {"role": "system", "content": system_instruction},
+                        {"role": "user", "content": input_content},
+                        {"role": "assistant", "content": output_content}
+                    ]
+                }
+            elif format_type == 'gemini':
+                record = {
+                    "systemInstruction": {
+                        "role": "system",
+                        "parts": [{"text": system_instruction}]
+                    },
+                    "contents": [
+                        {"role": "user", "parts": [{"text": input_content}]},
+                        {"role": "model", "parts": [{"text": output_content}]}
+                    ]
+                }
+            else:
+                continue
+            
+            output_lines.append(json.dumps(record))
+
+        return '\n'.join(output_lines)
+
+    except Exception as e:
+        return f"Error formatting for fine-tuning: {str(e)}"
+
 def add_trace(trace_id, user_id=None, session_id=None, name=None):
     c = read_config()
     auth = HTTPBasicAuth(c['langfuse_public_key'], c['langfuse_secret_key'])

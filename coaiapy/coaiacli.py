@@ -16,7 +16,7 @@ from cofuse import (
     create_score, apply_score_to_trace,
     list_prompts, get_prompt, create_prompt, format_prompts_table, format_prompt_display,
     list_datasets, get_dataset, create_dataset, format_datasets_table,
-    list_dataset_items, format_dataset_display,
+    list_dataset_items, format_dataset_display, format_dataset_for_finetuning,
     list_traces, list_projects, create_dataset_item, format_traces_table,
     add_trace
 )
@@ -113,6 +113,9 @@ def main():
     parser_fuse_ds.add_argument('action', choices=['list','get','create'], help="Action to perform.")
     parser_fuse_ds.add_argument('name', nargs='?', help="Dataset name.")
     parser_fuse_ds.add_argument('--json', action='store_true', help="Output in JSON format (default: table format)")
+    parser_fuse_ds.add_argument('--openai-ft', action='store_true', help="Format output for OpenAI fine-tuning.")
+    parser_fuse_ds.add_argument('--gemini-ft', action='store_true', help="Format output for Gemini fine-tuning.")
+    parser_fuse_ds.add_argument('--system-instruction', type=str, default="You are a helpful assistant", help="System instruction for fine-tuning formats.")
 
     parser_fuse_sessions = sub_fuse.add_parser('sessions', help="Manage sessions in Langfuse (create, add node, view)")
     parser_fuse_sessions_sub = parser_fuse_sessions.add_subparsers(dest='sessions_action')
@@ -299,7 +302,11 @@ def main():
                 dataset_json = get_dataset(args.name)
                 items_json = list_dataset_items(args.name)
 
-                if args.json:
+                if args.openai_ft:
+                    print(format_dataset_for_finetuning(items_json, 'openai', args.system_instruction))
+                elif args.gemini_ft:
+                    print(format_dataset_for_finetuning(items_json, 'gemini', args.system_instruction))
+                elif args.json:
                     dataset_data = json.loads(dataset_json)
                     items_data = json.loads(items_json)
                     dataset_data['items'] = items_data
