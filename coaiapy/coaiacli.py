@@ -14,9 +14,9 @@ from cofuse import (
     create_session_and_save, add_trace_node_and_save,
     load_session_file,
     create_score, apply_score_to_trace,
-    list_prompts, get_prompt, create_prompt, format_prompts_table,
-    list_datasets, get_dataset, create_dataset,
-    list_traces, list_projects, create_dataset_item,
+    list_prompts, get_prompt, create_prompt, format_prompts_table, format_prompt_display,
+    list_datasets, get_dataset, create_dataset, format_datasets_table,
+    list_traces, list_projects, create_dataset_item, format_traces_table,
     add_trace
 )
 
@@ -107,6 +107,7 @@ def main():
     parser_fuse_ds = sub_fuse.add_parser('datasets', help="Manage datasets in Langfuse (list, get, create)")
     parser_fuse_ds.add_argument('action', choices=['list','get','create'], help="Action to perform.")
     parser_fuse_ds.add_argument('name', nargs='?', help="Dataset name.")
+    parser_fuse_ds.add_argument('--json', action='store_true', help="Output in JSON format (default: table format)")
 
     parser_fuse_sessions = sub_fuse.add_parser('sessions', help="Manage sessions in Langfuse (create, add node, view)")
     parser_fuse_sessions_sub = parser_fuse_sessions.add_subparsers(dest='sessions_action')
@@ -141,6 +142,7 @@ def main():
     parser_fuse_sc_apply.add_argument('-v','--value', type=float, default=1.0)
 
     parser_fuse_traces = sub_fuse.add_parser('traces', help="List or add traces in Langfuse")
+    parser_fuse_traces.add_argument('--json', action='store_true', help="Output in JSON format (default: table format)")
     sub_fuse_traces = parser_fuse_traces.add_subparsers(dest='trace_action')
 
     parser_fuse_traces_add = sub_fuse_traces.add_parser('add', help='Add a new trace')
@@ -239,7 +241,11 @@ def main():
                 if not args.name:
                     print("Error: prompt name missing.")
                     return
-                print(get_prompt(args.name))
+                prompt_data = get_prompt(args.name)
+                if args.json:
+                    print(prompt_data)
+                else:
+                    print(format_prompt_display(prompt_data))
             elif args.action == 'create':
                 if not args.name or not args.content:
                     print("Error: name or content missing.")
@@ -247,7 +253,11 @@ def main():
                 print(create_prompt(args.name, args.content))
         elif args.fuse_command == 'datasets':
             if args.action == 'list':
-                print(list_datasets())
+                datasets_data = list_datasets()
+                if args.json:
+                    print(datasets_data)
+                else:
+                    print(format_datasets_table(datasets_data))
             elif args.action == 'get':
                 if not args.name:
                     print("Error: dataset name missing.")
@@ -276,7 +286,11 @@ def main():
                 data = json.loads(args.data) if args.data else None
                 print(add_trace(args.trace_id, args.user, args.session, args.name, data))
             else:
-                print(list_traces())
+                traces_data = list_traces()
+                if args.json:
+                    print(traces_data)
+                else:
+                    print(format_traces_table(traces_data))
         elif args.fuse_command == 'projects':
             print(list_projects())
         elif args.fuse_command == 'dataset-items':

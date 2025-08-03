@@ -126,7 +126,16 @@ def list_prompts(debug=False):
 def format_prompts_table(prompts_json):
     """Format prompts data as a readable table"""
     try:
-        prompts = json.loads(prompts_json) if isinstance(prompts_json, str) else prompts_json
+        data = json.loads(prompts_json) if isinstance(prompts_json, str) else prompts_json
+        
+        # Handle both direct array and nested structure from Langfuse API
+        if isinstance(data, dict) and 'data' in data:
+            prompts = data['data']
+        elif isinstance(data, list):
+            prompts = data
+        else:
+            prompts = data
+            
         if not prompts:
             return "No prompts found."
         
@@ -134,10 +143,10 @@ def format_prompts_table(prompts_json):
         headers = ["Name", "Version", "Created", "Tags/Labels"]
         
         # Calculate column widths
-        max_name = max([len(p.get('name', '')) for p in prompts] + [len(headers[0])])
-        max_version = max([len(str(p.get('version', ''))) for p in prompts] + [len(headers[1])])
-        max_created = max([len(p.get('createdAt', '')[:10]) for p in prompts] + [len(headers[2])])
-        max_tags = max([len(', '.join(p.get('labels', []))) for p in prompts] + [len(headers[3])])
+        max_name = max([len(p.get('name', '') or '') for p in prompts] + [len(headers[0])])
+        max_version = max([len(str(p.get('version', '') or '')) for p in prompts] + [len(headers[1])])
+        max_created = max([len((p.get('createdAt', '') or '')[:10]) for p in prompts] + [len(headers[2])])
+        max_tags = max([len(', '.join(p.get('labels', []) or [])) for p in prompts] + [len(headers[3])])
         
         # Minimum widths
         max_name = max(max_name, 15)
@@ -152,10 +161,10 @@ def format_prompts_table(prompts_json):
         table_lines = [separator, header_row, separator]
         
         for prompt in prompts:
-            name = prompt.get('name', 'N/A')[:max_name]
-            version = str(prompt.get('version', 'N/A'))[:max_version]
-            created = prompt.get('createdAt', 'N/A')[:10]  # Just date part
-            labels = ', '.join(prompt.get('labels', []))[:max_tags] or 'None'
+            name = (prompt.get('name', '') or 'N/A')[:max_name]
+            version = str(prompt.get('version', '') or 'N/A')[:max_version]
+            created = (prompt.get('createdAt', '') or 'N/A')[:10]  # Just date part
+            labels = ', '.join(prompt.get('labels', []) or [])[:max_tags] or 'None'
             
             row = f"| {name:<{max_name}} | {version:<{max_version}} | {created:<{max_created}} | {labels:<{max_tags}} |"
             table_lines.append(row)
@@ -168,11 +177,224 @@ def format_prompts_table(prompts_json):
     except Exception as e:
         return f"Error formatting prompts table: {str(e)}\n\nRaw JSON:\n{prompts_json}"
 
+def format_datasets_table(datasets_json):
+    """Format datasets data as a readable table"""
+    try:
+        data = json.loads(datasets_json) if isinstance(datasets_json, str) else datasets_json
+        
+        # Handle nested structure from Langfuse API
+        if isinstance(data, dict) and 'data' in data:
+            datasets = data['data']
+        else:
+            datasets = data
+            
+        if not datasets:
+            return "No datasets found."
+        
+        # Table headers
+        headers = ["Name", "Created", "Items", "Description"]
+        
+        # Calculate column widths
+        max_name = max([len(d.get('name', '')) for d in datasets] + [len(headers[0])])
+        max_created = max([len((d.get('createdAt', '') or '')[:10]) for d in datasets] + [len(headers[1])])
+        max_items = max([len(str(d.get('itemCount', 0))) for d in datasets] + [len(headers[2])])
+        max_desc = max([len((d.get('description', '') or '')[:50]) for d in datasets] + [len(headers[3])])
+        
+        # Minimum widths
+        max_name = max(max_name, 15)
+        max_created = max(max_created, 10)
+        max_items = max(max_items, 6)
+        max_desc = max(max_desc, 20)
+        
+        # Format table
+        separator = f"+{'-' * (max_name + 2)}+{'-' * (max_created + 2)}+{'-' * (max_items + 2)}+{'-' * (max_desc + 2)}+"
+        header_row = f"| {headers[0]:<{max_name}} | {headers[1]:<{max_created}} | {headers[2]:<{max_items}} | {headers[3]:<{max_desc}} |"
+        
+        table_lines = [separator, header_row, separator]
+        
+        for dataset in datasets:
+            name = (dataset.get('name', '') or 'N/A')[:max_name]
+            created = (dataset.get('createdAt', '') or 'N/A')[:10]  # Just date part
+            items = str(dataset.get('itemCount', 0))
+            desc = (dataset.get('description', '') or 'No description')[:max_desc]
+            
+            row = f"| {name:<{max_name}} | {created:<{max_created}} | {items:<{max_items}} | {desc:<{max_desc}} |"
+            table_lines.append(row)
+        
+        table_lines.append(separator)
+        table_lines.append(f"Total datasets: {len(datasets)}")
+        
+        return '\n'.join(table_lines)
+        
+    except Exception as e:
+        return f"Error formatting datasets table: {str(e)}\n\nRaw JSON:\n{datasets_json}"
+
+def format_traces_table(traces_json):
+    """Format traces data as a readable table"""
+    try:
+        data = json.loads(traces_json) if isinstance(traces_json, str) else traces_json
+        
+        # Handle nested structure from Langfuse API
+        if isinstance(data, dict) and 'data' in data:
+            traces = data['data']
+        else:
+            traces = data
+            
+        if not traces:
+            return "No traces found."
+        
+        # Table headers
+        headers = ["Name", "User ID", "Started", "Status", "Session"]
+        
+        # Calculate column widths
+        max_name = max([len((t.get('name', '') or '')[:25]) for t in traces] + [len(headers[0])])
+        max_user = max([len((t.get('userId', '') or '')[:15]) for t in traces] + [len(headers[1])])
+        max_started = max([len((t.get('timestamp', '') or '')[:16]) for t in traces] + [len(headers[2])])
+        max_status = max([len(str(t.get('level', '') or '')) for t in traces] + [len(headers[3])])
+        max_session = max([len((t.get('sessionId', '') or '')[:20]) for t in traces] + [len(headers[4])])
+        
+        # Minimum widths
+        max_name = max(max_name, 15)
+        max_user = max(max_user, 8)
+        max_started = max(max_started, 16)
+        max_status = max(max_status, 8)
+        max_session = max(max_session, 12)
+        
+        # Format table
+        separator = f"+{'-' * (max_name + 2)}+{'-' * (max_user + 2)}+{'-' * (max_started + 2)}+{'-' * (max_status + 2)}+{'-' * (max_session + 2)}+"
+        header_row = f"| {headers[0]:<{max_name}} | {headers[1]:<{max_user}} | {headers[2]:<{max_started}} | {headers[3]:<{max_status}} | {headers[4]:<{max_session}} |"
+        
+        table_lines = [separator, header_row, separator]
+        
+        for trace in traces:
+            name = (trace.get('name', '') or 'Unnamed')[:max_name]
+            user = (trace.get('userId', '') or 'N/A')[:max_user]
+            started = (trace.get('timestamp', '') or 'N/A')[:16]  # YYYY-MM-DD HH:MM
+            status = str(trace.get('level', '') or 'N/A')[:max_status]
+            session = (trace.get('sessionId', '') or 'N/A')[:max_session]
+            
+            row = f"| {name:<{max_name}} | {user:<{max_user}} | {started:<{max_started}} | {status:<{max_status}} | {session:<{max_session}} |"
+            table_lines.append(row)
+        
+        table_lines.append(separator)
+        table_lines.append(f"Total traces: {len(traces)}")
+        
+        return '\n'.join(table_lines)
+        
+    except Exception as e:
+        return f"Error formatting traces table: {str(e)}\n\nRaw JSON:\n{traces_json}"
+
+def format_prompt_display(prompt_json):
+    """Format a single prompt as a beautiful display"""
+    try:
+        prompt = json.loads(prompt_json) if isinstance(prompt_json, str) else prompt_json
+        if not prompt:
+            return "Prompt not found."
+
+        # Handle API error messages gracefully
+        if 'message' in prompt and 'error' in prompt:
+            return f"Error: {prompt['message']} ({prompt['error']})"
+        
+        # Extract key information
+        name = prompt.get('name', '') or 'Unnamed Prompt'
+        version = prompt.get('version', '') or 'N/A'
+        created_at = prompt.get('createdAt', '') or ''
+        created = created_at[:19] if created_at else 'N/A'  # YYYY-MM-DD HH:MM:SS
+        updated_at = prompt.get('updatedAt', '') or ''
+        updated = updated_at[:19] if updated_at else 'N/A'
+        labels = prompt.get('labels', []) or []
+        
+        # Handle different prompt content formats
+        prompt_content = prompt.get('prompt', '')
+        if isinstance(prompt_content, list):
+            # Handle chat format: [{"role": "system", "content": "..."}]
+            prompt_text = '\n'.join([msg.get('content', '') for msg in prompt_content if msg.get('content')])
+        else:
+            # Handle string format
+            prompt_text = prompt_content or ''
+            
+        type_val = prompt.get('type', '') or 'text'
+        is_active = prompt.get('isActive', False)
+        
+        # Handle config if present
+        config = prompt.get('config', {})
+        temperature = config.get('temperature', 'N/A') if config else 'N/A'
+        max_tokens = config.get('max_tokens', 'N/A') if config else 'N/A'
+        
+        # Additional metadata
+        tags = prompt.get('tags', []) or []
+        commit_message = prompt.get('commitMessage', '') or ''
+        
+        # Build display
+        display_lines = []
+        
+        # Header with name and version
+        header = f"🎯 PROMPT: {name}"
+        if version != 'N/A':
+            header += f" (v{version})"
+        display_lines.append("=" * len(header))
+        display_lines.append(header)
+        display_lines.append("=" * len(header))
+        display_lines.append("")
+        
+        # Metadata section
+        display_lines.append("📋 METADATA:")
+        display_lines.append(f"   Type: {type_val}")
+        display_lines.append(f"   Active: {'✅ Yes' if is_active else '❌ No'}")
+        display_lines.append(f"   Created: {created}")
+        display_lines.append(f"   Updated: {updated}")
+        if labels:
+            display_lines.append(f"   Labels: {', '.join(labels)}")
+        else:
+            display_lines.append("   Labels: None")
+        if tags:
+            display_lines.append(f"   Tags: {', '.join(tags)}")
+        if commit_message:
+            display_lines.append(f"   Commit: {commit_message}")
+        display_lines.append("")
+        
+        # Configuration section (if present)
+        if config:
+            display_lines.append("⚙️ CONFIGURATION:")
+            if temperature != 'N/A':
+                display_lines.append(f"   Temperature: {temperature}")
+            if max_tokens != 'N/A':
+                display_lines.append(f"   Max Tokens: {max_tokens}")
+            # Add other config fields if present
+            for key, value in config.items():
+                if key not in ['temperature', 'max_tokens']:
+                    display_lines.append(f"   {key.title()}: {value}")
+            display_lines.append("")
+        
+        # Prompt content section
+        display_lines.append("📝 PROMPT CONTENT:")
+        display_lines.append("-" * 50)
+        if prompt_text:
+            # Split long content into readable lines
+            for line in prompt_text.split('\n'):
+                display_lines.append(line)
+        else:
+            display_lines.append("(No content)")
+        display_lines.append("-" * 50)
+        
+        return '\n'.join(display_lines)
+        
+    except Exception as e:
+        return f"Error formatting prompt display: {str(e)}\n\nRaw JSON:\n{prompt_json}"
+
 def get_prompt(prompt_name):
     c = read_config()
     auth = HTTPBasicAuth(c['langfuse_public_key'], c['langfuse_secret_key'])
+    
+    # Try without label first (gets latest version)
     url = f"{c['langfuse_base_url']}/api/public/v2/prompts/{prompt_name}"
     r = requests.get(url, auth=auth)
+    
+    # If that fails, try with production label for backward compatibility
+    if r.status_code == 404:
+        url = f"{c['langfuse_base_url']}/api/public/v2/prompts/{prompt_name}?label=production"
+        r = requests.get(url, auth=auth)
+    
     return r.text
 
 def create_prompt(prompt_name, content):
