@@ -386,14 +386,9 @@ def get_prompt(prompt_name):
     c = read_config()
     auth = HTTPBasicAuth(c['langfuse_public_key'], c['langfuse_secret_key'])
     
-    # Try without label first (gets latest version)
+    # Gets latest version by default
     url = f"{c['langfuse_base_url']}/api/public/v2/prompts/{prompt_name}"
     r = requests.get(url, auth=auth)
-    
-    # If that fails, try with production label for backward compatibility
-    if r.status_code == 404:
-        url = f"{c['langfuse_base_url']}/api/public/v2/prompts/{prompt_name}?label=production"
-        r = requests.get(url, auth=auth)
     
     return r.text
 
