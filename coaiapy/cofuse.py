@@ -20,42 +20,107 @@ def post_comment(text):
     response = requests.post(url, json=data, auth=auth)
     return response.text
 
-def list_prompts():
+def list_prompts(debug=False):
     c = read_config()
     auth = HTTPBasicAuth(c['langfuse_public_key'], c['langfuse_secret_key'])
     base = f"{c['langfuse_base_url']}/api/public/v2/prompts"
     page = 1
     all_prompts = []
+    
+    if debug:
+        print(f"Starting pagination from: {base}")
+    
     while True:
         url = f"{base}?page={page}"
+        if debug:
+            print(f"Fetching page {page}: {url}")
+            
         r = requests.get(url, auth=auth)
         if r.status_code != 200:
+            if debug:
+                print(f"Request failed with status {r.status_code}: {r.text}")
             break
+            
         try:
             data = r.json()
-        except ValueError:
+        except ValueError as e:
+            if debug:
+                print(f"JSON parsing error: {e}")
             break
+
+        if debug:
+            print(f"Response keys: {list(data.keys()) if isinstance(data, dict) else 'Not a dict'}")
+            if isinstance(data, dict):
+                print(f"  data length: {len(data.get('data', [])) if data.get('data') else 'No data key'}")
+                meta = data.get('meta', {})
+                print(f"  meta: {meta}")
+                if meta:
+                    print(f"    page: {meta.get('page')}")
+                    print(f"    limit: {meta.get('limit')}")
+                    print(f"    totalPages: {meta.get('totalPages')}")
+                    print(f"    totalItems: {meta.get('totalItems')}")
+                # Also check for other pagination formats
+                print(f"  hasNextPage: {data.get('hasNextPage')}")
+                print(f"  nextPage: {data.get('nextPage')}")
+                print(f"  totalPages: {data.get('totalPages')}")
 
         prompts = data.get('data') if isinstance(data, dict) else data
         if not prompts:
+            if debug:
+                print("No prompts found, breaking")
             break
+            
         if isinstance(prompts, list):
             all_prompts.extend(prompts)
+            if debug:
+                print(f"Added {len(prompts)} prompts, total now: {len(all_prompts)}")
         else:
             all_prompts.append(prompts)
+            if debug:
+                print(f"Added 1 prompt, total now: {len(all_prompts)}")
 
+        # Check pagination conditions
+        should_continue = False
         if isinstance(data, dict):
-            if data.get('hasNextPage'):
+            # Check for meta-based pagination (Langfuse v2 format)
+            meta = data.get('meta', {})
+            if meta and meta.get('totalPages'):
+                current_page = meta.get('page', page)
+                total_pages = meta.get('totalPages')
+                if current_page < total_pages:
+                    page += 1
+                    should_continue = True
+                    if debug:
+                        print(f"Meta pagination: page {current_page} < totalPages {total_pages}, continuing to page {page}")
+                else:
+                    if debug:
+                        print(f"Meta pagination: page {current_page} >= totalPages {total_pages}, stopping")
+            # Fallback to other pagination formats
+            elif data.get('hasNextPage'):
                 page += 1
-                continue
-            if data.get('nextPage'):
+                should_continue = True
+                if debug:
+                    print(f"hasNextPage=True, continuing to page {page}")
+            elif data.get('nextPage'):
                 page = data['nextPage']
-                continue
-            if data.get('totalPages') and page < data['totalPages']:
+                should_continue = True
+                if debug:
+                    print(f"nextPage={page}, continuing")
+            elif data.get('totalPages') and page < data['totalPages']:
                 page += 1
-                continue
-        break
+                should_continue = True
+                if debug:
+                    print(f"page {page} < totalPages {data.get('totalPages')}, continuing")
+            else:
+                if debug:
+                    print("No pagination indicators found, stopping")
+        
+        if not should_continue:
+            break
 
+    if debug:
+        print(f"Final result: {len(all_prompts)} total prompts")
+    
     return json.dumps(all_prompts, indent=2)
 
 def format_prompts_table(prompts_json):

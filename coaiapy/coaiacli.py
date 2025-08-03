@@ -102,6 +102,7 @@ def main():
     parser_fuse_prompts.add_argument('name', nargs='?', help="Prompt name.")
     parser_fuse_prompts.add_argument('content', nargs='?', help="Prompt text.")
     parser_fuse_prompts.add_argument('--json', action='store_true', help="Output in JSON format (default: table format)")
+    parser_fuse_prompts.add_argument('--debug', action='store_true', help="Show debug information for pagination")
 
     parser_fuse_ds = sub_fuse.add_parser('datasets', help="Manage datasets in Langfuse (list, get, create)")
     parser_fuse_ds.add_argument('action', choices=['list','get','create'], help="Action to perform.")
@@ -229,7 +230,7 @@ def main():
                 print(post_comment(args.comment))
         elif args.fuse_command == 'prompts':
             if args.action == 'list':
-                prompts_data = list_prompts()
+                prompts_data = list_prompts(debug=getattr(args, 'debug', False))
                 if args.json:
                     print(prompts_data)
                 else:
