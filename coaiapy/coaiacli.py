@@ -113,8 +113,8 @@ def main():
     parser_fuse_ds.add_argument('action', choices=['list','get','create'], help="Action to perform.")
     parser_fuse_ds.add_argument('name', nargs='?', help="Dataset name.")
     parser_fuse_ds.add_argument('--json', action='store_true', help="Output in JSON format (default: table format)")
-    parser_fuse_ds.add_argument('--openai-ft', action='store_true', help="Format output for OpenAI fine-tuning.")
-    parser_fuse_ds.add_argument('--gemini-ft', action='store_true', help="Format output for Gemini fine-tuning.")
+    parser_fuse_ds.add_argument('-oft', '--openai-ft', action='store_true', help="Format output for OpenAI fine-tuning.")
+    parser_fuse_ds.add_argument('-gft', '--gemini-ft', action='store_true', help="Format output for Gemini fine-tuning.")
     parser_fuse_ds.add_argument('--system-instruction', type=str, default="You are a helpful assistant", help="System instruction for fine-tuning formats.")
 
     parser_fuse_sessions = sub_fuse.add_parser('sessions', help="Manage sessions in Langfuse (create, add node, view)")
