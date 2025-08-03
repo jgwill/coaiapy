@@ -106,6 +106,7 @@ def main():
     parser_fuse_prompts.add_argument('--label', type=str, help="Specify a label to fetch.")
     parser_fuse_prompts.add_argument('--prod', action='store_true', help="Shortcut to fetch the 'production' label.")
     parser_fuse_prompts.add_argument('-c', '--content-only', action='store_true', help="Output only the prompt content.")
+    parser_fuse_prompts.add_argument('--escaped', action='store_true', help="Output the prompt content as a single, escaped line.")
 
     parser_fuse_ds = sub_fuse.add_parser('datasets', help="Manage datasets in Langfuse (list, get, create)")
     parser_fuse_ds.add_argument('action', choices=['list','get','create'], help="Action to perform.")
@@ -253,16 +254,22 @@ def main():
 
                 prompt_data = get_prompt(args.name, label=label)
 
-                if args.content_only:
+                if args.content_only or args.escaped:
                     try:
                         prompt_json = json.loads(prompt_data)
                         prompt_content = prompt_json.get('prompt', '')
                         if isinstance(prompt_content, list):
                             # Handle chat format
-                            print('\n'.join([msg.get('content', '') for msg in prompt_content if msg.get('content')]))
+                            content = '\n'.join([msg.get('content', '') for msg in prompt_content if msg.get('content')])
                         else:
                             # Handle string format
-                            print(prompt_content)
+                            content = prompt_content
+                        
+                        if args.escaped:
+                            print(json.dumps(content))
+                        else:
+                            print(content)
+
                     except json.JSONDecodeError:
                         print(f"Error: Could not parse prompt data as JSON.\n{prompt_data}")
                     return
