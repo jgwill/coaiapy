@@ -244,6 +244,18 @@ coaia fuse datasets get MyDataset -oft > training_data.jsonl
 coaia fuse datasets get MyDataset -gft --system-instruction "You are a creative writing assistant."
 ```
 
+#### Creating a New Dataset
+You can create a new, empty dataset directly from the CLI.
+```bash
+coaia fuse datasets create <new_dataset_name>
+```
+
+#### Adding Items to a Dataset
+You can add new items (with an input and an optional expected output) to an existing dataset.
+```bash
+coaia fuse dataset-items create <dataset_name> --input "User question or prompt." --expected "Ideal model response."
+```
+
 ## Contributing
 
 Contributions are welcome! Please open an issue or submit a pull request for any improvements or bug fixes.
