@@ -51,6 +51,27 @@ def find_existing_config():
 
   return None
 
+def load_env_file(env_path='.env'):
+    """Simple .env file loader compatible with Python 3.6"""
+    env_vars = {}
+    if os.path.exists(env_path):
+        try:
+            with open(env_path, 'r') as f:
+                for line in f:
+                    line = line.strip()
+                    if line and not line.startswith('#') and '=' in line:
+                        key, value = line.split('=', 1)
+                        key = key.strip()
+                        value = value.strip()
+                        # Remove surrounding quotes if present
+                        if (value.startswith('"') and value.endswith('"')) or \
+                           (value.startswith("'") and value.endswith("'")):
+                            value = value[1:-1]
+                        env_vars[key] = value
+        except Exception as e:
+            print(f"Warning: Error loading .env file: {e}")
+    return env_vars
+
 def merge_configs(base_config, override_config):
     """Deep merge two configuration dictionaries"""
     merged = base_config.copy()
@@ -65,6 +86,9 @@ def read_config():
     global config
     
     if config is None:
+        # Load .env file first if it exists
+        env_vars = load_env_file()
+        
         # Default configuration
         config = {
             "jtaleconf": {
@@ -110,21 +134,31 @@ def read_config():
                 except Exception as e:
                     print(f"Warning: Error loading fallback config: {e}")
 
+        # Helper function to get value from .env first, then environment, then config
+        def get_env_value(env_key, config_value, env_vars=env_vars):
+            return env_vars.get(env_key) or os.getenv(env_key, config_value)
+        
         # Check for placeholder values and replace with environment variables if needed
-        config["openai_api_key"] = os.getenv("OPENAI_API_KEY", config["openai_api_key"])
-        config["pollyconf"]["key"] = os.getenv("AWS_KEY_ID", config["pollyconf"]["key"])
-        config["pollyconf"]["secret"] = os.getenv("AWS_SECRET_KEY", config["pollyconf"]["secret"])
-        config["pollyconf"]["region"] = os.getenv("AWS_REGION", config["pollyconf"]["region"])
+        config["openai_api_key"] = get_env_value("OPENAI_API_KEY", config["openai_api_key"])
+        config["pollyconf"]["key"] = get_env_value("AWS_KEY_ID", config["pollyconf"]["key"])
+        config["pollyconf"]["secret"] = get_env_value("AWS_SECRET_KEY", config["pollyconf"]["secret"])
+        config["pollyconf"]["region"] = get_env_value("AWS_REGION", config["pollyconf"]["region"])
         
-        config["jtaleconf"]["host"] = os.getenv("REDIS_HOST", config["jtaleconf"]["host"])
-        if config["jtaleconf"]["host"] == config["jtaleconf"]["host"] or os.getenv("REDIS_HOST") is None:
-          config["jtaleconf"]["host"] = os.getenv("UPSTASH_HOST", config["jtaleconf"]["host"])
+        config["jtaleconf"]["host"] = get_env_value("REDIS_HOST", config["jtaleconf"]["host"])
+        if config["jtaleconf"]["host"] == config["jtaleconf"]["host"] or (not env_vars.get("REDIS_HOST") and not os.getenv("REDIS_HOST")):
+          config["jtaleconf"]["host"] = get_env_value("UPSTASH_HOST", config["jtaleconf"]["host"])
 
-        config["jtaleconf"]["port"] = int(os.getenv("REDIS_PORT", config["jtaleconf"]["port"]))
+        config["jtaleconf"]["port"] = int(get_env_value("REDIS_PORT", config["jtaleconf"]["port"]))
         
-        config["jtaleconf"]["password"] = os.getenv("REDIS_PASSWORD", config["jtaleconf"]["password"])
-        if config["jtaleconf"]["password"] == config["jtaleconf"]["password"] or os.getenv("REDIS_PASSWORD") is None:
-          config["jtaleconf"]["password"] = os.getenv("UPSTASH_PASSWORD", config["jtaleconf"]["password"])
+        config["jtaleconf"]["password"] = get_env_value("REDIS_PASSWORD", config["jtaleconf"]["password"])
+        if config["jtaleconf"]["password"] == config["jtaleconf"]["password"] or (not env_vars.get("REDIS_PASSWORD") and not os.getenv("REDIS_PASSWORD")):
+          config["jtaleconf"]["password"] = get_env_value("UPSTASH_PASSWORD", config["jtaleconf"]["password"])
+        
+        # Add Langfuse environment variable support
+        config["langfuse_secret_key"] = get_env_value("LANGFUSE_SECRET_KEY", config.get("langfuse_secret_key", ""))
+        config["langfuse_public_key"] = get_env_value("LANGFUSE_PUBLIC_KEY", config.get("langfuse_public_key", ""))
+        config["langfuse_base_url"] = get_env_value("LANGFUSE_HOST", config.get("langfuse_base_url", "https://us.cloud.langfuse.com"))
+        config["langfuse_auth3"] = get_env_value("LANGFUSE_AUTH3", config.get("langfuse_auth3", ""))
 
     return config
 
