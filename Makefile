@@ -1,4 +1,4 @@
-.PHONY: install test build dist sdist bdist_wheel upload upload-test test-release bump clean
+.PHONY: install test build dist sdist bdist_wheel upload upload-test test-release bump clean test-docker test-docker-clean
 
 install:
 	pip install -r requirements.txt
@@ -33,3 +33,9 @@ bump:
 
 clean:
 	rm -rf build/ dist/ *.egg-info **/*.egg-info
+
+test-docker:
+	cd tests && ./run_docker_tests.sh
+
+test-docker-clean:
+	docker rmi coaiapy-test || true
