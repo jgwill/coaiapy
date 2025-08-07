@@ -11,8 +11,14 @@ WORKDIR /app
 # Copy package files
 COPY . /app/
 
-# Install the package in development mode
-RUN pip install -e .
+# Install dependencies manually for Python 3.6 compatibility
+# Avoid pyproject.toml build system which requires newer setuptools
+RUN pip install --upgrade "pip<21.0" && \
+    pip install --upgrade "setuptools<60.0" wheel && \
+    pip install -r tests/requirements-py36.txt
+
+# Install package using setup.py directly (Python 3.6 compatible)
+RUN python setup.py develop
 
 # Create test user (optional, for more realistic testing)
 RUN useradd -m -s /bin/bash testuser

@@ -1,0 +1,12 @@
+# Python 3.6 compatible requirements for testing
+# These versions are pinned to work with Python 3.6
+
+boto3<=1.26.137
+mutagen<=1.45.1
+certifi
+charset-normalizer<3.1.0
+idna
+redis<5.0.0
+requests<2.29.0
+markdown<3.5.0
+PyYAML<6.1

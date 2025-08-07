@@ -43,11 +43,11 @@ def test_langfuse_config_loading():
             assert config['langfuse_base_url'] == 'https://cloud.langfuse.com'
             assert config['langfuse_auth3'] == 'test-auth3-token'
             
-            print("✓ Langfuse configuration loaded correctly from .env")
+            print("OK: Langfuse configuration loaded correctly from .env")
             return True
             
         except Exception as e:
-            print(f"❌ Configuration loading failed: {e}")
+            print(f"ERROR: Configuration loading failed: {e}")
             return False
         finally:
             os.chdir(old_cwd)
@@ -70,27 +70,27 @@ def test_fuse_commands_with_env():
             # Test 1: coaia fuse prompts list --help (should work)
             result = subprocess.run([
                 sys.executable, '-m', 'coaiapy.coaiacli', 'fuse', 'prompts', 'list', '--help'
-            ], capture_output=True, text=True, cwd='/app')
+            ], stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True, cwd='/app')
             
             if result.returncode == 0 and 'usage:' in result.stdout.lower():
-                print("✓ coaia fuse prompts list --help works with .env config")
+                print("OK: coaia fuse prompts list --help works with .env config")
             else:
-                print(f"❌ Help command failed: {result.stderr}")
+                print(f"ERROR: Help command failed: {result.stderr}")
                 return False
             
             # Test 2: coaia fuse prompts list (will fail with test credentials, but should attempt connection)
             result = subprocess.run([
                 sys.executable, '-m', 'coaiapy.coaiacli', 'fuse', 'prompts', 'list'
-            ], capture_output=True, text=True, cwd='/app', timeout=10)
+            ], stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True, cwd='/app', timeout=10)
             
             # We expect this to fail with authentication error, but it should try to connect
             # This proves the .env config was loaded and used
             if 'langfuse' in result.stderr.lower() or 'unauthorized' in result.stderr.lower() or 'authentication' in result.stderr.lower():
-                print("✓ coaia fuse prompts list attempted connection with .env credentials")
+                print("OK: coaia fuse prompts list attempted connection with .env credentials")
             elif result.returncode != 0:
-                print(f"✓ coaia fuse prompts list failed as expected with test credentials: {result.stderr[:100]}")
+                print(f"OK: coaia fuse prompts list failed as expected with test credentials: {result.stderr[:100]}")
             else:
-                print(f"⚠️ Unexpected success or different error: {result.stdout[:100]}")
+                print(f"WARNING: Unexpected success or different error: {result.stdout[:100]}")
             
             # Test 3: Verify the config is loaded by checking internal state
             # Reset and reload config in this directory
@@ -103,17 +103,17 @@ def test_fuse_commands_with_env():
                 
                 # This should use the .env config
                 # We don't actually call it since it would try to connect
-                print("✓ Langfuse client module loads successfully with .env config")
+                print("OK: Langfuse client module loads successfully with .env config")
             except ImportError as e:
-                print(f"⚠️ Could not import cofuse module: {e}")
+                print(f"WARNING: Could not import cofuse module: {e}")
             
             return True
             
         except subprocess.TimeoutExpired:
-            print("✓ Command timed out as expected (likely trying to connect)")
+            print("OK: Command timed out as expected (likely trying to connect)")
             return True
         except Exception as e:
-            print(f"❌ Fuse command test failed: {e}")
+            print(f"ERROR: Fuse command test failed: {e}")
             return False
         finally:
             os.chdir(old_cwd)
@@ -147,11 +147,11 @@ def test_env_vs_system_priority():
             # .env should be used when system env not set
             assert config['langfuse_public_key'] == 'dotenv_public'
             
-            print("✓ Environment variable priority works correctly")
+            print("OK: Environment variable priority works correctly")
             return True
             
         except Exception as e:
-            print(f"❌ Priority test failed: {e}")
+            print(f"ERROR: Priority test failed: {e}")
             return False
         finally:
             # Clean up environment
@@ -177,17 +177,17 @@ def test_fuse_commands_without_env():
             # Test help command should still work
             result = subprocess.run([
                 sys.executable, '-m', 'coaiapy.coaiacli', 'fuse', '--help'
-            ], capture_output=True, text=True, cwd='/app')
+            ], stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True, cwd='/app')
             
             if result.returncode == 0:
-                print("✓ coaia fuse --help works without .env file")
+                print("OK: coaia fuse --help works without .env file")
                 return True
             else:
-                print(f"❌ Help failed without .env: {result.stderr}")
+                print(f"ERROR: Help failed without .env: {result.stderr}")
                 return False
             
         except Exception as e:
-            print(f"❌ No .env test failed: {e}")
+            print(f"ERROR: No .env test failed: {e}")
             return False
         finally:
             os.chdir(old_cwd)
@@ -195,7 +195,7 @@ def test_fuse_commands_without_env():
 def run_langfuse_integration_tests():
     """Run all Langfuse .env integration tests"""
     print("=" * 60)
-    print("🔗 LANGFUSE .ENV INTEGRATION TESTS")
+    print("LANGFUSE  LANGFUSE .ENV INTEGRATION TESTS")
     print("=" * 60)
     
     tests = [
@@ -215,7 +215,7 @@ def run_langfuse_integration_tests():
             else:
                 failed += 1
         except Exception as e:
-            print(f"❌ {test_func.__name__} crashed: {e}")
+            print(f"ERROR: {test_func.__name__} crashed: {e}")
             failed += 1
         print()  # Add spacing between tests
     
@@ -223,9 +223,9 @@ def run_langfuse_integration_tests():
     total = passed + failed
     print("=" * 60)
     if failed == 0:
-        print(f"🎉 ALL LANGFUSE .ENV TESTS PASSED! ({passed}/{total})")
+        print(f"SUCCESS:  ALL LANGFUSE .ENV TESTS PASSED! ({passed}/{total})")
     else:
-        print(f"💥 {failed}/{total} TESTS FAILED")
+        print(f"FAILURE:  {failed}/{total} TESTS FAILED")
     print("=" * 60)
     
     return failed == 0

@@ -21,11 +21,11 @@ class TestResults:
         self.errors = []
     
     def success(self, test_name):
-        print(f"✓ {test_name}")
+        print(f"OK: {test_name}")
         self.passed += 1
     
     def failure(self, test_name, error):
-        print(f"❌ {test_name}: {error}")
+        print(f"ERROR: {test_name}: {error}")
         self.failed += 1
         self.errors.append(f"{test_name}: {error}")
     
@@ -109,7 +109,7 @@ def test_cli_help(results):
         # Test main help
         result = subprocess.run([
             sys.executable, '-m', 'coaiapy.coaiacli', '--help'
-        ], capture_output=True, text=True, cwd='/app')
+        ], stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True, cwd='/app')
         
         if result.returncode == 0 and 'usage:' in result.stdout.lower():
             results.success("CLI main help")
@@ -119,7 +119,7 @@ def test_cli_help(results):
         # Test subcommand help
         result = subprocess.run([
             sys.executable, '-m', 'coaiapy.coaiacli', 'fuse', '--help'
-        ], capture_output=True, text=True, cwd='/app')
+        ], stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True, cwd='/app')
         
         if result.returncode == 0:
             results.success("CLI fuse help")
@@ -138,7 +138,7 @@ def test_cli_commands(results):
         with tempfile.TemporaryDirectory() as temp_dir:
             result = subprocess.run([
                 sys.executable, '-m', 'coaiapy.coaiacli', 'init'
-            ], capture_output=True, text=True, cwd=temp_dir)
+            ], stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True, cwd=temp_dir)
             
             if result.returncode == 0:
                 results.success("CLI init command")
@@ -242,7 +242,7 @@ def test_python_compatibility(results):
 def run_comprehensive_tests():
     """Run all tests in the comprehensive suite"""
     print("=" * 60)
-    print("🧪 COAIAPY COMPREHENSIVE TEST SUITE")
+    print("COAIAPY COMPREHENSIVE TEST SUITE")
     print("=" * 60)
     
     results = TestResults()
@@ -260,9 +260,9 @@ def run_comprehensive_tests():
     print("\n" + "=" * 60)
     success = results.summary()
     if success:
-        print("🎉 ALL TESTS PASSED!")
+        print("SUCCESS: ALL TESTS PASSED!")
     else:
-        print("💥 SOME TESTS FAILED!")
+        print("FAILURE: SOME TESTS FAILED!")
     print("=" * 60)
     
     return success
@@ -297,6 +297,6 @@ if __name__ == '__main__':
     comp_success = run_comprehensive_tests()
     
     overall_success = env_success and langfuse_success and comp_success
-    print(f"\n🏁 OVERALL RESULT: {'PASS' if overall_success else 'FAIL'}")
+    print(f"\nOVERALL RESULT: {'PASS' if overall_success else 'FAIL'}")
     
     sys.exit(0 if overall_success else 1)

@@ -44,14 +44,14 @@ def test_load_env_file():
         assert env_vars['LANGFUSE_AUTH3'] == 'quoted_value'
         assert '# Comment line' not in env_vars
         
-        print("✓ Basic .env file loading works")
+        print("OK: Basic .env file loading works")
     finally:
         os.unlink(env_file)
     
     # Test 2: Non-existent file
     env_vars = load_env_file('/nonexistent/file')
     assert env_vars == {}
-    print("✓ Non-existent file handling works")
+    print("OK: Non-existent file handling works")
     
     # Test 3: Empty file
     with tempfile.NamedTemporaryFile(mode='w', suffix='.env', delete=False) as f:
@@ -61,7 +61,7 @@ def test_load_env_file():
     try:
         env_vars = load_env_file(env_file)
         assert env_vars == {}
-        print("✓ Empty file handling works")
+        print("OK: Empty file handling works")
     finally:
         os.unlink(env_file)
 
@@ -99,7 +99,7 @@ def test_config_with_env_file():
             assert config['openai_api_key'] == 'env_openai_key'
             assert config['jtaleconf']['host'] == 'env_redis_host'
             
-            print("✓ .env file values loaded into config")
+            print("OK: .env file values loaded into config")
             
         finally:
             os.chdir(old_cwd)
@@ -133,7 +133,7 @@ def test_config_priority_order():
             # .env should be used when system env not set
             assert config['langfuse_public_key'] == 'dotenv_public'
             
-            print("✓ Priority order works: system env > .env file")
+            print("OK: Priority order works: system env > .env file")
             
         finally:
             # Clean up environment
@@ -166,12 +166,12 @@ def test_cli_with_env_config():
             
             result = subprocess.run([
                 sys.executable, '-m', 'coaiapy.coaiacli', '--help'
-            ], capture_output=True, text=True, cwd='/app')
+            ], stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True, cwd='/app')
             
             assert result.returncode == 0
             assert 'usage:' in result.stdout.lower()
             
-            print("✓ CLI works with .env configuration")
+            print("OK: CLI works with .env configuration")
             
         finally:
             os.chdir(old_cwd)
@@ -189,12 +189,12 @@ def run_all_tests():
         test_cli_with_env_config()
         
         print("\n" + "=" * 50)
-        print("✅ ALL .env FUNCTIONALITY TESTS PASSED")
+        print("SUCCESS: ALL .env FUNCTIONALITY TESTS PASSED")
         print("=" * 50)
         return True
         
     except Exception as e:
-        print(f"\n❌ TEST FAILED: {e}")
+        print(f"\nERROR: TEST FAILED: {e}")
         import traceback
         traceback.print_exc()
         return False
