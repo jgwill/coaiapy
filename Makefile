@@ -1,4 +1,4 @@
-.PHONY: install test build dist sdist bdist_wheel upload upload-test test-release bump clean test-docker test-docker-clean
+.PHONY: install test build dist sdist bdist_wheel upload upload-test test-release bump clean test-docker test-docker-clean test-langfuse-real
 
 install:
 	pip install -r requirements.txt
@@ -39,3 +39,6 @@ test-docker:
 
 test-docker-clean:
 	docker rmi coaiapy-test || true
+
+test-langfuse-real:
+	cd tests && ./run_real_langfuse_tests.sh

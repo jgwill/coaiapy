@@ -293,10 +293,22 @@ if __name__ == '__main__':
         print(f"Error running Langfuse tests: {e}")
         langfuse_success = False
     
+    print("\n\nRunning REAL Langfuse integration tests...\n")
+    
+    try:
+        from test_real_langfuse_integration import run_real_langfuse_integration_tests
+        real_langfuse_success = run_real_langfuse_integration_tests()
+    except ImportError:
+        print("Warning: Could not import real Langfuse integration tests")
+        real_langfuse_success = True
+    except Exception as e:
+        print(f"Error running real Langfuse tests: {e}")
+        real_langfuse_success = False
+    
     print("\n\nNow running comprehensive tests...\n")
     comp_success = run_comprehensive_tests()
     
-    overall_success = env_success and langfuse_success and comp_success
+    overall_success = env_success and langfuse_success and real_langfuse_success and comp_success
     print(f"\nOVERALL RESULT: {'PASS' if overall_success else 'FAIL'}")
     
     sys.exit(0 if overall_success else 1)

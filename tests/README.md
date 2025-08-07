@@ -35,7 +35,17 @@ Run all tests:
 - **Tests**: All service configurations (AWS, Redis, OpenAI, Langfuse)
 - **Purpose**: Comprehensive integration testing
 
-### 4. No .env File
+### 4. **Real Langfuse Integration** 🔥
+- **File**: `../.env.tests`
+- **Tests**: Actual Langfuse API calls with real credentials
+- **Purpose**: End-to-end validation with live Langfuse environment
+- **Operations Tested**:
+  - `coaia fuse prompts list` (table and JSON formats)
+  - `coaia fuse datasets list`
+  - `coaia fuse traces list`
+  - Configuration loading and authentication
+
+### 5. No .env File
 - **File**: None
 - **Tests**: System environment variables only
 - **Purpose**: Fallback behavior validation
@@ -91,6 +101,12 @@ docker run --rm \
   -v $(pwd):/app/tests:ro \
   coaiapy-test
 
+# Test with REAL Langfuse environment
+docker run --rm \
+  -v $(pwd)/../.env.tests:/app/.env:ro \
+  -v $(pwd):/app/tests:ro \
+  coaiapy-test python test_real_langfuse_integration.py
+
 # Test without .env file
 docker run --rm \
   -v $(pwd):/app/tests:ro \
@@ -104,13 +120,28 @@ docker build -f Dockerfile.test -t coaiapy-test ..
 
 ## Integration with Main Build System
 
-Add to main `Makefile`:
+Available in main `Makefile`:
 ```make
 test-docker:
 	cd tests && ./run_docker_tests.sh
 
+test-langfuse-real:
+	cd tests && ./run_real_langfuse_tests.sh
+
 test-docker-clean:
 	docker rmi coaiapy-test || true
+```
+
+### Quick Commands:
+```bash
+# Run all test scenarios (mock + real)
+make test-docker
+
+# Run ONLY real Langfuse tests
+make test-langfuse-real
+
+# Clean up Docker images
+make test-docker-clean
 ```
 
 ## Expected Output

@@ -55,6 +55,7 @@ declare -a TEST_SCENARIOS=(
     "minimal:sample.env.minimal:Basic .env functionality with minimal config"
     "langfuse:sample.env.langfuse:Langfuse-specific configuration testing"
     "full:sample.env.full:Complete configuration with all services"
+    "real-langfuse:../.env.tests:Real Langfuse integration testing"
     "none::Testing without .env file (environment variables only)"
 )
 
