@@ -134,9 +134,9 @@ def read_config():
                 except Exception as e:
                     print(f"Warning: Error loading fallback config: {e}")
 
-        # Helper function to get value from .env first, then environment, then config
+        # Helper function to get value from system env first, then .env, then config
         def get_env_value(env_key, config_value, env_vars=env_vars):
-            return env_vars.get(env_key) or os.getenv(env_key, config_value)
+            return os.getenv(env_key) or env_vars.get(env_key) or config_value
         
         # Check for placeholder values and replace with environment variables if needed
         config["openai_api_key"] = get_env_value("OPENAI_API_KEY", config["openai_api_key"])

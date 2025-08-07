@@ -1,8 +1,11 @@
-from coaiamodule import readconfig_polly
+from coaiamodule import read_config
 import boto3
 
 def synthesize(text,voice_id,outfile,outformat="mp3"):
-	key,secret,region=readconfig_polly()
+	config = read_config()
+	key = config["pollyconf"]["key"]
+	secret = config["pollyconf"]["secret"]
+	region = config["pollyconf"]["region"]
 	
 	try:
 		polly = boto3.client('polly', aws_access_key_id=key, aws_secret_access_key=secret, region_name=region)
