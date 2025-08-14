@@ -630,28 +630,115 @@ def format_dataset_for_finetuning(items_json, format_type, system_instruction):
     except Exception as e:
         return f"Error formatting for fine-tuning: {str(e)}"
 
-def add_trace(trace_id, user_id=None, session_id=None, name=None):
+def add_trace(trace_id, user_id=None, session_id=None, name=None, input_data=None, output_data=None, metadata=None):
+    """
+    Create a trace in Langfuse with enhanced features
+    
+    Args:
+        trace_id: Unique identifier for the trace
+        user_id: Optional user ID
+        session_id: Optional session ID  
+        name: Optional trace name
+        input_data: Optional input data
+        output_data: Optional output data
+        metadata: Optional metadata object
+    """
     c = read_config()
     auth = HTTPBasicAuth(c['langfuse_public_key'], c['langfuse_secret_key'])
     now = datetime.datetime.utcnow().isoformat()
+    
+    batch_item = {
+        "type": "trace",
+        "id": trace_id,
+        "timestamp": now
+    }
+    
+    if session_id:
+        batch_item["sessionId"] = session_id
+    if name:
+        batch_item["name"] = name
+    if input_data:
+        batch_item["input"] = input_data
+    if output_data:
+        batch_item["output"] = output_data
+        
+    trace_metadata = {}
+    if user_id:
+        trace_metadata["userId"] = user_id
+    if metadata:
+        trace_metadata.update(metadata)
+    if trace_metadata:
+        batch_item["metadata"] = trace_metadata
+    
+    data = {
+        "batch": [batch_item]
+    }
+    
+    url = f"{c['langfuse_base_url']}/api/public/ingestion"
+    r = requests.post(url, json=data, auth=auth)
+    return r.text
+
+def add_observation(observation_id, trace_id, observation_type="EVENT", name=None, 
+                   input_data=None, output_data=None, metadata=None, parent_observation_id=None,
+                   start_time=None, end_time=None, level="DEFAULT", model=None, usage=None):
+    """
+    Create an observation (event, span, or generation) in Langfuse
+    
+    Args:
+        observation_id: Unique identifier for the observation
+        trace_id: ID of the trace this observation belongs to
+        observation_type: Type of observation ("EVENT", "SPAN", "GENERATION")
+        name: Optional observation name
+        input_data: Optional input data
+        output_data: Optional output data
+        metadata: Optional metadata object
+        parent_observation_id: Optional parent observation ID for nesting
+        start_time: Optional start time (ISO format)
+        end_time: Optional end time (ISO format)
+        level: Observation level ("DEBUG", "DEFAULT", "WARNING", "ERROR")
+        model: Optional model name
+        usage: Optional usage information
+    """
+    c = read_config()
+    auth = HTTPBasicAuth(c['langfuse_public_key'], c['langfuse_secret_key'])
+    
+    if not start_time:
+        start_time = datetime.datetime.utcnow().isoformat() + 'Z'
+    
+    body = {
+        "id": observation_id,
+        "traceId": trace_id,
+        "type": observation_type,
+        "startTime": start_time,
+        "level": level
+    }
+    
+    if name:
+        body["name"] = name
+    if input_data:
+        body["input"] = input_data
+    if output_data:
+        body["output"] = output_data
+    if metadata:
+        body["metadata"] = metadata
+    if parent_observation_id:
+        body["parentObservationId"] = parent_observation_id
+    if end_time:
+        body["endTime"] = end_time
+    if model:
+        body["model"] = model
+    if usage:
+        body["usage"] = usage
+    
     data = {
         "batch": [
             {
-                "type": "trace",
-                "id": trace_id,
-                "timestamp": now
+                "type": "observation-create",
+                "body": body
             }
         ]
     }
-    if session_id:
-        data["batch"][0]["sessionId"] = session_id
-    if name:
-        data["batch"][0]["name"] = name
-    metadata = {}
-    if user_id:
-        metadata["userId"] = user_id
-    if metadata:
-        data["batch"][0]["metadata"] = metadata
+    
     url = f"{c['langfuse_base_url']}/api/public/ingestion"
     r = requests.post(url, json=data, auth=auth)
     return r.text

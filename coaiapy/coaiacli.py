@@ -18,7 +18,7 @@ from cofuse import (
     list_datasets, get_dataset, create_dataset, format_datasets_table,
     list_dataset_items, format_dataset_display, format_dataset_for_finetuning,
     list_traces, list_projects, create_dataset_item, format_traces_table,
-    add_trace
+    add_trace, add_observation
 )
 
 EPILOG = """see: https://github.com/jgwill/coaiapy/wiki for more details."""
@@ -158,16 +158,33 @@ def main():
     parser_fuse_sc_apply.add_argument('score_id')
     parser_fuse_sc_apply.add_argument('-v','--value', type=float, default=1.0)
 
-    parser_fuse_traces = sub_fuse.add_parser('traces', help="List or add traces in Langfuse")
+    parser_fuse_traces = sub_fuse.add_parser('traces', help="List or manage traces and observations in Langfuse")
     parser_fuse_traces.add_argument('--json', action='store_true', help="Output in JSON format (default: table format)")
     sub_fuse_traces = parser_fuse_traces.add_subparsers(dest='trace_action')
 
-    parser_fuse_traces_add = sub_fuse_traces.add_parser('add', help='Add a new trace')
+    parser_fuse_traces_add = sub_fuse_traces.add_parser('create', help='Create a new trace')
     parser_fuse_traces_add.add_argument('trace_id', help="Trace ID")
-    parser_fuse_traces_add.add_argument('-s','--session', required=True, help="Session ID")
-    parser_fuse_traces_add.add_argument('-u','--user', required=True, help="User ID") 
-    parser_fuse_traces_add.add_argument('-n','--name', required=True, help="Trace name")
-    parser_fuse_traces_add.add_argument('-d','--data', help="Additional trace data as JSON string")
+    parser_fuse_traces_add.add_argument('-s','--session', help="Session ID")
+    parser_fuse_traces_add.add_argument('-u','--user', help="User ID") 
+    parser_fuse_traces_add.add_argument('-n','--name', help="Trace name")
+    parser_fuse_traces_add.add_argument('-i','--input', help="Input data (JSON string or plain text)")
+    parser_fuse_traces_add.add_argument('-o','--output', help="Output data (JSON string or plain text)")
+    parser_fuse_traces_add.add_argument('-m','--metadata', help="Additional metadata as JSON string")
+
+    parser_fuse_obs_add = sub_fuse_traces.add_parser('add-observation', help='Add an observation to a trace')
+    parser_fuse_obs_add.add_argument('observation_id', help="Observation ID")
+    parser_fuse_obs_add.add_argument('trace_id', help="Trace ID")
+    parser_fuse_obs_add.add_argument('-t','--type', choices=['EVENT', 'SPAN', 'GENERATION'], default='EVENT', help="Observation type")
+    parser_fuse_obs_add.add_argument('-n','--name', help="Observation name")
+    parser_fuse_obs_add.add_argument('-i','--input', help="Input data (JSON string or plain text)")
+    parser_fuse_obs_add.add_argument('-o','--output', help="Output data (JSON string or plain text)")
+    parser_fuse_obs_add.add_argument('-m','--metadata', help="Metadata as JSON string")
+    parser_fuse_obs_add.add_argument('-p','--parent', help="Parent observation ID")
+    parser_fuse_obs_add.add_argument('--start-time', help="Start time (ISO format)")
+    parser_fuse_obs_add.add_argument('--end-time', help="End time (ISO format)")
+    parser_fuse_obs_add.add_argument('--level', choices=['DEBUG', 'DEFAULT', 'WARNING', 'ERROR'], default='DEFAULT', help="Observation level")
+    parser_fuse_obs_add.add_argument('--model', help="Model name")
+    parser_fuse_obs_add.add_argument('--usage', help="Usage information as JSON string")
 
     parser_fuse_projects = sub_fuse.add_parser('projects', help="List projects in Langfuse")
     parser_fuse_ds_items = sub_fuse.add_parser('dataset-items', help="Manage dataset items (create) in Langfuse")
@@ -382,9 +399,88 @@ def main():
             elif args.scores_action == 'apply':
                 print(apply_score_to_trace(args.trace_id, args.score_id, args.value))
         elif args.fuse_command == 'traces':
-            if args.trace_action == 'add':
-                data = json.loads(args.data) if args.data else None
-                print(add_trace(args.trace_id, args.user, args.session, args.name, data))
+            if args.trace_action == 'create':
+                # Parse JSON data, fallback to plain text if not JSON
+                input_data = None
+                if args.input:
+                    try:
+                        input_data = json.loads(args.input)
+                    except json.JSONDecodeError:
+                        input_data = args.input  # Use as plain text
+                
+                output_data = None
+                if args.output:
+                    try:
+                        output_data = json.loads(args.output)
+                    except json.JSONDecodeError:
+                        output_data = args.output  # Use as plain text
+                
+                metadata = None
+                if args.metadata:
+                    try:
+                        metadata = json.loads(args.metadata)
+                    except json.JSONDecodeError:
+                        print(f"Warning: metadata must be valid JSON, got: {args.metadata}")
+                        return
+                
+                result = add_trace(
+                    args.trace_id, 
+                    user_id=args.user,
+                    session_id=args.session,
+                    name=args.name,
+                    input_data=input_data,
+                    output_data=output_data,
+                    metadata=metadata
+                )
+                print(result)
+            elif args.trace_action == 'add-observation':
+                # Parse JSON data, fallback to plain text if not JSON
+                input_data = None
+                if args.input:
+                    try:
+                        input_data = json.loads(args.input)
+                    except json.JSONDecodeError:
+                        input_data = args.input  # Use as plain text
+                
+                output_data = None
+                if args.output:
+                    try:
+                        output_data = json.loads(args.output)
+                    except json.JSONDecodeError:
+                        output_data = args.output  # Use as plain text
+                
+                metadata = None
+                if args.metadata:
+                    try:
+                        metadata = json.loads(args.metadata)
+                    except json.JSONDecodeError:
+                        print(f"Warning: metadata must be valid JSON, got: {args.metadata}")
+                        return
+                
+                usage = None
+                if args.usage:
+                    try:
+                        usage = json.loads(args.usage)
+                    except json.JSONDecodeError:
+                        print(f"Warning: usage must be valid JSON, got: {args.usage}")
+                        return
+                
+                result = add_observation(
+                    args.observation_id,
+                    args.trace_id,
+                    observation_type=args.type,
+                    name=args.name,
+                    input_data=input_data,
+                    output_data=output_data,
+                    metadata=metadata,
+                    parent_observation_id=args.parent,
+                    start_time=getattr(args, 'start_time', None),
+                    end_time=getattr(args, 'end_time', None),
+                    level=args.level,
+                    model=args.model,
+                    usage=usage
+                )
+                print(result)
             else:
                 traces_data = list_traces()
                 if args.json:
@@ -395,8 +491,17 @@ def main():
             print(list_projects())
         elif args.fuse_command == 'dataset-items':
             if args.ds_items_action == 'create':
-                md = args.metadata if args.metadata else None
-                print(create_dataset_item(args.datasetName, args.input, args.expected, md))
+                result = create_dataset_item(
+                    args.datasetName, 
+                    args.input, 
+                    expected_output=args.expected,
+                    metadata=args.metadata,
+                    source_trace_id=getattr(args, 'source_trace', None),
+                    source_observation_id=getattr(args, 'source_observation', None),
+                    item_id=getattr(args, 'id', None),
+                    status=getattr(args, 'status', None)
+                )
+                print(result)
     else:
         parser.print_help()
 
