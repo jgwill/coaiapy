@@ -645,33 +645,38 @@ def add_trace(trace_id, user_id=None, session_id=None, name=None, input_data=Non
     """
     c = read_config()
     auth = HTTPBasicAuth(c['langfuse_public_key'], c['langfuse_secret_key'])
-    now = datetime.datetime.utcnow().isoformat()
+    now = datetime.datetime.utcnow().isoformat() + 'Z'
     
-    batch_item = {
-        "type": "trace",
+    # Build the trace body
+    body = {
         "id": trace_id,
         "timestamp": now
     }
     
     if session_id:
-        batch_item["sessionId"] = session_id
+        body["sessionId"] = session_id
     if name:
-        batch_item["name"] = name
+        body["name"] = name
     if input_data:
-        batch_item["input"] = input_data
+        body["input"] = input_data
     if output_data:
-        batch_item["output"] = output_data
-        
-    trace_metadata = {}
+        body["output"] = output_data
     if user_id:
-        trace_metadata["userId"] = user_id
+        body["userId"] = user_id
     if metadata:
-        trace_metadata.update(metadata)
-    if trace_metadata:
-        batch_item["metadata"] = trace_metadata
+        body["metadata"] = metadata
     
+    # Build the ingestion event
+    event_id = trace_id + "-event"  # Create unique event ID
     data = {
-        "batch": [batch_item]
+        "batch": [
+            {
+                "id": event_id,
+                "timestamp": now,
+                "type": "trace-create",
+                "body": body
+            }
+        ]
     }
     
     url = f"{c['langfuse_base_url']}/api/public/ingestion"
@@ -730,9 +735,14 @@ def add_observation(observation_id, trace_id, observation_type="EVENT", name=Non
     if usage:
         body["usage"] = usage
     
+    # Build the ingestion event with proper envelope structure
+    event_id = observation_id + "-event"  # Create unique event ID
+    now = datetime.datetime.utcnow().isoformat() + 'Z'
     data = {
         "batch": [
             {
+                "id": event_id,
+                "timestamp": now,
                 "type": "observation-create",
                 "body": body
             }
