@@ -395,11 +395,43 @@ def get_prompt(prompt_name, label=None):
     
     return r.text
 
-def create_prompt(prompt_name, content):
+def create_prompt(prompt_name, content, commit_message=None, labels=None, tags=None, prompt_type="text", config=None):
+    """
+    Create a prompt in Langfuse with enhanced features
+    
+    Args:
+        prompt_name: Name of the prompt
+        content: Prompt content (string for text prompts, list for chat prompts)
+        commit_message: Optional commit message for version tracking
+        labels: Optional list of deployment labels
+        tags: Optional list of tags
+        prompt_type: Type of prompt ("text" or "chat")
+        config: Optional configuration object
+    """
     c = read_config()
     auth = HTTPBasicAuth(c['langfuse_public_key'], c['langfuse_secret_key'])
     url = f"{c['langfuse_base_url']}/api/public/v2/prompts"
-    data = {"name": prompt_name, "text": content}
+    
+    # Build the request data based on prompt type
+    data = {
+        "type": prompt_type,
+        "name": prompt_name,
+        "prompt": content
+    }
+    
+    # Add optional fields
+    if commit_message:
+        data["commitMessage"] = commit_message
+        
+    if labels:
+        data["labels"] = labels if isinstance(labels, list) else [labels]
+        
+    if tags:
+        data["tags"] = tags if isinstance(tags, list) else [tags]
+        
+    if config:
+        data["config"] = config
+    
     r = requests.post(url, json=data, auth=auth)
     return r.text
 
@@ -417,11 +449,33 @@ def get_dataset(dataset_name):
     r = requests.get(url, auth=auth)
     return r.text
 
-def create_dataset(dataset_name):
+def create_dataset(dataset_name, description=None, metadata=None):
+    """
+    Create a dataset in Langfuse with enhanced features
+    
+    Args:
+        dataset_name: Name of the dataset
+        description: Optional description of the dataset
+        metadata: Optional metadata object
+    """
     c = read_config()
     auth = HTTPBasicAuth(c['langfuse_public_key'], c['langfuse_secret_key'])
     url = f"{c['langfuse_base_url']}/api/public/v2/datasets"
+    
     data = {"name": dataset_name}
+    
+    if description:
+        data["description"] = description
+        
+    if metadata:
+        if isinstance(metadata, str):
+            try:
+                data["metadata"] = json.loads(metadata)
+            except json.JSONDecodeError:
+                data["metadata"] = {"note": metadata}  # Treat as simple note if not JSON
+        else:
+            data["metadata"] = metadata
+    
     r = requests.post(url, json=data, auth=auth)
     return r.text
 
@@ -675,17 +729,53 @@ def list_projects():
     r = requests.get(url, auth=auth)
     return r.text
 
-def create_dataset_item(dataset_name, input_data, expected_output=None, metadata=None):
+def create_dataset_item(dataset_name, input_data, expected_output=None, metadata=None, 
+                       source_trace_id=None, source_observation_id=None, item_id=None, status=None):
+    """
+    Create a dataset item in Langfuse with enhanced features
+    
+    Args:
+        dataset_name: Name of the dataset
+        input_data: Input data for the item
+        expected_output: Optional expected output
+        metadata: Optional metadata (string or object)
+        source_trace_id: Optional source trace ID
+        source_observation_id: Optional source observation ID 
+        item_id: Optional custom ID (items are upserted on their id)
+        status: Optional status (DatasetStatus enum)
+    """
     c = read_config()
     auth = HTTPBasicAuth(c['langfuse_public_key'], c['langfuse_secret_key'])
     url = f"{c['langfuse_base_url']}/api/public/dataset-items"
+    
     data = {
         "datasetName": dataset_name,
         "input": input_data
     }
+    
     if expected_output:
         data["expectedOutput"] = expected_output
+        
     if metadata:
-        data["metadata"] = json.loads(metadata)
+        if isinstance(metadata, str):
+            try:
+                data["metadata"] = json.loads(metadata)
+            except json.JSONDecodeError:
+                data["metadata"] = {"note": metadata}  # Treat as simple note if not JSON
+        else:
+            data["metadata"] = metadata
+            
+    if source_trace_id:
+        data["sourceTraceId"] = source_trace_id
+        
+    if source_observation_id:
+        data["sourceObservationId"] = source_observation_id
+        
+    if item_id:
+        data["id"] = item_id
+        
+    if status:
+        data["status"] = status
+    
     r = requests.post(url, json=data, auth=auth)
     return r.text

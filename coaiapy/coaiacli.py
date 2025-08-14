@@ -108,6 +108,12 @@ def main():
     parser_fuse_prompts.add_argument('--prod', action='store_true', help="Shortcut to fetch the 'production' label.")
     parser_fuse_prompts.add_argument('-c', '--content-only', action='store_true', help="Output only the prompt content.")
     parser_fuse_prompts.add_argument('-e', '--escaped', action='store_true', help="Output the prompt content as a single, escaped line.")
+    # Enhanced prompt creation arguments
+    parser_fuse_prompts.add_argument('--commit-message', type=str, help="Commit message for this prompt version")
+    parser_fuse_prompts.add_argument('--labels', type=str, nargs='*', help="Deployment labels (space-separated)")
+    parser_fuse_prompts.add_argument('--tags', type=str, nargs='*', help="Tags (space-separated)")
+    parser_fuse_prompts.add_argument('--type', type=str, choices=['text', 'chat'], default='text', help="Prompt type (text or chat)")
+    parser_fuse_prompts.add_argument('-f', '--file', type=str, help="Read prompt content from file")
 
     parser_fuse_ds = sub_fuse.add_parser('datasets', help="Manage datasets in Langfuse (list, get, create)")
     parser_fuse_ds.add_argument('action', choices=['list','get','create'], help="Action to perform.")
@@ -116,6 +122,9 @@ def main():
     parser_fuse_ds.add_argument('-oft', '--openai-ft', action='store_true', help="Format output for OpenAI fine-tuning.")
     parser_fuse_ds.add_argument('-gft', '--gemini-ft', action='store_true', help="Format output for Gemini fine-tuning.")
     parser_fuse_ds.add_argument('--system-instruction', type=str, default="You are a helpful assistant", help="System instruction for fine-tuning formats.")
+    # Enhanced dataset creation arguments
+    parser_fuse_ds.add_argument('--description', type=str, help="Description for the dataset")
+    parser_fuse_ds.add_argument('--metadata', type=str, help="Metadata for the dataset (JSON string or simple text)")
 
     parser_fuse_sessions = sub_fuse.add_parser('sessions', help="Manage sessions in Langfuse (create, add node, view)")
     parser_fuse_sessions_sub = parser_fuse_sessions.add_subparsers(dest='sessions_action')
@@ -168,6 +177,11 @@ def main():
     parser_ds_items_create.add_argument('-i','--input', required=True)
     parser_ds_items_create.add_argument('-e','--expected', help="Expected output")
     parser_ds_items_create.add_argument('-m','--metadata', help="Optional metadata as JSON string")
+    # Enhanced dataset item creation arguments
+    parser_ds_items_create.add_argument('--source-trace', help="Source trace ID")
+    parser_ds_items_create.add_argument('--source-observation', help="Source observation ID")
+    parser_ds_items_create.add_argument('--id', help="Custom item ID (for upserts)")
+    parser_ds_items_create.add_argument('--status', help="Item status")
 
     # Subparser for 'fetch' command
     parser_fetch = subparsers.add_parser('fetch', help='Fetch a value from Redis by key.')
@@ -283,10 +297,41 @@ def main():
                 else:
                     print(format_prompt_display(prompt_data))
             elif args.action == 'create':
-                if not args.name or not args.content:
-                    print("Error: name or content missing.")
+                if not args.name:
+                    print("Error: prompt name missing.")
                     return
-                print(create_prompt(args.name, args.content))
+                    
+                # Get content from file or argument
+                content = None
+                if args.file:
+                    if not os.path.isfile(args.file):
+                        print(f"Error: File '{args.file}' does not exist.")
+                        return
+                    with open(args.file, 'r') as f:
+                        content = f.read()
+                elif args.content:
+                    content = args.content
+                else:
+                    print("Error: content missing. Provide either content argument or --file.")
+                    return
+                
+                # Handle chat prompts (JSON format expected)
+                if args.type == 'chat' and content:
+                    try:
+                        content = json.loads(content)
+                    except json.JSONDecodeError:
+                        print("Error: Chat prompt content must be valid JSON format.")
+                        return
+                
+                result = create_prompt(
+                    args.name, 
+                    content,
+                    commit_message=getattr(args, 'commit_message', None),
+                    labels=getattr(args, 'labels', None),
+                    tags=getattr(args, 'tags', None),
+                    prompt_type=getattr(args, 'type', 'text')
+                )
+                print(result)
         elif args.fuse_command == 'datasets':
             if args.action == 'list':
                 datasets_data = list_datasets()
@@ -317,7 +362,12 @@ def main():
                 if not args.name:
                     print("Error: dataset name missing.")
                     return
-                print(create_dataset(args.name))
+                result = create_dataset(
+                    args.name, 
+                    description=getattr(args, 'description', None),
+                    metadata=getattr(args, 'metadata', None)
+                )
+                print(result)
         elif args.fuse_command == 'sessions':
             if args.sessions_action == 'create':
                 print(create_session_and_save(args.file, args.session_id, args.user_id, args.name))
