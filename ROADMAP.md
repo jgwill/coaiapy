@@ -34,9 +34,19 @@ This document outlines the features of CoAiAPy, marking them as completed, in pr
   - `[x]` Gemini format (`-gft`, `--gemini-ft`).
   - `[x]` Custom system instruction (`--system-instruction`).
 
+### Trace & Observation Management
+
+- `[x]` **List Traces**: (`coaia fuse traces`) Display all traces in a formatted table.
+- `[x]` **Create Trace**: (`coaia fuse traces create`) Create a new trace with session, user, and metadata.
+- `[x]` **Add Observation**: (`coaia fuse traces add-observation`) Add single observation to existing trace.
+- `[x]` **Batch Observations**: (`coaia fuse traces add-observations`) Add multiple observations to trace from file/stdin.
+  - `[x]` Alias support: `add-obs` for single, `add-observations` for batch operations.
+  - `[x]` JSON and YAML input format support.
+  - `[x]` Parent-child observation relationships.
+  - `[x]` Multiple observation types: EVENT, SPAN, GENERATION.
+
 ### Other Integrations
 
-- `[x]` **Traces**: List and add traces.
 - `[x]` **Sessions**: Create and manage sessions.
 - `[x]` **Scores**: Create and apply scores to traces.
 - `[x]` **Comments**: List and post comments.

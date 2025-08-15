@@ -18,7 +18,7 @@ from cofuse import (
     list_datasets, get_dataset, create_dataset, format_datasets_table,
     list_dataset_items, format_dataset_display, format_dataset_for_finetuning,
     list_traces, list_projects, create_dataset_item, format_traces_table,
-    add_trace, add_observation
+    add_trace, add_observation, add_observations_batch
 )
 
 EPILOG = """see: https://github.com/jgwill/coaiapy/wiki for more details."""
@@ -185,6 +185,13 @@ def main():
     parser_fuse_obs_add.add_argument('--level', choices=['DEBUG', 'DEFAULT', 'WARNING', 'ERROR'], default='DEFAULT', help="Observation level")
     parser_fuse_obs_add.add_argument('--model', help="Model name")
     parser_fuse_obs_add.add_argument('--usage', help="Usage information as JSON string")
+
+    # Add batch observations command with aliases
+    parser_fuse_obs_batch = sub_fuse_traces.add_parser('add-observations', aliases=['add-obs-batch'], help='Add multiple observations to a trace from file or stdin')
+    parser_fuse_obs_batch.add_argument('trace_id', help="Trace ID to add observations to")
+    parser_fuse_obs_batch.add_argument('-f','--file', help="File containing observations (JSON or YAML format)")
+    parser_fuse_obs_batch.add_argument('--format', choices=['json', 'yaml'], default='json', help="Input format (default: json)")
+    parser_fuse_obs_batch.add_argument('--dry-run', action='store_true', help="Show what would be created without actually creating")
 
     parser_fuse_projects = sub_fuse.add_parser('projects', help="List projects in Langfuse")
     parser_fuse_ds_items = sub_fuse.add_parser('dataset-items', help="Manage dataset items (create) in Langfuse")
@@ -479,6 +486,35 @@ def main():
                     level=args.level,
                     model=args.model,
                     usage=usage
+                )
+                print(result)
+            elif args.trace_action == 'add-observations' or args.trace_action == 'add-obs-batch':
+                # Handle batch observation creation
+                observations_data = None
+                
+                if args.file:
+                    # Read from file
+                    if not os.path.isfile(args.file):
+                        print(f"Error: File '{args.file}' does not exist.")
+                        return
+                    with open(args.file, 'r') as f:
+                        observations_data = f.read()
+                elif not sys.stdin.isatty():
+                    # Read from stdin
+                    observations_data = sys.stdin.read()
+                else:
+                    print("Error: No input provided. Use --file or pipe data via stdin.")
+                    return
+                
+                if not observations_data.strip():
+                    print("Error: No observation data provided.")
+                    return
+                
+                result = add_observations_batch(
+                    args.trace_id,
+                    observations_data,
+                    format_type=args.format,
+                    dry_run=args.dry_run
                 )
                 print(result)
             else:

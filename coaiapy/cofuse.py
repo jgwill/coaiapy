@@ -753,6 +753,112 @@ def add_observation(observation_id, trace_id, observation_type="EVENT", name=Non
     r = requests.post(url, json=data, auth=auth)
     return r.text
 
+def add_observations_batch(trace_id, observations_data, format_type='json', dry_run=False):
+    """
+    Add multiple observations to a trace from structured data
+    
+    Args:
+        trace_id: ID of the trace to add observations to
+        observations_data: List of observation dictionaries or string data to parse
+        format_type: Format of input data ('json' or 'yaml')
+        dry_run: If True, show what would be created without actually creating
+    
+    Returns:
+        Results from batch creation or dry run preview
+    """
+    c = read_config()
+    auth = HTTPBasicAuth(c['langfuse_public_key'], c['langfuse_secret_key'])
+    
+    # Parse input data if it's a string
+    if isinstance(observations_data, str):
+        try:
+            if format_type == 'yaml':
+                observations = yaml.safe_load(observations_data)
+            else:
+                observations = json.loads(observations_data)
+        except (yaml.YAMLError, json.JSONDecodeError) as e:
+            return f"Error parsing {format_type.upper()} data: {str(e)}"
+    else:
+        observations = observations_data
+    
+    # Ensure observations is a list
+    if not isinstance(observations, list):
+        observations = [observations]
+    
+    if dry_run:
+        # Return preview of what would be created
+        preview = {
+            "trace_id": trace_id,
+            "total_observations": len(observations),
+            "observations_preview": []
+        }
+        
+        for i, obs in enumerate(observations):
+            obs_preview = {
+                "index": i + 1,
+                "id": obs.get('id', f"obs-{i+1}"),
+                "type": obs.get('type', 'EVENT'),
+                "name": obs.get('name', f"Observation {i+1}"),
+                "has_input": bool(obs.get('input')),
+                "has_output": bool(obs.get('output')),
+                "parent": obs.get('parent_observation_id')
+            }
+            preview["observations_preview"].append(obs_preview)
+        
+        return json.dumps(preview, indent=2)
+    
+    # Build batch ingestion data
+    now = datetime.datetime.utcnow().isoformat() + 'Z'
+    batch_events = []
+    
+    for i, obs in enumerate(observations):
+        # Generate observation ID if not provided
+        observation_id = obs.get('id', f"{trace_id}-obs-{i+1}")
+        
+        # Build observation body
+        body = {
+            "id": observation_id,
+            "traceId": trace_id,
+            "type": obs.get('type', 'EVENT'),
+            "startTime": obs.get('start_time', now),
+            "level": obs.get('level', 'DEFAULT')
+        }
+        
+        # Add optional fields
+        if obs.get('name'):
+            body["name"] = obs['name']
+        if obs.get('input'):
+            body["input"] = obs['input']
+        if obs.get('output'):
+            body["output"] = obs['output']
+        if obs.get('metadata'):
+            body["metadata"] = obs['metadata']
+        if obs.get('parent_observation_id'):
+            body["parentObservationId"] = obs['parent_observation_id']
+        if obs.get('end_time'):
+            body["endTime"] = obs['end_time']
+        if obs.get('model'):
+            body["model"] = obs['model']
+        if obs.get('usage'):
+            body["usage"] = obs['usage']
+        
+        # Create event
+        event_id = f"{observation_id}-event"
+        event = {
+            "id": event_id,
+            "timestamp": now,
+            "type": "observation-create",
+            "body": body
+        }
+        
+        batch_events.append(event)
+    
+    # Send batch request
+    data = {"batch": batch_events}
+    url = f"{c['langfuse_base_url']}/api/public/ingestion"
+    r = requests.post(url, json=data, auth=auth)
+    return r.text
+
 def create_session(session_id, user_id, session_name="New Session"):
     return add_trace(trace_id=session_id, user_id=user_id, session_id=session_id, name=session_name)
 

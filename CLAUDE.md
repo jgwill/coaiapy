@@ -27,6 +27,11 @@ coaia fetch <key>           # Fetch from Redis
 coaia fuse                  # Manage Langfuse integrations
 coaia p <tag> <text>        # Process with custom tags
 coaia init                  # Create sample config
+
+# Enhanced Langfuse Trace Management
+coaia fuse traces create <id>              # Create new trace
+coaia fuse traces add-observation <obs> <trace>  # Add single observation
+coaia fuse traces add-observations <trace> # Batch add observations from file/stdin
 ```
 
 ---
@@ -225,17 +230,19 @@ coaia --help        # Verify CLI functionality
 ✅ **Docker Test Suite**: Comprehensive testing including real API validation
 ✅ **Real Langfuse Integration**: Live API testing with `.env.tests` credentials
 
-**Ready for**: Enhanced Langfuse operations, multi-environment support, advanced testing scenarios
+**Ready for**: Batch trace workflows, multi-environment support, advanced AI pipeline observability
 
 ---
 
 ## 🚀 Next Steps for Future Instances
 
-**Priority 1: Enhanced Langfuse Operations**
-- Implement `coaia fuse traces create` command
-- Add dataset CRUD operations (`create`, `update`, `delete`)
-- Enhance scoring and evaluation features
-- Expand real API integration testing
+**Priority 1: Advanced Trace Workflow Management** ✅ **COMPLETED**
+- ✅ Implement `coaia fuse traces create` command
+- ✅ Add single observation creation (`add-observation`)
+- ✅ Implement batch observation creation (`add-observations`)
+- ✅ Add command aliases and workflow support
+- ✅ Enhanced dataset CRUD operations with metadata support
+- ✅ Real API integration testing validated
 
 **Priority 2: Advanced Configuration Features**  
 - Multi-environment support (`.env.development`, `.env.production`)
