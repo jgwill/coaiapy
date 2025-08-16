@@ -4,6 +4,81 @@ from coaiamodule import read_config
 import datetime
 import yaml
 import json
+import re
+
+def parse_tlid_to_iso(tlid_str):
+    """
+    Parse tlid format (yyMMddHHmmss) to ISO 8601 format
+    
+    Args:
+        tlid_str: String in format 'yyMMddHHmmss' (e.g., '251216143022' for 2025-12-16 14:30:22)
+    
+    Returns:
+        String in ISO 8601 format with Z suffix (e.g., '2025-12-16T14:30:22Z')
+    
+    Raises:
+        ValueError: If the format is invalid
+    """
+    if not tlid_str or not isinstance(tlid_str, str):
+        raise ValueError("tlid_str must be a non-empty string")
+    
+    # Check if it's exactly 12 digits
+    if not re.match(r'^\d{12}$', tlid_str):
+        raise ValueError("tlid format must be exactly 12 digits: yyMMddHHmmss")
+    
+    try:
+        # Parse components
+        yy = int(tlid_str[:2])
+        mm = int(tlid_str[2:4])
+        dd = int(tlid_str[4:6])
+        hh = int(tlid_str[6:8])
+        min_val = int(tlid_str[8:10])
+        ss = int(tlid_str[10:12])
+        
+        # Convert 2-digit year to 4-digit (assuming 2000s)
+        yyyy = 2000 + yy
+        
+        # Create datetime object (this will validate the date/time)
+        dt = datetime.datetime(yyyy, mm, dd, hh, min_val, ss)
+        
+        # Return ISO format with Z suffix
+        return dt.isoformat() + 'Z'
+        
+    except ValueError as e:
+        raise ValueError(f"Invalid date/time values in tlid '{tlid_str}': {str(e)}")
+
+def detect_and_parse_datetime(time_str):
+    """
+    Detect format and parse datetime string to ISO format
+    
+    Supports:
+    - tlid format: yyMMddHHmmss (12 digits)
+    - ISO format: already in correct format
+    - Other formats: passed through as-is
+    
+    Args:
+        time_str: Time string in various formats
+        
+    Returns:
+        String in ISO 8601 format, or original string if not recognized
+    """
+    if not time_str:
+        return None
+    
+    # Check if it's tlid format (exactly 12 digits)
+    if re.match(r'^\d{12}$', time_str):
+        try:
+            return parse_tlid_to_iso(time_str)
+        except ValueError:
+            # If tlid parsing fails, return original string
+            return time_str
+    
+    # Check if it's already ISO format or similar
+    if 'T' in time_str or time_str.endswith('Z'):
+        return time_str
+    
+    # Return original string for other formats
+    return time_str
 
 def get_comments():
     config = read_config()
@@ -698,8 +773,8 @@ def add_observation(observation_id, trace_id, observation_type="EVENT", name=Non
         output_data: Optional output data
         metadata: Optional metadata object
         parent_observation_id: Optional parent observation ID for nesting
-        start_time: Optional start time (ISO format)
-        end_time: Optional end time (ISO format)
+        start_time: Optional start time (ISO format or tlid format yyMMddHHmmss)
+        end_time: Optional end time (ISO format or tlid format yyMMddHHmmss)
         level: Observation level ("DEBUG", "DEFAULT", "WARNING", "ERROR")
         model: Optional model name
         usage: Optional usage information
@@ -707,8 +782,14 @@ def add_observation(observation_id, trace_id, observation_type="EVENT", name=Non
     c = read_config()
     auth = HTTPBasicAuth(c['langfuse_public_key'], c['langfuse_secret_key'])
     
-    if not start_time:
+    # Auto-detect and parse datetime formats
+    if start_time:
+        start_time = detect_and_parse_datetime(start_time)
+    else:
         start_time = datetime.datetime.utcnow().isoformat() + 'Z'
+    
+    if end_time:
+        end_time = detect_and_parse_datetime(end_time)
     
     body = {
         "id": observation_id,
@@ -759,7 +840,8 @@ def add_observations_batch(trace_id, observations_data, format_type='json', dry_
     
     Args:
         trace_id: ID of the trace to add observations to
-        observations_data: List of observation dictionaries or string data to parse
+        observations_data: List of observation dictionaries or string data to parse.
+                          start_time and end_time fields support both ISO format and tlid format (yyMMddHHmmss)
         format_type: Format of input data ('json' or 'yaml')
         dry_run: If True, show what would be created without actually creating
     
@@ -815,12 +897,24 @@ def add_observations_batch(trace_id, observations_data, format_type='json', dry_
         # Generate observation ID if not provided
         observation_id = obs.get('id', f"{trace_id}-obs-{i+1}")
         
+        # Parse start_time with auto-detection
+        start_time_val = obs.get('start_time')
+        if start_time_val:
+            start_time_val = detect_and_parse_datetime(start_time_val)
+        else:
+            start_time_val = now
+            
+        # Parse end_time with auto-detection
+        end_time_val = obs.get('end_time')
+        if end_time_val:
+            end_time_val = detect_and_parse_datetime(end_time_val)
+        
         # Build observation body
         body = {
             "id": observation_id,
             "traceId": trace_id,
             "type": obs.get('type', 'EVENT'),
-            "startTime": obs.get('start_time', now),
+            "startTime": start_time_val,
             "level": obs.get('level', 'DEFAULT')
         }
         
@@ -835,8 +929,8 @@ def add_observations_batch(trace_id, observations_data, format_type='json', dry_
             body["metadata"] = obs['metadata']
         if obs.get('parent_observation_id'):
             body["parentObservationId"] = obs['parent_observation_id']
-        if obs.get('end_time'):
-            body["endTime"] = obs['end_time']
+        if end_time_val:
+            body["endTime"] = end_time_val
         if obs.get('model'):
             body["model"] = obs['model']
         if obs.get('usage'):
