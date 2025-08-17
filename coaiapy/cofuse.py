@@ -8,10 +8,15 @@ import re
 
 def parse_tlid_to_iso(tlid_str):
     """
-    Parse tlid format (yyMMddHHmmss) to ISO 8601 format
+    Parse tlid format to ISO 8601 format
+    
+    Supports:
+    - yyMMddHHmmss (12 digits): Full format with seconds
+    - yyMMddHHmm (10 digits): Short format, seconds default to 00
     
     Args:
-        tlid_str: String in format 'yyMMddHHmmss' (e.g., '251216143022' for 2025-12-16 14:30:22)
+        tlid_str: String in format 'yyMMddHHmmss' or 'yyMMddHHmm'
+                 (e.g., '251216143022' or '2512161430' for 2025-12-16 14:30:22 or 2025-12-16 14:30:00)
     
     Returns:
         String in ISO 8601 format with Z suffix (e.g., '2025-12-16T14:30:22Z')
@@ -22,9 +27,15 @@ def parse_tlid_to_iso(tlid_str):
     if not tlid_str or not isinstance(tlid_str, str):
         raise ValueError("tlid_str must be a non-empty string")
     
-    # Check if it's exactly 12 digits
-    if not re.match(r'^\d{12}$', tlid_str):
-        raise ValueError("tlid format must be exactly 12 digits: yyMMddHHmmss")
+    # Check if it's 10 or 12 digits
+    if re.match(r'^\d{12}$', tlid_str):
+        # Full format: yyMMddHHmmss
+        format_type = "full"
+    elif re.match(r'^\d{10}$', tlid_str):
+        # Short format: yyMMddHHmm
+        format_type = "short"
+    else:
+        raise ValueError("tlid format must be 10 digits (yyMMddHHmm) or 12 digits (yyMMddHHmmss)")
     
     try:
         # Parse components
@@ -33,7 +44,11 @@ def parse_tlid_to_iso(tlid_str):
         dd = int(tlid_str[4:6])
         hh = int(tlid_str[6:8])
         min_val = int(tlid_str[8:10])
-        ss = int(tlid_str[10:12])
+        
+        if format_type == "full":
+            ss = int(tlid_str[10:12])
+        else:
+            ss = 0  # Default seconds to 0 for short format
         
         # Convert 2-digit year to 4-digit (assuming 2000s)
         yyyy = 2000 + yy
@@ -52,7 +67,7 @@ def detect_and_parse_datetime(time_str):
     Detect format and parse datetime string to ISO format
     
     Supports:
-    - tlid format: yyMMddHHmmss (12 digits)
+    - tlid format: yyMMddHHmmss (12 digits) or yyMMddHHmm (10 digits)
     - ISO format: already in correct format
     - Other formats: passed through as-is
     
@@ -65,8 +80,8 @@ def detect_and_parse_datetime(time_str):
     if not time_str:
         return None
     
-    # Check if it's tlid format (exactly 12 digits)
-    if re.match(r'^\d{12}$', time_str):
+    # Check if it's tlid format (10 or 12 digits)
+    if re.match(r'^\d{10}$', time_str) or re.match(r'^\d{12}$', time_str):
         try:
             return parse_tlid_to_iso(time_str)
         except ValueError:
@@ -841,7 +856,8 @@ def add_observations_batch(trace_id, observations_data, format_type='json', dry_
     Args:
         trace_id: ID of the trace to add observations to
         observations_data: List of observation dictionaries or string data to parse.
-                          start_time and end_time fields support both ISO format and tlid format (yyMMddHHmmss)
+                          start_time and end_time fields support ISO format, tlid format (yyMMddHHmmss), 
+                          or short tlid format (yyMMddHHmm)
         format_type: Format of input data ('json' or 'yaml')
         dry_run: If True, show what would be created without actually creating
     
