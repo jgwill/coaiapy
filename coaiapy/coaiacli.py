@@ -14,7 +14,8 @@ from cofuse import (
     get_comments, post_comment,
     create_session_and_save, add_trace_node_and_save,
     load_session_file,
-    create_score, apply_score_to_trace,
+    create_score, apply_score_to_trace, create_score_for_target, list_scores, format_scores_table,
+    list_score_configs, get_score_config, create_score_config, format_score_configs_table,
     list_prompts, get_prompt, create_prompt, format_prompts_table, format_prompt_display,
     list_datasets, get_dataset, create_dataset, format_datasets_table,
     list_dataset_items, format_dataset_display, format_dataset_for_finetuning,
@@ -158,6 +159,27 @@ def main():
     parser_fuse_sc_apply.add_argument('trace_id')
     parser_fuse_sc_apply.add_argument('score_id')
     parser_fuse_sc_apply.add_argument('-v','--value', type=float, default=1.0)
+
+    parser_fuse_sc_list = sub_fuse_sc.add_parser('list')
+    parser_fuse_sc_list.add_argument('--json', action='store_true', help="Output in JSON format (default: table format)")
+
+    parser_fuse_scc = sub_fuse.add_parser('score-configs', aliases=['scc'], help="Manage score configurations in Langfuse (list, get, create)")
+    sub_fuse_scc = parser_fuse_scc.add_subparsers(dest='score_configs_action')
+
+    parser_fuse_scc_list = sub_fuse_scc.add_parser('list')
+    parser_fuse_scc_list.add_argument('--json', action='store_true', help="Output in JSON format (default: table format)")
+
+    parser_fuse_scc_get = sub_fuse_scc.add_parser('get')
+    parser_fuse_scc_get.add_argument('config_id', help="Score config ID")
+    parser_fuse_scc_get.add_argument('--json', action='store_true', help="Output in JSON format (default: formatted display)")
+
+    parser_fuse_scc_create = sub_fuse_scc.add_parser('create')
+    parser_fuse_scc_create.add_argument('name', help="Name of the score config")
+    parser_fuse_scc_create.add_argument('data_type', choices=['NUMERIC', 'CATEGORICAL', 'BOOLEAN'], help="Data type for the score config")
+    parser_fuse_scc_create.add_argument('--description', help="Description of the score config")
+    parser_fuse_scc_create.add_argument('--min-value', type=float, help="Minimum value for numeric scores")
+    parser_fuse_scc_create.add_argument('--max-value', type=float, help="Maximum value for numeric scores")
+    parser_fuse_scc_create.add_argument('--categories', help="Categories for categorical scores (JSON format: [{\"label\": \"Good\", \"value\": 1}])")
 
     parser_fuse_traces = sub_fuse.add_parser('traces', help="List or manage traces and observations in Langfuse")
     parser_fuse_traces.add_argument('--json', action='store_true', help="Output in JSON format (default: table format)")
@@ -414,6 +436,49 @@ def main():
                 print(create_score(args.score_id, args.name, args.value))
             elif args.scores_action == 'apply':
                 print(apply_score_to_trace(args.trace_id, args.score_id, args.value))
+            elif args.scores_action == 'list':
+                scores_data = list_scores()
+                if args.json:
+                    print(scores_data)
+                else:
+                    print(format_scores_table(scores_data))
+        elif args.fuse_command == 'score-configs' or args.fuse_command == 'scc':
+            if args.score_configs_action == 'list':
+                configs_data = list_score_configs()
+                if args.json:
+                    print(configs_data)
+                else:
+                    print(format_score_configs_table(configs_data))
+            elif args.score_configs_action == 'get':
+                config_data = get_score_config(args.config_id)
+                if args.json:
+                    print(config_data)
+                else:
+                    # For now, just print JSON formatted for get action
+                    try:
+                        parsed = json.loads(config_data)
+                        print(json.dumps(parsed, indent=2))
+                    except json.JSONDecodeError:
+                        print(config_data)
+            elif args.score_configs_action == 'create':
+                # Parse categories if provided
+                categories = None
+                if args.categories:
+                    try:
+                        categories = json.loads(args.categories)
+                    except json.JSONDecodeError:
+                        print("Error: Invalid JSON format for categories")
+                        return
+                
+                result = create_score_config(
+                    name=args.name,
+                    data_type=args.data_type,
+                    description=args.description,
+                    categories=categories,
+                    min_value=getattr(args, 'min_value', None),
+                    max_value=getattr(args, 'max_value', None)
+                )
+                print(result)
         elif args.fuse_command == 'traces':
             if args.trace_action == 'create':
                 # Parse JSON data, fallback to plain text if not JSON

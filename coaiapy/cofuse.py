@@ -1028,14 +1028,422 @@ def create_score(score_id, score_name="New Score", score_value=1.0):
     return r.text
 
 def apply_score_to_trace(trace_id, score_id, score_value=1.0):
+    """Apply a score to a trace (legacy function, kept for compatibility)"""
+    return create_score_for_target(
+        target_type="trace",
+        target_id=trace_id,
+        score_id=score_id,
+        score_value=score_value
+    )
+
+def create_score_for_target(target_type, target_id, score_id, score_value=1.0, score_name=None, observation_id=None, config_id=None, comment=None):
+    """
+    Create a score for a trace or session
+    
+    Args:
+        target_type: "trace" or "session"
+        target_id: ID of the trace or session
+        score_id: ID for the score (if not using config_id)
+        score_value: Value of the score
+        score_name: Name of the score (if not using config_id)
+        observation_id: Optional observation ID for trace scores
+        config_id: Optional config ID to use instead of score_id/score_name
+        comment: Optional comment for the score
+    """
     c = read_config()
     auth = HTTPBasicAuth(c['langfuse_public_key'], c['langfuse_secret_key'])
     url = f"{c['langfuse_base_url']}/api/public/scores"
+    
+    # Build the request data
     data = {
-        "traceId": trace_id,
-        "scoreId": score_id,
         "value": score_value
     }
+    
+    # Add target-specific fields
+    if target_type == "trace":
+        data["traceId"] = target_id
+        if observation_id:
+            data["observationId"] = observation_id
+    elif target_type == "session":
+        data["sessionId"] = target_id
+    else:
+        raise ValueError("target_type must be 'trace' or 'session'")
+    
+    # Add score identification (either by config or by id/name)
+    if config_id:
+        data["configId"] = config_id
+    else:
+        if score_id:
+            data["id"] = score_id
+        if score_name:
+            data["name"] = score_name
+    
+    # Add optional fields
+    if comment:
+        data["comment"] = comment
+    
+    r = requests.post(url, json=data, auth=auth)
+    return r.text
+
+def list_scores(debug=False, user_id=None, name=None, from_timestamp=None, to_timestamp=None, config_id=None):
+    """List all scores from Langfuse with optional filtering"""
+    c = read_config()
+    auth = HTTPBasicAuth(c['langfuse_public_key'], c['langfuse_secret_key'])
+    base = f"{c['langfuse_base_url']}/api/public/v2/scores"
+    page = 1
+    all_scores = []
+    
+    if debug:
+        print(f"Starting pagination from: {base}")
+    
+    while True:
+        # Build query parameters
+        params = {"page": page}
+        if user_id:
+            params["userId"] = user_id
+        if name:
+            params["name"] = name
+        if from_timestamp:
+            params["fromTimestamp"] = from_timestamp
+        if to_timestamp:
+            params["toTimestamp"] = to_timestamp
+        if config_id:
+            params["configId"] = config_id
+            
+        if debug:
+            print(f"Fetching page {page}: {base} with params {params}")
+            
+        r = requests.get(base, params=params, auth=auth)
+        if r.status_code != 200:
+            if debug:
+                print(f"Request failed with status {r.status_code}: {r.text}")
+            break
+            
+        try:
+            data = r.json()
+        except ValueError as e:
+            if debug:
+                print(f"JSON parsing error: {e}")
+            break
+
+        if debug:
+            print(f"Response keys: {list(data.keys()) if isinstance(data, dict) else 'Not a dict'}")
+            if isinstance(data, dict):
+                print(f"  data length: {len(data.get('data', [])) if data.get('data') else 'No data key'}")
+                meta = data.get('meta', {})
+                print(f"  meta: {meta}")
+
+        scores = data.get('data') if isinstance(data, dict) else data
+        if not scores:
+            if debug:
+                print("No scores found, breaking")
+            break
+            
+        if isinstance(scores, list):
+            all_scores.extend(scores)
+            if debug:
+                print(f"Added {len(scores)} scores, total now: {len(all_scores)}")
+        else:
+            all_scores.append(scores)
+            if debug:
+                print(f"Added 1 score, total now: {len(all_scores)}")
+
+        # Check pagination conditions
+        should_continue = False
+        if isinstance(data, dict):
+            # Check for meta-based pagination (Langfuse v2 format)
+            meta = data.get('meta', {})
+            if meta and meta.get('totalPages'):
+                current_page = meta.get('page', page)
+                total_pages = meta.get('totalPages')
+                if current_page < total_pages:
+                    page += 1
+                    should_continue = True
+                    if debug:
+                        print(f"Meta pagination: page {current_page} < totalPages {total_pages}, continuing to page {page}")
+                else:
+                    if debug:
+                        print(f"Meta pagination: page {current_page} >= totalPages {total_pages}, stopping")
+            # Fallback to other pagination formats
+            elif data.get('hasNextPage'):
+                page += 1
+                should_continue = True
+                if debug:
+                    print(f"hasNextPage=True, continuing to page {page}")
+            elif data.get('nextPage'):
+                page = data['nextPage']
+                should_continue = True
+                if debug:
+                    print(f"nextPage={page}, continuing")
+            elif data.get('totalPages') and page < data['totalPages']:
+                page += 1
+                should_continue = True
+                if debug:
+                    print(f"page {page} < totalPages {data.get('totalPages')}, continuing")
+            else:
+                if debug:
+                    print("No pagination indicators found, stopping")
+        
+        if not should_continue:
+            break
+
+    if debug:
+        print(f"Final result: {len(all_scores)} total scores")
+    
+    return json.dumps(all_scores, indent=2)
+
+def format_scores_table(scores_json):
+    """Format scores data as a readable table"""
+    try:
+        data = json.loads(scores_json) if isinstance(scores_json, str) else scores_json
+        
+        # Handle nested structure from Langfuse API
+        if isinstance(data, dict) and 'data' in data:
+            scores = data['data']
+        elif isinstance(data, list):
+            scores = data
+        else:
+            scores = data
+            
+        if not scores:
+            return "No scores found."
+        
+        # Table headers
+        headers = ["ID", "Name", "Value", "Created", "Trace ID"]
+        
+        # Calculate column widths
+        max_id = max([len((s.get('id', '') or '')[:20]) for s in scores] + [len(headers[0])])
+        max_name = max([len(s.get('name', '') or '') for s in scores] + [len(headers[1])])
+        max_value = max([len(str(s.get('value', '') or '')) for s in scores] + [len(headers[2])])
+        max_created = max([len((s.get('timestamp', '') or '')[:16]) for s in scores] + [len(headers[3])])
+        max_trace = max([len((s.get('traceId', '') or '')[:20]) for s in scores] + [len(headers[4])])
+        
+        # Minimum widths
+        max_id = max(max_id, 8)
+        max_name = max(max_name, 15)
+        max_value = max(max_value, 8)
+        max_created = max(max_created, 16)
+        max_trace = max(max_trace, 12)
+        
+        # Format table
+        separator = f"+{'-' * (max_id + 2)}+{'-' * (max_name + 2)}+{'-' * (max_value + 2)}+{'-' * (max_created + 2)}+{'-' * (max_trace + 2)}+"
+        header_row = f"| {headers[0]:<{max_id}} | {headers[1]:<{max_name}} | {headers[2]:<{max_value}} | {headers[3]:<{max_created}} | {headers[4]:<{max_trace}} |"
+        
+        table_lines = [separator, header_row, separator]
+        
+        for score in scores:
+            score_id = (score.get('id', '') or 'N/A')[:max_id]
+            name = (score.get('name', '') or 'N/A')[:max_name]
+            value = str(score.get('value', '') or 'N/A')[:max_value]
+            created = (score.get('timestamp', '') or 'N/A')[:16]  # YYYY-MM-DD HH:MM
+            trace_id = (score.get('traceId', '') or 'N/A')[:max_trace]
+            
+            row = f"| {score_id:<{max_id}} | {name:<{max_name}} | {value:<{max_value}} | {created:<{max_created}} | {trace_id:<{max_trace}} |"
+            table_lines.append(row)
+        
+        table_lines.append(separator)
+        table_lines.append(f"Total scores: {len(scores)}")
+        
+        return '\n'.join(table_lines)
+        
+    except Exception as e:
+        return f"Error formatting scores table: {str(e)}\n\nRaw JSON:\n{scores_json}"
+
+def list_score_configs(debug=False):
+    """List all score configs from Langfuse"""
+    c = read_config()
+    auth = HTTPBasicAuth(c['langfuse_public_key'], c['langfuse_secret_key'])
+    base = f"{c['langfuse_base_url']}/api/public/score-configs"
+    page = 1
+    all_configs = []
+    
+    if debug:
+        print(f"Starting pagination from: {base}")
+    
+    while True:
+        url = f"{base}?page={page}"
+        if debug:
+            print(f"Fetching page {page}: {url}")
+            
+        r = requests.get(url, auth=auth)
+        if r.status_code != 200:
+            if debug:
+                print(f"Request failed with status {r.status_code}: {r.text}")
+            break
+            
+        try:
+            data = r.json()
+        except ValueError as e:
+            if debug:
+                print(f"JSON parsing error: {e}")
+            break
+
+        if debug:
+            print(f"Response keys: {list(data.keys()) if isinstance(data, dict) else 'Not a dict'}")
+            if isinstance(data, dict):
+                print(f"  data length: {len(data.get('data', [])) if data.get('data') else 'No data key'}")
+                meta = data.get('meta', {})
+                print(f"  meta: {meta}")
+
+        configs = data.get('data') if isinstance(data, dict) else data
+        if not configs:
+            if debug:
+                print("No score configs found, breaking")
+            break
+            
+        if isinstance(configs, list):
+            all_configs.extend(configs)
+            if debug:
+                print(f"Added {len(configs)} score configs, total now: {len(all_configs)}")
+        else:
+            all_configs.append(configs)
+            if debug:
+                print(f"Added 1 score config, total now: {len(all_configs)}")
+
+        # Check pagination conditions
+        should_continue = False
+        if isinstance(data, dict):
+            # Check for meta-based pagination (Langfuse v2 format)
+            meta = data.get('meta', {})
+            if meta and meta.get('totalPages'):
+                current_page = meta.get('page', page)
+                total_pages = meta.get('totalPages')
+                if current_page < total_pages:
+                    page += 1
+                    should_continue = True
+                    if debug:
+                        print(f"Meta pagination: page {current_page} < totalPages {total_pages}, continuing to page {page}")
+                else:
+                    if debug:
+                        print(f"Meta pagination: page {current_page} >= totalPages {total_pages}, stopping")
+            # Fallback to other pagination formats
+            elif data.get('hasNextPage'):
+                page += 1
+                should_continue = True
+                if debug:
+                    print(f"hasNextPage=True, continuing to page {page}")
+            elif data.get('nextPage'):
+                page = data['nextPage']
+                should_continue = True
+                if debug:
+                    print(f"nextPage={page}, continuing")
+            elif data.get('totalPages') and page < data['totalPages']:
+                page += 1
+                should_continue = True
+                if debug:
+                    print(f"page {page} < totalPages {data.get('totalPages')}, continuing")
+            else:
+                if debug:
+                    print("No pagination indicators found, stopping")
+        
+        if not should_continue:
+            break
+
+    if debug:
+        print(f"Final result: {len(all_configs)} total score configs")
+    
+    return json.dumps(all_configs, indent=2)
+
+def format_score_configs_table(configs_json):
+    """Format score configs data as a readable table"""
+    try:
+        data = json.loads(configs_json) if isinstance(configs_json, str) else configs_json
+        
+        # Handle nested structure from Langfuse API
+        if isinstance(data, dict) and 'data' in data:
+            configs = data['data']
+        elif isinstance(data, list):
+            configs = data
+        else:
+            configs = data
+            
+        if not configs:
+            return "No score configs found."
+        
+        # Table headers
+        headers = ["ID", "Name", "Data Type", "Description", "Created"]
+        
+        # Calculate column widths
+        max_id = max([len((c.get('id', '') or '')[:20]) for c in configs] + [len(headers[0])])
+        max_name = max([len(c.get('name', '') or '') for c in configs] + [len(headers[1])])
+        max_datatype = max([len(str(c.get('dataType', '') or '')) for c in configs] + [len(headers[2])])
+        max_desc = max([len((c.get('description', '') or '')[:40]) for c in configs] + [len(headers[3])])
+        max_created = max([len((c.get('createdAt', '') or '')[:16]) for c in configs] + [len(headers[4])])
+        
+        # Minimum widths
+        max_id = max(max_id, 8)
+        max_name = max(max_name, 15)
+        max_datatype = max(max_datatype, 10)
+        max_desc = max(max_desc, 20)
+        max_created = max(max_created, 16)
+        
+        # Format table
+        separator = f"+{'-' * (max_id + 2)}+{'-' * (max_name + 2)}+{'-' * (max_datatype + 2)}+{'-' * (max_desc + 2)}+{'-' * (max_created + 2)}+"
+        header_row = f"| {headers[0]:<{max_id}} | {headers[1]:<{max_name}} | {headers[2]:<{max_datatype}} | {headers[3]:<{max_desc}} | {headers[4]:<{max_created}} |"
+        
+        table_lines = [separator, header_row, separator]
+        
+        for config in configs:
+            config_id = (config.get('id', '') or 'N/A')[:max_id]
+            name = (config.get('name', '') or 'N/A')[:max_name]
+            data_type = str(config.get('dataType', '') or 'N/A')[:max_datatype]
+            description = (config.get('description', '') or 'N/A')[:max_desc]
+            created = (config.get('createdAt', '') or 'N/A')[:16]  # YYYY-MM-DD HH:MM
+            
+            row = f"| {config_id:<{max_id}} | {name:<{max_name}} | {data_type:<{max_datatype}} | {description:<{max_desc}} | {created:<{max_created}} |"
+            table_lines.append(row)
+        
+        table_lines.append(separator)
+        table_lines.append(f"Total score configs: {len(configs)}")
+        
+        return '\n'.join(table_lines)
+        
+    except Exception as e:
+        return f"Error formatting score configs table: {str(e)}\n\nRaw JSON:\n{configs_json}"
+
+def get_score_config(config_id):
+    """Get a specific score config by ID"""
+    c = read_config()
+    auth = HTTPBasicAuth(c['langfuse_public_key'], c['langfuse_secret_key'])
+    url = f"{c['langfuse_base_url']}/api/public/score-configs/{config_id}"
+    r = requests.get(url, auth=auth)
+    return r.text
+
+def create_score_config(name, data_type, description=None, categories=None, min_value=None, max_value=None):
+    """
+    Create a score config in Langfuse
+    
+    Args:
+        name: Name of the score config
+        data_type: Type of score data ("NUMERIC", "CATEGORICAL", "BOOLEAN")
+        description: Optional description of the score config
+        categories: Optional list of categories for categorical scores (list of dicts with 'label' and 'value')
+        min_value: Optional minimum value for numerical scores
+        max_value: Optional maximum value for numerical scores
+    """
+    c = read_config()
+    auth = HTTPBasicAuth(c['langfuse_public_key'], c['langfuse_secret_key'])
+    url = f"{c['langfuse_base_url']}/api/public/score-configs"
+    
+    # Build the request data
+    data = {
+        "name": name,
+        "dataType": data_type
+    }
+    
+    # Add optional fields
+    if description:
+        data["description"] = description
+        
+    if categories:
+        data["categories"] = categories
+        
+    if min_value is not None:
+        data["minValue"] = min_value
+        
+    if max_value is not None:
+        data["maxValue"] = max_value
+    
     r = requests.post(url, json=data, auth=auth)
     return r.text
 
