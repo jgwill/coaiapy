@@ -256,6 +256,154 @@ You can add new items (with an input and an optional expected output) to an exis
 coaia fuse dataset-items create <dataset_name> --input "User question or prompt." --expected "Ideal model response."
 ```
 
+### Traces & Observations - Enhanced AI Pipeline Support
+
+CoAiAPy provides comprehensive support for Langfuse traces and observations with enhanced pipeline integration.
+
+#### Creating Traces
+
+Create a new trace with session, user metadata, and optional environment variable export:
+```bash
+coaia fuse traces create <trace_id> -s <session_id> -u <user_id> -n "Trace Name"
+```
+
+**Pipeline Integration Example:**
+```bash
+# Create trace and export environment variables for pipeline use
+eval $(coaia fuse traces create $(uuidgen) -s $(uuidgen) -u pipeline-user -n "AI Workflow" --export-env)
+echo "Created trace: $COAIA_TRACE_ID"
+```
+
+#### Adding Observations
+
+Add single observations to traces with auto-generated IDs and enhanced CLI options:
+
+**Basic Usage:**
+```bash
+# Observation ID is auto-generated if not provided
+coaia fuse traces add-observation <trace_id> -n "Processing Step" -i '{"input":"data"}' -o '{"result":"output"}'
+
+# With explicit observation ID
+coaia fuse traces add-observation <trace_id> <observation_id> -n "Custom Step"
+```
+
+**Observation Types with Shortcuts:**
+```bash
+# EVENT (default) - discrete events
+coaia fuse traces add-observation <trace_id> -te -n "Data Loaded"
+
+# SPAN - operations with duration  
+coaia fuse traces add-observation <trace_id> -ts -n "Main Processing"
+
+# GENERATION - AI model calls
+coaia fuse traces add-observation <trace_id> -tg -n "LLM Response" --model "gpt-4"
+```
+
+**Parent-Child Relationships:**
+```bash
+# Create parent SPAN
+eval $(coaia fuse traces add-observation $COAIA_TRACE_ID -ts -n "Main Workflow" --export-env)
+parent_span=$COAIA_LAST_OBSERVATION_ID
+
+# Add child observations under the SPAN
+coaia fuse traces add-observation $COAIA_TRACE_ID -n "Step 1" --parent $parent_span
+coaia fuse traces add-observation $COAIA_TRACE_ID -n "Step 2" --parent $parent_span
+```
+
+**Pipeline Workflow Example:**
+```bash
+#!/bin/bash
+# Complete AI pipeline with automatic ID propagation
+
+# Step 1: Create trace and export environment
+eval $(coaia fuse traces create $(uuidgen) -s $(uuidgen) -u ai-pipeline --export-env)
+
+# Step 2: Create main SPAN observation
+eval $(coaia fuse traces add-observation $COAIA_TRACE_ID -ts -n "AI Processing Pipeline" --export-env)
+main_span=$COAIA_LAST_OBSERVATION_ID
+
+# Step 3: Add processing steps under the main SPAN
+eval $(coaia fuse traces add-observation $COAIA_TRACE_ID -n "Data Loading" --parent $main_span --export-env)
+eval $(coaia fuse traces add-observation $COAIA_TRACE_ID -tg -n "Model Inference" --parent $main_span --model "gpt-4" --export-env)
+eval $(coaia fuse traces add-observation $COAIA_TRACE_ID -n "Results Processing" --parent $main_span --export-env)
+
+echo "Pipeline complete! Trace: $COAIA_TRACE_ID"
+```
+
+#### Batch Observations
+
+Add multiple observations from JSON or YAML files:
+```bash
+# From file
+coaia fuse traces add-observations <trace_id> -f observations.json
+
+# From stdin with YAML format
+cat observations.yaml | coaia fuse traces add-observations <trace_id> --format yaml
+
+# Dry run to preview what would be created
+coaia fuse traces add-observations <trace_id> -f observations.json --dry-run
+```
+
+**Example JSON format for batch observations:**
+```json
+[
+  {
+    "name": "Data Processing",
+    "type": "SPAN",
+    "input": {"dataset": "user_data.csv"},
+    "output": {"processed_rows": 1000}
+  },
+  {
+    "name": "Model Training", 
+    "type": "GENERATION",
+    "parent_observation_id": "previous-observation-id",
+    "model": "gpt-4",
+    "usage": {"tokens": 150, "cost": 0.003}
+  }
+]
+```
+
+#### Environment Variables for Pipelines
+
+CoAiAPy exports standard environment variables for seamless pipeline integration:
+
+- `COAIA_TRACE_ID`: Current trace identifier
+- `COAIA_SESSION_ID`: Current session identifier  
+- `COAIA_USER_ID`: Current user identifier
+- `COAIA_LAST_OBSERVATION_ID`: Most recently created observation ID
+- `COAIA_PARENT_OBSERVATION_ID`: Parent observation ID (when using --parent)
+
+**Usage Pattern:**
+```bash
+# Commands with --export-env output only shell export statements (no JSON)
+eval $(coaia fuse traces create $(uuidgen) --export-env)
+eval $(coaia fuse traces add-observation $COAIA_TRACE_ID -ts -n "Process" --export-env)
+
+# Use the exported variables in subsequent steps
+coaia fuse traces add-observation $COAIA_TRACE_ID -n "Child" --parent $COAIA_LAST_OBSERVATION_ID
+```
+
+#### Advanced Features
+
+**Datetime Format Support:**
+- ISO format: `2025-08-17T14:30:22Z`
+- TLID format: `250817143022` (yyMMddHHmmss)
+- Short TLID: `2508171430` (yyMMddHHmm, seconds default to 00)
+
+**Usage Information:**
+```bash
+coaia fuse traces add-observation <trace_id> -tg -n "LLM Call" \
+  --model "gpt-4" \
+  --usage '{"prompt_tokens": 100, "completion_tokens": 50, "total_cost": 0.0025}'
+```
+
+**Metadata and Levels:**
+```bash
+coaia fuse traces add-observation <trace_id> -n "Error Handling" \
+  --level ERROR \
+  --metadata '{"error_type": "timeout", "retry_count": 3}'
+```
+
 ## Contributing
 
 Contributions are welcome! Please open an issue or submit a pull request for any improvements or bug fixes.

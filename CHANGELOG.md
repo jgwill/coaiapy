@@ -2,6 +2,30 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.54] - 2025-08-17
+
+### Added
+- **Observation Auto-Generation**: `observation_id` is now optional and auto-generated using UUID when not provided
+- **Environment Variable Export**: Added `--export-env` flag to output shell variables (`COAIA_TRACE_ID`, `COAIA_LAST_OBSERVATION_ID`, `COAIA_PARENT_OBSERVATION_ID`) for pipeline workflows
+- **Shorthand Observation Types**: Added convenience flags `-te` (EVENT), `-ts` (SPAN), `-tg` (GENERATION) as shortcuts for `--type`
+- **Response Processing**: Implemented clean API response format showing actual observation/trace IDs instead of internal event IDs
+- **Enhanced Help Text**: Improved CLI help descriptions for all observation parameters with detailed explanations
+
+### Changed  
+- **CLI Argument Order**: `trace_id` is now the first required argument, `observation_id` is second and optional for `add-observation` command
+- **Pipeline Integration**: Commands with `--export-env` output only shell export statements (no JSON) for `eval $()` usage
+- **Observation Types**: Enhanced help text explains EVENT (default), SPAN (with duration), GENERATION (model call) use cases
+
+### Fixed
+- **Response Format**: API responses now return actual observation/trace IDs instead of confusing internal event IDs suffixed with "-event"
+- **Parent Relationships**: Proper handling of nested observations under SPAN parents
+- **Environment Variables**: Clean shell export format compatible with bash `eval $()` command substitution
+
+### Technical Improvements
+- **UUID Import**: Added UUID module for reliable ID generation
+- **Response Processor**: New `process_langfuse_response()` function cleans up Langfuse API responses
+- **Pipeline Workflows**: Full support for complex multi-step AI observability pipelines
+
 ## [0.2.51] - 2025-08-03
 
 ### Added

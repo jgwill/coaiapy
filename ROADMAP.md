@@ -38,12 +38,19 @@ This document outlines the features of CoAiAPy, marking them as completed, in pr
 
 - `[x]` **List Traces**: (`coaia fuse traces`) Display all traces in a formatted table.
 - `[x]` **Create Trace**: (`coaia fuse traces create`) Create a new trace with session, user, and metadata.
+  - `[x]` Environment variable export (`--export-env`) for pipeline workflows.
 - `[x]` **Add Observation**: (`coaia fuse traces add-observation`) Add single observation to existing trace.
+  - `[x]` Auto-generated observation IDs when not provided.
+  - `[x]` Improved argument order: `trace_id` (required) → `observation_id` (optional).
+  - `[x]` Shorthand type flags: `-te` (EVENT), `-ts` (SPAN), `-tg` (GENERATION).
+  - `[x]` Environment variable export (`--export-env`) for pipeline workflows.
+  - `[x]` Clean API response format with actual IDs (not internal event IDs).
 - `[x]` **Batch Observations**: (`coaia fuse traces add-observations`) Add multiple observations to trace from file/stdin.
   - `[x]` Alias support: `add-obs` for single, `add-observations` for batch operations.
   - `[x]` JSON and YAML input format support.
   - `[x]` Parent-child observation relationships.
   - `[x]` Multiple observation types: EVENT, SPAN, GENERATION.
+  - `[x]` TLID datetime format support (yyMMddHHmmss and yyMMddHHmm).
 
 ### Other Integrations
 
@@ -51,6 +58,22 @@ This document outlines the features of CoAiAPy, marking them as completed, in pr
 - `[x]` **Scores**: Create and apply scores to traces.
 - `[x]` **Comments**: List and post comments.
 - `[x]` **Projects**: List projects.
+
+## Pipeline Integration ✅ **COMPLETED**
+
+### Environment Variable Workflow Support
+
+- `[x]` **Shell Export Integration**: `--export-env` flag outputs shell variables for bash pipelines.
+- `[x]` **Variable Standards**: `COAIA_TRACE_ID`, `COAIA_SESSION_ID`, `COAIA_LAST_OBSERVATION_ID`, `COAIA_PARENT_OBSERVATION_ID`.
+- `[x]` **Pipeline Compatibility**: Clean output format for `eval $()` command substitution.
+- `[x]` **Multi-Step Workflows**: Support for complex AI observability pipelines with automatic ID propagation.
+
+### Enhanced CLI Experience
+
+- `[x]` **UUID Auto-Generation**: Observation IDs automatically generated when not provided.
+- `[x]` **Shorthand Options**: Quick type selection with `-te`, `-ts`, `-tg` flags.
+- `[x]` **Response Cleanup**: API responses show actual IDs instead of internal event identifiers.
+- `[x]` **Enhanced Help**: Detailed parameter descriptions and usage examples.
 
 ## Planned Features
 
@@ -61,7 +84,14 @@ This document outlines the features of CoAiAPy, marking them as completed, in pr
 - `[ ]` **`coaia fuse finetune status <job_id>`**: Check the status of a specific job.
 - `[ ]` **`coaia fuse finetune cancel <job_id>`**: Cancel an ongoing job.
 
-### V1.1: Advanced CLI Features
+### V1.1: Advanced Pipeline Features
+
+- `[ ]` **Environment File Management**: Persistent environment file (`.coaia-env`) for cross-session workflows.
+- `[ ]` **Bash Completion**: Shell completion for commands and parameters.
+- `[ ]` **Pipeline Templates**: Pre-built templates for common AI workflow patterns.
+- `[ ]` **Multi-Environment Support**: Support for development, staging, production environment configurations.
+
+### V1.2: Advanced CLI Features
 
 - `[ ]` **Interactive Mode**: An interactive shell for running commands.
 - `[ ]` **Direct Model Execution**: A `coaia run <prompt_name>` command to execute prompts directly against AI models.
