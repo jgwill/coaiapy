@@ -3,6 +3,7 @@ import os
 import json
 import sys
 import warnings
+import uuid
 #ignore : RequestsDependencyWarning: Unable to find acceptable character detection dependency (chardet or charset_normalizer).
 warnings.filterwarnings("ignore", message="Unable to find acceptable character detection dependency")
 
@@ -170,21 +171,29 @@ def main():
     parser_fuse_traces_add.add_argument('-i','--input', help="Input data (JSON string or plain text)")
     parser_fuse_traces_add.add_argument('-o','--output', help="Output data (JSON string or plain text)")
     parser_fuse_traces_add.add_argument('-m','--metadata', help="Additional metadata as JSON string")
+    parser_fuse_traces_add.add_argument('--export-env', action='store_true', help="Export shell environment variables for pipeline workflows")
 
     parser_fuse_obs_add = sub_fuse_traces.add_parser('add-observation', help='Add an observation to a trace')
-    parser_fuse_obs_add.add_argument('observation_id', help="Observation ID")
-    parser_fuse_obs_add.add_argument('trace_id', help="Trace ID")
-    parser_fuse_obs_add.add_argument('-t','--type', choices=['EVENT', 'SPAN', 'GENERATION'], default='EVENT', help="Observation type")
-    parser_fuse_obs_add.add_argument('-n','--name', help="Observation name")
+    parser_fuse_obs_add.add_argument('trace_id', help="Trace ID to add observation to")
+    parser_fuse_obs_add.add_argument('observation_id', nargs='?', help="Observation ID (auto-generated UUID if not provided)")
+    parser_fuse_obs_add.add_argument('-t','--type', choices=['EVENT', 'SPAN', 'GENERATION'], default='EVENT', 
+                                   help="Observation type: EVENT (default), SPAN (with duration), GENERATION (model call)")
+    parser_fuse_obs_add.add_argument('-te', action='store_const', dest='type', const='EVENT', help="Shorthand for --type EVENT")
+    parser_fuse_obs_add.add_argument('-ts', action='store_const', dest='type', const='SPAN', help="Shorthand for --type SPAN") 
+    parser_fuse_obs_add.add_argument('-tg', action='store_const', dest='type', const='GENERATION', help="Shorthand for --type GENERATION")
+    parser_fuse_obs_add.add_argument('-n','--name', help="Observation name (descriptive label)")
     parser_fuse_obs_add.add_argument('-i','--input', help="Input data (JSON string or plain text)")
     parser_fuse_obs_add.add_argument('-o','--output', help="Output data (JSON string or plain text)")
     parser_fuse_obs_add.add_argument('-m','--metadata', help="Metadata as JSON string")
-    parser_fuse_obs_add.add_argument('-p','--parent', help="Parent observation ID")
+    parser_fuse_obs_add.add_argument('-p','--parent', help="Parent observation ID (for nested observations under SPAN)")
     parser_fuse_obs_add.add_argument('--start-time', help="Start time (ISO format, tlid format yyMMddHHmmss, or short tlid yyMMddHHmm)")
     parser_fuse_obs_add.add_argument('--end-time', help="End time (ISO format, tlid format yyMMddHHmmss, or short tlid yyMMddHHmm)")
-    parser_fuse_obs_add.add_argument('--level', choices=['DEBUG', 'DEFAULT', 'WARNING', 'ERROR'], default='DEFAULT', help="Observation level")
-    parser_fuse_obs_add.add_argument('--model', help="Model name")
-    parser_fuse_obs_add.add_argument('--usage', help="Usage information as JSON string")
+    parser_fuse_obs_add.add_argument('--level', choices=['DEBUG', 'DEFAULT', 'WARNING', 'ERROR'], default='DEFAULT', 
+                                   help="Observation level/severity")
+    parser_fuse_obs_add.add_argument('--model', help="Model name (for GENERATION observations)")
+    parser_fuse_obs_add.add_argument('--usage', help="Usage information as JSON string (tokens, cost, etc.)")
+    parser_fuse_obs_add.add_argument('--export-env', action='store_true', 
+                                   help="Export COAIA_TRACE_ID, COAIA_LAST_OBSERVATION_ID environment variables")
 
     # Add batch observations command with aliases
     parser_fuse_obs_batch = sub_fuse_traces.add_parser('add-observations', aliases=['add-obs-batch'], help='Add multiple observations to a trace from file or stdin')
@@ -439,7 +448,16 @@ def main():
                     output_data=output_data,
                     metadata=metadata
                 )
-                print(result)
+                
+                # Handle environment variable export
+                if getattr(args, 'export_env', False):
+                    print(f"export COAIA_TRACE_ID='{args.trace_id}'")
+                    if args.session:
+                        print(f"export COAIA_SESSION_ID='{args.session}'")
+                    if args.user:
+                        print(f"export COAIA_USER_ID='{args.user}'")
+                else:
+                    print(result)
             elif args.trace_action == 'add-observation':
                 # Parse JSON data, fallback to plain text if not JSON
                 input_data = None
@@ -472,8 +490,11 @@ def main():
                         print(f"Warning: usage must be valid JSON, got: {args.usage}")
                         return
                 
+                # Auto-generate observation_id if not provided
+                observation_id = args.observation_id if args.observation_id else str(uuid.uuid4())
+                
                 result = add_observation(
-                    args.observation_id,
+                    observation_id,
                     args.trace_id,
                     observation_type=args.type,
                     name=args.name,
@@ -487,7 +508,15 @@ def main():
                     model=args.model,
                     usage=usage
                 )
-                print(result)
+                
+                # Handle environment variable export
+                if getattr(args, 'export_env', False):
+                    print(f"export COAIA_TRACE_ID='{args.trace_id}'")
+                    print(f"export COAIA_LAST_OBSERVATION_ID='{observation_id}'")
+                    if args.parent:
+                        print(f"export COAIA_PARENT_OBSERVATION_ID='{args.parent}'")
+                else:
+                    print(result)
             elif args.trace_action == 'add-observations' or args.trace_action == 'add-obs-batch':
                 # Handle batch observation creation
                 observations_data = None

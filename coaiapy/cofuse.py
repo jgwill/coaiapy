@@ -62,6 +62,45 @@ def parse_tlid_to_iso(tlid_str):
     except ValueError as e:
         raise ValueError(f"Invalid date/time values in tlid '{tlid_str}': {str(e)}")
 
+def process_langfuse_response(response_text, actual_id=None, operation_type="operation"):
+    """
+    Process Langfuse API response to return cleaner format with actual IDs
+    
+    Args:
+        response_text: Raw response from Langfuse API
+        actual_id: The actual ID we want to show (observation_id, trace_id, etc.)
+        operation_type: Type of operation for error messages
+    
+    Returns:
+        Processed response with actual IDs instead of internal event IDs
+    """
+    try:
+        response_data = json.loads(response_text)
+        
+        if isinstance(response_data, dict):
+            # Handle successful responses
+            if 'successes' in response_data:
+                processed_successes = []
+                for success in response_data['successes']:
+                    processed_success = success.copy()
+                    # Replace event ID with actual ID if provided
+                    if actual_id and success.get('id', '').endswith('-event'):
+                        processed_success['id'] = actual_id
+                    processed_successes.append(processed_success)
+                
+                response_data['successes'] = processed_successes
+                return json.dumps(response_data, indent=2)
+            
+            # Handle error responses
+            elif 'message' in response_data:
+                return response_text
+        
+        return response_text
+        
+    except (json.JSONDecodeError, KeyError):
+        # Return original response if we can't process it
+        return response_text
+
 def detect_and_parse_datetime(time_str):
     """
     Detect format and parse datetime string to ISO format
@@ -771,7 +810,7 @@ def add_trace(trace_id, user_id=None, session_id=None, name=None, input_data=Non
     
     url = f"{c['langfuse_base_url']}/api/public/ingestion"
     r = requests.post(url, json=data, auth=auth)
-    return r.text
+    return process_langfuse_response(r.text, trace_id, "trace creation")
 
 def add_observation(observation_id, trace_id, observation_type="EVENT", name=None, 
                    input_data=None, output_data=None, metadata=None, parent_observation_id=None,
@@ -847,7 +886,7 @@ def add_observation(observation_id, trace_id, observation_type="EVENT", name=Non
     
     url = f"{c['langfuse_base_url']}/api/public/ingestion"
     r = requests.post(url, json=data, auth=auth)
-    return r.text
+    return process_langfuse_response(r.text, observation_id, "observation creation")
 
 def add_observations_batch(trace_id, observations_data, format_type='json', dry_run=False):
     """
@@ -967,6 +1006,7 @@ def add_observations_batch(trace_id, observations_data, format_type='json', dry_
     data = {"batch": batch_events}
     url = f"{c['langfuse_base_url']}/api/public/ingestion"
     r = requests.post(url, json=data, auth=auth)
+    # For batch operations, we don't have a single ID to clean up, so return as-is
     return r.text
 
 def create_session(session_id, user_id, session_name="New Session"):
