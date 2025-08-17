@@ -1,13 +1,28 @@
 # CoAiAPy
 
-CoAiAPy is a Python package that provides functionality for audio transcription, synthesis, and tagging of MP3 files using Boto3 and the Mutagen library. This package is designed to facilitate the processing of audio files for various applications.
+CoAiAPy is a comprehensive Python package for AI workflow automation and observability. It provides audio transcription, synthesis, and tagging capabilities using AWS services, along with powerful Langfuse integration for AI pipeline observability, prompt management, and dataset operations.
 
 ## Features
 
+### Core Audio & Data Processing
 - **Audio Transcription**: Convert audio files to text using AWS services.
 - **Audio Synthesis**: Generate audio files from text input.
 - **MP3 Tagging**: Add metadata tags to MP3 files for better organization and identification.
 - **Redis Stashing**: Stash key-value pairs to a Redis service.
+
+### Langfuse AI Observability (`coaia fuse`)
+**Langfuse Integration**: Complete command-line interface for [Langfuse](https://langfuse.com/) - the open-source AI engineering platform for observability, analytics, and prompt management.
+
+- **Prompt Management**: Create, list, and retrieve AI prompts with version control
+- **Dataset Management**: Manage datasets with fine-tuning export (OpenAI/Gemini formats)  
+- **Trace & Observation Workflows**: Production-ready AI pipeline observability
+  - Auto-generated observation IDs and environment variable export
+  - Pipeline integration with bash automation (`--export-env`)
+  - Parent-child relationships with SPAN, EVENT, GENERATION observations
+  - Shorthand type selection (`-te`, `-ts`, `-tg`)
+  - Batch observation processing from JSON/YAML files
+- **Session Management**: Create and manage user sessions with metadata
+- **Project Integration**: Full Langfuse project and workspace support
 
 ## Installation
 
