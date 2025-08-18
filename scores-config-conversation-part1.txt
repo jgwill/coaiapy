@@ -1,0 +1,22 @@
+SCORE-CONFIGS CONVERSATION - PART 1 (Lines 1-500)
+
+This conversation shows the development of score configuration management in coaiapy.
+
+KEY DEVELOPMENTS:
+1. Initial implementation of "coaia fuse scores list" command
+2. Discovery that score-configs are separate from scores 
+3. Beginning implementation of score-configs functionality
+4. API endpoint analysis: /api/public/score-configs vs /api/public/scores
+
+TECHNICAL FEATURES BEING DEVELOPED:
+- list_score_configs() function with pagination
+- format_score_configs_table() for readable display
+- Score configurations as templates/schemas for scores
+- Distinction between score configs (templates) and actual scores applied to traces
+
+PROGRESS:
+- ✅ Basic scores listing implemented 
+- 🔄 Score-configs implementation in progress
+- 📋 Todo list created for complete score-configs system
+
+This shows the evolution from simple score listing to comprehensive score configuration management.
