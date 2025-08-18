@@ -1597,6 +1597,576 @@ def create_score_config(name, data_type, description=None, categories=None, min_
     r = requests.post(url, json=data, auth=auth)
     return r.text
 
+# Built-in preset library of unified score configurations
+BUILT_IN_PRESETS = [
+    # Narrative & Storytelling Category
+    {
+        "name": "Narrative Coherence",
+        "dataType": "CATEGORICAL",
+        "description": "Evaluates how well story elements connect and flow together logically.",
+        "categories": [
+            {"label": "Incoherent", "value": 1},
+            {"label": "Loosely Connected", "value": 2},
+            {"label": "Coherent", "value": 3},
+            {"label": "Well-Structured", "value": 4},
+            {"label": "Masterfully Woven", "value": 5}
+        ]
+    },
+    {
+        "name": "Character Development",
+        "dataType": "CATEGORICAL",
+        "description": "Measures the depth and growth of characters throughout the narrative.",
+        "categories": [
+            {"label": "Flat/Static", "value": 1},
+            {"label": "Basic Development", "value": 2},
+            {"label": "Moderate Growth", "value": 3},
+            {"label": "Rich Development", "value": 4},
+            {"label": "Complex Evolution", "value": 5}
+        ]
+    },
+    {
+        "name": "Emotional Resonance",
+        "dataType": "CATEGORICAL",
+        "description": "Evaluates the emotional impact and connection with the audience.",
+        "categories": [
+            {"label": "No Emotional Impact", "value": 1},
+            {"label": "Mild Resonance", "value": 2},
+            {"label": "Moderate Impact", "value": 3},
+            {"label": "Strong Emotional Connection", "value": 4},
+            {"label": "Deeply Moving", "value": 5}
+        ]
+    },
+    {
+        "name": "Originality",
+        "dataType": "CATEGORICAL",
+        "description": "Evaluates the uniqueness and freshness of the ideas or expression.",
+        "categories": [
+            {"label": "Unoriginal", "value": 1},
+            {"label": "Low Originality", "value": 2},
+            {"label": "Moderate Originality", "value": 3},
+            {"label": "High Originality", "value": 4},
+            {"label": "Highly Original", "value": 5}
+        ]
+    },
+    {
+        "name": "Thematic Depth",
+        "dataType": "CATEGORICAL",
+        "description": "Measures the depth and sophistication of underlying themes.",
+        "categories": [
+            {"label": "Surface Level", "value": 1},
+            {"label": "Basic Themes", "value": 2},
+            {"label": "Developed Themes", "value": 3},
+            {"label": "Rich Thematic Content", "value": 4},
+            {"label": "Profound Depth", "value": 5}
+        ]
+    },
+    # AI Response Evaluation Category
+    {
+        "name": "Helpfulness",
+        "dataType": "CATEGORICAL",
+        "description": "Measures how well the response addresses the user's needs and provides value.",
+        "categories": [
+            {"label": "Not Helpful", "value": 1},
+            {"label": "Slightly Helpful", "value": 2},
+            {"label": "Moderately Helpful", "value": 3},
+            {"label": "Very Helpful", "value": 4},
+            {"label": "Extremely Helpful", "value": 5}
+        ]
+    },
+    {
+        "name": "Accuracy",
+        "dataType": "CATEGORICAL",
+        "description": "Evaluates the factual correctness and precision of the information provided.",
+        "categories": [
+            {"label": "Inaccurate", "value": 1},
+            {"label": "Mostly Inaccurate", "value": 2},
+            {"label": "Partially Accurate", "value": 3},
+            {"label": "Mostly Accurate", "value": 4},
+            {"label": "Completely Accurate", "value": 5}
+        ]
+    },
+    {
+        "name": "Safety",
+        "dataType": "CATEGORICAL",
+        "description": "Assesses whether the content is safe, appropriate, and free from harmful elements.",
+        "categories": [
+            {"label": "Unsafe/Harmful", "value": 1},
+            {"label": "Potentially Unsafe", "value": 2},
+            {"label": "Neutral/Safe", "value": 3},
+            {"label": "Very Safe", "value": 4},
+            {"label": "Exemplarily Safe", "value": 5}
+        ]
+    },
+    {
+        "name": "Relevance",
+        "dataType": "CATEGORICAL",
+        "description": "Measures how well the response relates to and addresses the specific query or context.",
+        "categories": [
+            {"label": "Irrelevant", "value": 1},
+            {"label": "Slightly Relevant", "value": 2},
+            {"label": "Moderately Relevant", "value": 3},
+            {"label": "Highly Relevant", "value": 4},
+            {"label": "Perfectly Relevant", "value": 5}
+        ]
+    },
+    {
+        "name": "Completeness",
+        "dataType": "CATEGORICAL",
+        "description": "Evaluates whether the response fully addresses all aspects of the query or task.",
+        "categories": [
+            {"label": "Incomplete", "value": 1},
+            {"label": "Partially Complete", "value": 2},
+            {"label": "Mostly Complete", "value": 3},
+            {"label": "Very Complete", "value": 4},
+            {"label": "Comprehensive", "value": 5}
+        ]
+    },
+    # General Content Evaluation Category
+    {
+        "name": "Clarity",
+        "dataType": "CATEGORICAL",
+        "description": "Measures how easy it is to understand the content.",
+        "categories": [
+            {"label": "Unclear", "value": 1},
+            {"label": "Moderately Clear", "value": 2},
+            {"label": "Clear", "value": 3},
+            {"label": "Very Clear", "value": 4},
+            {"label": "Excellent Clarity", "value": 5}
+        ]
+    },
+    {
+        "name": "Engagement",
+        "dataType": "CATEGORICAL",
+        "description": "Evaluates how well the content captures and holds the audience's attention.",
+        "categories": [
+            {"label": "Disengaging", "value": 1},
+            {"label": "Slightly Engaging", "value": 2},
+            {"label": "Engaging", "value": 3},
+            {"label": "Very Engaging", "value": 4},
+            {"label": "Highly Engaging", "value": 5}
+        ]
+    },
+    {
+        "name": "Tone Appropriateness",
+        "dataType": "CATEGORICAL",
+        "description": "Assesses whether the tone matches the context and audience expectations.",
+        "categories": [
+            {"label": "Inappropriate Tone", "value": 1},
+            {"label": "Somewhat Inappropriate", "value": 2},
+            {"label": "Acceptable Tone", "value": 3},
+            {"label": "Well-Matched Tone", "value": 4},
+            {"label": "Perfect Tone", "value": 5}
+        ]
+    },
+    {
+        "name": "Conciseness",
+        "dataType": "CATEGORICAL",
+        "description": "Evaluates the efficiency of communication - saying more with fewer words.",
+        "categories": [
+            {"label": "Verbose/Wordy", "value": 1},
+            {"label": "Somewhat Verbose", "value": 2},
+            {"label": "Balanced", "value": 3},
+            {"label": "Concise", "value": 4},
+            {"label": "Perfectly Concise", "value": 5}
+        ]
+    },
+    # Technical Quality Category
+    {
+        "name": "Structure & Organization",
+        "dataType": "CATEGORICAL",
+        "description": "Evaluates the logical organization and structural quality of the content.",
+        "categories": [
+            {"label": "Disorganized", "value": 1},
+            {"label": "Basic Structure", "value": 2},
+            {"label": "Well-Organized", "value": 3},
+            {"label": "Excellent Structure", "value": 4},
+            {"label": "Masterful Organization", "value": 5}
+        ]
+    },
+    {
+        "name": "Language Quality",
+        "dataType": "CATEGORICAL",
+        "description": "Assesses grammar, vocabulary usage, and overall linguistic competence.",
+        "categories": [
+            {"label": "Poor Language", "value": 1},
+            {"label": "Fair Language", "value": 2},
+            {"label": "Good Language", "value": 3},
+            {"label": "Excellent Language", "value": 4},
+            {"label": "Exceptional Language", "value": 5}
+        ]
+    },
+    # Specialized Assessment Category
+    {
+        "name": "Critical Thinking",
+        "dataType": "CATEGORICAL",
+        "description": "Measures the depth of analysis, reasoning, and intellectual rigor.",
+        "categories": [
+            {"label": "No Critical Analysis", "value": 1},
+            {"label": "Basic Analysis", "value": 2},
+            {"label": "Sound Reasoning", "value": 3},
+            {"label": "Strong Critical Thinking", "value": 4},
+            {"label": "Exceptional Analysis", "value": 5}
+        ]
+    },
+    {
+        "name": "Evidence Support",
+        "dataType": "CATEGORICAL",
+        "description": "Evaluates the use and quality of supporting evidence, examples, or citations.",
+        "categories": [
+            {"label": "No Evidence", "value": 1},
+            {"label": "Weak Evidence", "value": 2},
+            {"label": "Adequate Evidence", "value": 3},
+            {"label": "Strong Evidence", "value": 4},
+            {"label": "Compelling Evidence", "value": 5}
+        ]
+    },
+    {
+        "name": "Innovation",
+        "dataType": "CATEGORICAL",
+        "description": "Assesses creativity, novel approaches, and fresh perspectives in problem-solving.",
+        "categories": [
+            {"label": "Conventional", "value": 1},
+            {"label": "Slightly Creative", "value": 2},
+            {"label": "Moderately Innovative", "value": 3},
+            {"label": "Highly Innovative", "value": 4},
+            {"label": "Groundbreaking", "value": 5}
+        ]
+    },
+    # Numeric Assessment Category
+    {
+        "name": "Overall Quality",
+        "dataType": "NUMERIC",
+        "description": "General numeric assessment of overall content quality.",
+        "minValue": 0.0,
+        "maxValue": 10.0
+    },
+    {
+        "name": "Performance Score",
+        "dataType": "NUMERIC",
+        "description": "Numeric performance evaluation score.",
+        "minValue": 0,
+        "maxValue": 100
+    },
+    # Boolean Assessment Category
+    {
+        "name": "Meets Requirements",
+        "dataType": "BOOLEAN",
+        "description": "Binary assessment of whether content meets specified requirements."
+    }
+]
+
+def get_built_in_presets():
+    """Return the list of built-in preset score configurations"""
+    return BUILT_IN_PRESETS.copy()
+
+def list_presets(category=None):
+    """
+    List available preset score configurations
+    
+    Args:
+        category: Optional category filter (e.g., 'narrative', 'ai', 'general', 'technical', 'specialized', 'numeric', 'boolean')
+    
+    Returns:
+        List of presets matching the filter criteria
+    """
+    presets = get_built_in_presets()
+    
+    if not category:
+        return presets
+    
+    # Category mapping based on the preset library structure
+    category_mapping = {
+        'narrative': ['Narrative Coherence', 'Character Development', 'Emotional Resonance', 'Originality', 'Thematic Depth'],
+        'ai': ['Helpfulness', 'Accuracy', 'Safety', 'Relevance', 'Completeness'],
+        'general': ['Clarity', 'Engagement', 'Tone Appropriateness', 'Conciseness'],
+        'technical': ['Structure & Organization', 'Language Quality'],
+        'specialized': ['Critical Thinking', 'Evidence Support', 'Innovation'],
+        'numeric': ['Overall Quality', 'Performance Score'],
+        'boolean': ['Meets Requirements']
+    }
+    
+    category_names = category_mapping.get(category.lower(), [])
+    if category_names:
+        return [p for p in presets if p['name'] in category_names]
+    
+    return presets
+
+def format_presets_table(presets):
+    """
+    Format presets list as a readable table
+    
+    Args:
+        presets: List of preset configurations
+    
+    Returns:
+        Formatted table string
+    """
+    if not presets:
+        return "No presets found."
+    
+    # Table headers
+    headers = ["Name", "Type", "Categories/Range", "Description"]
+    
+    # Calculate column widths
+    max_name = max([len(p['name']) for p in presets] + [len(headers[0])])
+    max_type = max([len(p['dataType']) for p in presets] + [len(headers[1])])
+    max_range = 20  # Fixed width for range/categories summary
+    max_desc = max([len((p.get('description', '')[:50])) for p in presets] + [len(headers[3])])
+    
+    # Minimum widths
+    max_name = max(max_name, 15)
+    max_type = max(max_type, 10)
+    max_desc = max(max_desc, 30)
+    
+    # Format table
+    separator = f"+{'-' * (max_name + 2)}+{'-' * (max_type + 2)}+{'-' * (max_range + 2)}+{'-' * (max_desc + 2)}+"
+    header_row = f"| {headers[0]:<{max_name}} | {headers[1]:<{max_type}} | {headers[2]:<{max_range}} | {headers[3]:<{max_desc}} |"
+    
+    table_lines = [separator, header_row, separator]
+    
+    for preset in presets:
+        name = preset['name'][:max_name]
+        data_type = preset['dataType'][:max_type]
+        description = (preset.get('description', '') or 'N/A')[:max_desc]
+        
+        # Format range/categories summary
+        if preset['dataType'] == 'CATEGORICAL' and preset.get('categories'):
+            range_info = f"{len(preset['categories'])} categories"
+        elif preset['dataType'] == 'NUMERIC':
+            min_val = preset.get('minValue', 'N/A')
+            max_val = preset.get('maxValue', 'N/A')
+            range_info = f"{min_val}-{max_val}"
+        elif preset['dataType'] == 'BOOLEAN':
+            range_info = "True/False"
+        else:
+            range_info = "N/A"
+        
+        range_info = range_info[:max_range]
+        
+        row = f"| {name:<{max_name}} | {data_type:<{max_type}} | {range_info:<{max_range}} | {description:<{max_desc}} |"
+        table_lines.append(row)
+    
+    table_lines.append(separator)
+    table_lines.append(f"Total presets: {len(presets)}")
+    
+    return '\n'.join(table_lines)
+
+def install_preset(preset_name, check_duplicates=True, interactive=False):
+    """
+    Install a preset score configuration
+    
+    Args:
+        preset_name: Name of the preset to install
+        check_duplicates: Whether to check for existing configs with the same name
+        interactive: Whether to prompt for confirmation in case of duplicates
+    
+    Returns:
+        Installation result message
+    """
+    # Find the preset
+    presets = get_built_in_presets()
+    preset = next((p for p in presets if p['name'].lower() == preset_name.lower()), None)
+    
+    if not preset:
+        available_names = [p['name'] for p in presets]
+        return f"Preset '{preset_name}' not found.\n\nAvailable presets:\n" + "\n".join(f"  - {name}" for name in available_names)
+    
+    # Check for duplicates if requested
+    if check_duplicates:
+        existing_configs = json.loads(list_score_configs())
+        duplicate = next((c for c in existing_configs if c['name'].lower() == preset['name'].lower()), None)
+        
+        if duplicate:
+            duplicate_msg = f"Score config '{preset['name']}' already exists (ID: {duplicate.get('id', 'unknown')})."
+            
+            if interactive:
+                # In a real CLI, this would prompt the user
+                # For now, we'll return a message indicating what would happen
+                return f"{duplicate_msg}\n\nTo install anyway, use: coaia fuse score-configs presets install '{preset_name}' --force"
+            else:
+                return f"{duplicate_msg}\n\nSkipping installation. Use --force to override."
+    
+    # Install the preset
+    try:
+        result = create_score_config(
+            name=preset['name'],
+            data_type=preset['dataType'],
+            description=preset.get('description'),
+            categories=preset.get('categories'),
+            min_value=preset.get('minValue'),
+            max_value=preset.get('maxValue')
+        )
+        
+        # Check if installation was successful
+        result_data = json.loads(result)
+        if 'id' in result_data:
+            return f"✅ Successfully installed preset '{preset['name']}' (ID: {result_data['id']})"
+        else:
+            return f"❌ Failed to install preset '{preset['name']}': {result}"
+            
+    except Exception as e:
+        return f"❌ Error installing preset '{preset['name']}': {str(e)}"
+
+def get_preset_by_name(preset_name):
+    """
+    Get a specific preset configuration by name
+    
+    Args:
+        preset_name: Name of the preset to retrieve
+    
+    Returns:
+        Preset configuration dictionary or None if not found
+    """
+    presets = get_built_in_presets()
+    return next((p for p in presets if p['name'].lower() == preset_name.lower()), None)
+
+def format_preset_display(preset):
+    """
+    Format a single preset as a detailed display
+    
+    Args:
+        preset: Preset configuration dictionary
+    
+    Returns:
+        Formatted display string
+    """
+    if not preset:
+        return "Preset not found."
+    
+    display_lines = []
+    
+    # Header
+    header = f"🎯 PRESET: {preset['name']}"
+    display_lines.append("=" * len(header))
+    display_lines.append(header)
+    display_lines.append("=" * len(header))
+    display_lines.append("")
+    
+    # Basic info
+    display_lines.append("📋 CONFIGURATION:")
+    display_lines.append(f"   Data Type: {preset['dataType']}")
+    
+    if preset.get('description'):
+        display_lines.append(f"   Description: {preset['description']}")
+    
+    # Type-specific details
+    if preset['dataType'] == 'CATEGORICAL' and preset.get('categories'):
+        display_lines.append(f"   Categories: {len(preset['categories'])} options")
+        display_lines.append("")
+        display_lines.append("📝 CATEGORIES:")
+        for i, cat in enumerate(preset['categories'], 1):
+            display_lines.append(f"   {i}. {cat['label']} (value: {cat['value']})")
+    
+    elif preset['dataType'] == 'NUMERIC':
+        if preset.get('minValue') is not None or preset.get('maxValue') is not None:
+            min_val = preset.get('minValue', 'No minimum')
+            max_val = preset.get('maxValue', 'No maximum')
+            display_lines.append(f"   Range: {min_val} to {max_val}")
+    
+    elif preset['dataType'] == 'BOOLEAN':
+        display_lines.append("   Values: True or False")
+    
+    display_lines.append("")
+    
+    # Installation command
+    display_lines.append("🚀 INSTALLATION:")
+    display_lines.append(f"   coaia fuse score-configs presets install '{preset['name']}'")
+    
+    return '\n'.join(display_lines)
+
+def install_presets_interactive(preset_names=None, category=None):
+    """
+    Interactively install multiple presets with duplicate checking
+    
+    Args:
+        preset_names: Optional list of specific preset names to install
+        category: Optional category filter for bulk installation
+    
+    Returns:
+        Installation results summary
+    """
+    # Get presets to install
+    if preset_names:
+        # Install specific presets
+        presets_to_install = []
+        for name in preset_names:
+            preset = get_preset_by_name(name)
+            if preset:
+                presets_to_install.append(preset)
+            else:
+                return f"Preset '{name}' not found."
+    elif category:
+        # Install by category
+        presets_to_install = list_presets(category)
+        if not presets_to_install:
+            return f"No presets found for category '{category}'."
+    else:
+        # Install all presets (with confirmation)
+        presets_to_install = get_built_in_presets()
+    
+    # Check for duplicates
+    existing_configs = json.loads(list_score_configs())
+    existing_names = {c['name'].lower(): c for c in existing_configs}
+    
+    duplicates = []
+    new_installs = []
+    
+    for preset in presets_to_install:
+        if preset['name'].lower() in existing_names:
+            duplicates.append({
+                'preset': preset,
+                'existing': existing_names[preset['name'].lower()]
+            })
+        else:
+            new_installs.append(preset)
+    
+    # Build results
+    results = []
+    
+    if duplicates:
+        results.append(f"⚠️  Found {len(duplicates)} duplicate(s):")
+        for dup in duplicates:
+            results.append(f"   - '{dup['preset']['name']}' (existing ID: {dup['existing'].get('id', 'unknown')})")
+        results.append("")
+    
+    if new_installs:
+        results.append(f"✅ Installing {len(new_installs)} new preset(s):")
+        
+        installed_count = 0
+        failed_count = 0
+        
+        for preset in new_installs:
+            try:
+                result = create_score_config(
+                    name=preset['name'],
+                    data_type=preset['dataType'],
+                    description=preset.get('description'),
+                    categories=preset.get('categories'),
+                    min_value=preset.get('minValue'),
+                    max_value=preset.get('maxValue')
+                )
+                
+                result_data = json.loads(result)
+                if 'id' in result_data:
+                    results.append(f"   ✅ '{preset['name']}' (ID: {result_data['id']})")
+                    installed_count += 1
+                else:
+                    results.append(f"   ❌ '{preset['name']}' - Installation failed")
+                    failed_count += 1
+            except Exception as e:
+                results.append(f"   ❌ '{preset['name']}' - Error: {str(e)}")
+                failed_count += 1
+        
+        results.append("")
+        results.append(f"📊 SUMMARY: {installed_count} installed, {failed_count} failed, {len(duplicates)} skipped (duplicates)")
+    else:
+        if duplicates:
+            results.append("No new presets to install (all already exist).")
+        else:
+            results.append("No presets selected for installation.")
+    
+    return "\n".join(results)
+
 def export_score_configs(output_file=None, include_metadata=True):
     """
     Export all score configs to JSON format

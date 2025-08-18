@@ -16,6 +16,7 @@ from cofuse import (
     load_session_file,
     create_score, apply_score_to_trace, create_score_for_target, list_scores, format_scores_table,
     list_score_configs, get_score_config, create_score_config, export_score_configs, format_score_configs_table,
+    list_presets, get_preset_by_name, format_presets_table, format_preset_display, install_preset, install_presets_interactive,
     list_prompts, get_prompt, create_prompt, format_prompts_table, format_prompt_display,
     list_datasets, get_dataset, create_dataset, format_datasets_table,
     list_dataset_items, format_dataset_display, format_dataset_for_finetuning,
@@ -186,6 +187,24 @@ def main():
     parser_fuse_scc_export = sub_fuse_scc.add_parser('export')
     parser_fuse_scc_export.add_argument('-o', '--output', help="Output file path (optional, defaults to stdout)")
     parser_fuse_scc_export.add_argument('--no-metadata', action='store_true', help="Exclude Langfuse metadata (cleaner for sharing)")
+
+    parser_fuse_scc_presets = sub_fuse_scc.add_parser('presets', help="Manage built-in score configuration presets")
+    sub_fuse_scc_presets = parser_fuse_scc_presets.add_subparsers(dest='presets_action')
+    
+    parser_fuse_scc_presets_list = sub_fuse_scc_presets.add_parser('list', help="List available presets")
+    parser_fuse_scc_presets_list.add_argument('--category', choices=['narrative', 'ai', 'general', 'technical', 'specialized', 'numeric', 'boolean'], 
+                                            help="Filter by category")
+    parser_fuse_scc_presets_list.add_argument('--json', action='store_true', help="Output in JSON format")
+    
+    parser_fuse_scc_presets_show = sub_fuse_scc_presets.add_parser('show', help="Show detailed preset information")
+    parser_fuse_scc_presets_show.add_argument('preset_name', help="Name of the preset to show")
+    
+    parser_fuse_scc_presets_install = sub_fuse_scc_presets.add_parser('install', help="Install one or more presets")
+    parser_fuse_scc_presets_install.add_argument('preset_names', nargs='*', help="Preset names to install (if none provided, installs all)")
+    parser_fuse_scc_presets_install.add_argument('--category', choices=['narrative', 'ai', 'general', 'technical', 'specialized', 'numeric', 'boolean'], 
+                                               help="Install all presets from a specific category")
+    parser_fuse_scc_presets_install.add_argument('--force', action='store_true', help="Force installation even if duplicates exist")
+    parser_fuse_scc_presets_install.add_argument('--interactive', action='store_true', help="Interactive mode with duplicate checking")
 
     parser_fuse_traces = sub_fuse.add_parser('traces', help="List or manage traces and observations in Langfuse")
     parser_fuse_traces.add_argument('--json', action='store_true', help="Output in JSON format (default: table format)")
@@ -574,6 +593,41 @@ def main():
                     print(result)
                 else:
                     print(f"Score configs exported to {args.output}")
+            elif args.score_configs_action == 'presets':
+                if args.presets_action == 'list':
+                    presets = list_presets(category=args.category)
+                    if args.json:
+                        print(json.dumps(presets, indent=2))
+                    else:
+                        print(format_presets_table(presets))
+                elif args.presets_action == 'show':
+                    preset = get_preset_by_name(args.preset_name)
+                    print(format_preset_display(preset))
+                elif args.presets_action == 'install':
+                    if args.preset_names:
+                        # Install specific presets
+                        if len(args.preset_names) == 1:
+                            # Single preset installation
+                            result = install_preset(
+                                args.preset_names[0], 
+                                check_duplicates=not args.force,
+                                interactive=args.interactive
+                            )
+                            print(result)
+                        else:
+                            # Multiple preset installation
+                            result = install_presets_interactive(
+                                preset_names=args.preset_names
+                            )
+                            print(result)
+                    elif args.category:
+                        # Install by category
+                        result = install_presets_interactive(category=args.category)
+                        print(result)
+                    else:
+                        # Install all presets (interactive by default)
+                        result = install_presets_interactive()
+                        print(result)
         elif args.fuse_command == 'traces':
             if args.trace_action == 'create':
                 # Parse JSON data, fallback to plain text if not JSON
