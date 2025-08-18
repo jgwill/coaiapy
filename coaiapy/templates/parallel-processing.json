@@ -1,0 +1,110 @@
+{
+  "name": "parallel-processing",
+  "version": "1.0",
+  "description": "Concurrent operations with aggregation",
+  "author": "CoaiaPy Built-in",
+  "variables": [
+    {
+      "name": "job_name",
+      "type": "string", 
+      "required": true,
+      "description": "Name for the parallel job"
+    },
+    {
+      "name": "worker_count",
+      "type": "number",
+      "required": false,
+      "default": 3,
+      "description": "Number of parallel workers"
+    },
+    {
+      "name": "batch_size",
+      "type": "number", 
+      "required": false,
+      "default": 100,
+      "description": "Batch size per worker"
+    },
+    {
+      "name": "user_id",
+      "type": "string",
+      "required": false,
+      "description": "User running the job"
+    }
+  ],
+  "steps": [
+    {
+      "name": "Parallel Job: {{job_name}}",
+      "observation_type": "SPAN",
+      "description": "Parallel processing job with {{worker_count}} workers",
+      "variables": {
+        "input": {"job_name": "{{job_name}}", "workers": "{{worker_count}}"},
+        "output": {"status": "job_started"}
+      },
+      "metadata": {
+        "template": "parallel-processing",
+        "worker_count": "{{worker_count}}",
+        "batch_size": "{{batch_size}}",
+        "user_id": "{{user_id}}"
+      }
+    },
+    {
+      "name": "Worker 1 Processing",
+      "observation_type": "SPAN",
+      "description": "Worker 1 processing batch for {{job_name}}",
+      "parent": "Parallel Job: {{job_name}}",
+      "variables": {
+        "input": {"worker_id": 1, "batch_size": "{{batch_size}}"},
+        "output": {"processed_items": "{{batch_size}}", "status": "complete"}
+      },
+      "metadata": {
+        "worker_id": 1,
+        "batch_size": "{{batch_size}}"
+      }
+    },
+    {
+      "name": "Worker 2 Processing", 
+      "observation_type": "SPAN",
+      "description": "Worker 2 processing batch for {{job_name}}",
+      "parent": "Parallel Job: {{job_name}}",
+      "conditional": "{% if worker_count >= 2 %}true{% endif %}",
+      "variables": {
+        "input": {"worker_id": 2, "batch_size": "{{batch_size}}"},
+        "output": {"processed_items": "{{batch_size}}", "status": "complete"}
+      },
+      "metadata": {
+        "worker_id": 2,
+        "batch_size": "{{batch_size}}"
+      }
+    },
+    {
+      "name": "Worker 3 Processing",
+      "observation_type": "SPAN", 
+      "description": "Worker 3 processing batch for {{job_name}}",
+      "parent": "Parallel Job: {{job_name}}",
+      "conditional": "{% if worker_count >= 3 %}true{% endif %}",
+      "variables": {
+        "input": {"worker_id": 3, "batch_size": "{{batch_size}}"},
+        "output": {"processed_items": "{{batch_size}}", "status": "complete"}
+      },
+      "metadata": {
+        "worker_id": 3,
+        "batch_size": "{{batch_size}}"
+      }
+    },
+    {
+      "name": "Results Aggregation",
+      "observation_type": "EVENT",
+      "description": "Aggregating results from all workers",
+      "parent": "Parallel Job: {{job_name}}",
+      "variables": {
+        "input": {"action": "aggregate", "workers": "{{worker_count}}"},
+        "output": {"total_processed": "{{worker_count * batch_size}}", "status": "aggregated"}
+      },
+      "metadata": {
+        "step": "aggregation",
+        "total_items": "{{worker_count * batch_size}}",
+        "aggregation_complete": true
+      }
+    }
+  ]
+}

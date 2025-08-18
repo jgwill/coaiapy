@@ -1,0 +1,112 @@
+{
+  "name": "data-pipeline",
+  "version": "1.0", 
+  "description": "Data processing pipeline with validation steps",
+  "author": "CoaiaPy Built-in",
+  "variables": [
+    {
+      "name": "dataset_name",
+      "type": "string",
+      "required": true,
+      "description": "Name of the dataset being processed"
+    },
+    {
+      "name": "processing_steps",
+      "type": "list",
+      "required": false,
+      "default": ["load", "validate", "transform", "export"],
+      "description": "List of processing steps to include"
+    },
+    {
+      "name": "user_id",
+      "type": "string",
+      "required": false,
+      "description": "User running the pipeline"
+    },
+    {
+      "name": "environment",
+      "type": "string",
+      "required": false,
+      "default": "development",
+      "choices": ["development", "staging", "production"],
+      "description": "Environment where pipeline is running"
+    }
+  ],
+  "steps": [
+    {
+      "name": "Data Processing Pipeline",
+      "observation_type": "SPAN",
+      "description": "Main data processing span for {{dataset_name}}",
+      "variables": {
+        "input": {"dataset": "{{dataset_name}}", "environment": "{{environment}}"},
+        "output": {"status": "pipeline_started"}
+      },
+      "metadata": {
+        "template": "data-pipeline",
+        "dataset": "{{dataset_name}}",
+        "user_id": "{{user_id}}"
+      }
+    },
+    {
+      "name": "Load Data",
+      "observation_type": "EVENT",
+      "description": "Loading dataset {{dataset_name}}",
+      "parent": "Data Processing Pipeline",
+      "conditional": "{% if 'load' in processing_steps %}true{% endif %}",
+      "variables": {
+        "input": {"action": "load", "dataset": "{{dataset_name}}"},
+        "output": {"status": "data_loaded", "records": "{{dataset_name}}_records"}
+      },
+      "metadata": {
+        "step": "load",
+        "dataset": "{{dataset_name}}"
+      }
+    },
+    {
+      "name": "Validate Data",
+      "observation_type": "EVENT", 
+      "description": "Validating data quality for {{dataset_name}}",
+      "parent": "Data Processing Pipeline",
+      "conditional": "{% if 'validate' in processing_steps %}true{% endif %}",
+      "variables": {
+        "input": {"action": "validate", "dataset": "{{dataset_name}}"},
+        "output": {"status": "validation_complete", "errors": 0}
+      },
+      "metadata": {
+        "step": "validate",
+        "validation_rules": ["completeness", "format", "range"]
+      }
+    },
+    {
+      "name": "Transform Data",
+      "observation_type": "EVENT",
+      "description": "Applying transformations to {{dataset_name}}", 
+      "parent": "Data Processing Pipeline",
+      "conditional": "{% if 'transform' in processing_steps %}true{% endif %}",
+      "variables": {
+        "input": {"action": "transform", "dataset": "{{dataset_name}}"},
+        "output": {"status": "transformation_complete", "output_format": "processed"}
+      },
+      "metadata": {
+        "step": "transform",
+        "transformations": ["normalize", "aggregate", "enrich"]
+      }
+    },
+    {
+      "name": "Export Results",
+      "observation_type": "EVENT",
+      "description": "Exporting processed data for {{dataset_name}}",
+      "parent": "Data Processing Pipeline", 
+      "conditional": "{% if 'export' in processing_steps %}true{% endif %}",
+      "variables": {
+        "input": {"action": "export", "dataset": "{{dataset_name}}"},
+        "output": {"status": "export_complete", "location": "{{dataset_name}}_processed.csv"}
+      },
+      "metadata": {
+        "step": "export",
+        "format": "csv",
+        "destination": "{{environment}}_storage"
+      }
+    }
+  ]
+}

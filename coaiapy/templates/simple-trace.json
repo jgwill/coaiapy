@@ -1,0 +1,42 @@
+{
+  "name": "simple-trace",
+  "version": "1.0",
+  "description": "Basic trace with single observation for simple monitoring",
+  "author": "CoaiaPy Built-in",
+  "variables": [
+    {
+      "name": "trace_name",
+      "type": "string",
+      "required": true,
+      "description": "Name for the trace"
+    },
+    {
+      "name": "observation_name", 
+      "type": "string",
+      "required": false,
+      "default": "Main Task",
+      "description": "Name for the main observation"
+    },
+    {
+      "name": "user_id",
+      "type": "string", 
+      "required": false,
+      "description": "User ID for the trace"
+    }
+  ],
+  "steps": [
+    {
+      "name": "{{observation_name}}",
+      "observation_type": "EVENT",
+      "description": "Main task observation for {{trace_name}}",
+      "variables": {
+        "input": "Starting {{trace_name}}",
+        "output": "Task completed successfully"
+      },
+      "metadata": {
+        "template": "simple-trace",
+        "created_by": "{{user_id or 'system'}}"
+      }
+    }
+  ]
+}

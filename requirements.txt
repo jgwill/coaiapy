@@ -7,3 +7,4 @@ redis==5.1.1
 requests
 markdown
 PyYAML
+Jinja2>=2.10

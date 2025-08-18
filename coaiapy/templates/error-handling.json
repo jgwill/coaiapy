@@ -1,0 +1,134 @@
+{
+  "name": "error-handling", 
+  "version": "1.0",
+  "description": "Pipeline with retry logic and error monitoring",
+  "author": "CoaiaPy Built-in",
+  "variables": [
+    {
+      "name": "operation_name",
+      "type": "string",
+      "required": true,
+      "description": "Name of the operation to monitor"
+    },
+    {
+      "name": "max_retries",
+      "type": "number",
+      "required": false,
+      "default": 3,
+      "description": "Maximum number of retry attempts"
+    },
+    {
+      "name": "timeout_seconds",
+      "type": "number", 
+      "required": false,
+      "default": 30,
+      "description": "Timeout for each attempt in seconds"
+    },
+    {
+      "name": "user_id",
+      "type": "string",
+      "required": false, 
+      "description": "User running the operation"
+    },
+    {
+      "name": "enable_alerts",
+      "type": "boolean",
+      "required": false,
+      "default": true,
+      "description": "Enable error alerting"
+    }
+  ],
+  "steps": [
+    {
+      "name": "Error-Resilient Operation: {{operation_name}}",
+      "observation_type": "SPAN",
+      "description": "Monitored operation with error handling and retries",
+      "variables": {
+        "input": {"operation": "{{operation_name}}", "max_retries": "{{max_retries}}"},
+        "output": {"status": "operation_started"}
+      },
+      "metadata": {
+        "template": "error-handling",
+        "max_retries": "{{max_retries}}",
+        "timeout_seconds": "{{timeout_seconds}}",
+        "enable_alerts": "{{enable_alerts}}",
+        "user_id": "{{user_id}}"
+      }
+    },
+    {
+      "name": "Initial Attempt",
+      "observation_type": "EVENT",
+      "description": "First attempt at {{operation_name}}",
+      "parent": "Error-Resilient Operation: {{operation_name}}",
+      "variables": {
+        "input": {"attempt": 1, "operation": "{{operation_name}}"},
+        "output": {"status": "attempt_complete", "success": true}
+      },
+      "metadata": {
+        "attempt_number": 1,
+        "timeout_seconds": "{{timeout_seconds}}"
+      }
+    },
+    {
+      "name": "Error Detection",
+      "observation_type": "EVENT",
+      "description": "Monitoring for errors in {{operation_name}}",
+      "parent": "Error-Resilient Operation: {{operation_name}}",
+      "variables": {
+        "input": {"action": "error_check", "operation": "{{operation_name}}"},
+        "output": {"errors_found": 0, "status": "healthy"}
+      },
+      "metadata": {
+        "step": "error_detection",
+        "monitoring_active": true
+      }
+    },
+    {
+      "name": "Retry Attempt",
+      "observation_type": "EVENT",
+      "description": "Retry attempt for {{operation_name}} (if needed)",
+      "parent": "Error-Resilient Operation: {{operation_name}}",
+      "conditional": "{% if max_retries > 1 %}true{% endif %}",
+      "variables": {
+        "input": {"attempt": 2, "operation": "{{operation_name}}", "retry": true},
+        "output": {"status": "retry_complete", "success": true}
+      },
+      "metadata": {
+        "attempt_number": 2,
+        "is_retry": true,
+        "max_retries": "{{max_retries}}"
+      }
+    },
+    {
+      "name": "Error Alert",
+      "observation_type": "EVENT", 
+      "description": "Error alerting for {{operation_name}}",
+      "parent": "Error-Resilient Operation: {{operation_name}}",
+      "conditional": "{% if enable_alerts %}true{% endif %}",
+      "variables": {
+        "input": {"action": "alert_check", "operation": "{{operation_name}}"},
+        "output": {"alerts_sent": 0, "status": "monitoring_active"}
+      },
+      "metadata": {
+        "step": "alerting",
+        "alert_enabled": "{{enable_alerts}}",
+        "alert_threshold": "ERROR"
+      }
+    },
+    {
+      "name": "Final Status", 
+      "observation_type": "EVENT",
+      "description": "Final status report for {{operation_name}}",
+      "parent": "Error-Resilient Operation: {{operation_name}}",
+      "variables": {
+        "input": {"action": "status_report", "operation": "{{operation_name}}"},
+        "output": {"final_status": "success", "total_attempts": 1, "errors_handled": 0}
+      },
+      "metadata": {
+        "step": "status_report", 
+        "operation_complete": true,
+        "success_rate": 1.0
+      }
+    }
+  ]
+}

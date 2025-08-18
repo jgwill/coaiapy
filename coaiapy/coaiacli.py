@@ -22,6 +22,8 @@ from cofuse import (
     list_traces, list_projects, create_dataset_item, format_traces_table,
     add_trace, add_observation, add_observations_batch
 )
+from .pipeline import TemplateLoader, TemplateRenderer, PipelineTemplate, PipelineVariable, PipelineStep
+from .environment import EnvironmentManager, format_environment_table
 
 EPILOG = """see: https://github.com/jgwill/coaiapy/wiki for more details."""
 EPILOG1 = """
@@ -246,6 +248,85 @@ def main():
     parser_fetch = subparsers.add_parser('fetch', help='Fetch a value from Redis by key.')
     parser_fetch.add_argument('key', type=str, help="The key to fetch.")
     parser_fetch.add_argument('-O', '--output', type=str, help="Filename to save the fetched value.")
+
+    # Pipeline template management commands
+    parser_pipeline = subparsers.add_parser('pipeline', help='Manage pipeline templates for automated workflows')
+    sub_pipeline = parser_pipeline.add_subparsers(dest='pipeline_action')
+    
+    parser_pipeline_list = sub_pipeline.add_parser('list', help='List available pipeline templates')
+    parser_pipeline_list.add_argument('--path', action='store_true', help='Include template file paths')
+    parser_pipeline_list.add_argument('--json', action='store_true', help='Output in JSON format')
+    
+    parser_pipeline_show = sub_pipeline.add_parser('show', help='Show template details and variables')
+    parser_pipeline_show.add_argument('template_name', help='Name of the template to show')
+    parser_pipeline_show.add_argument('--preview', action='store_true', help='Show rendered output preview with example variables')
+    
+    parser_pipeline_create = sub_pipeline.add_parser('create', help='Create a pipeline from template')
+    parser_pipeline_create.add_argument('template_name', help='Name of the template to use')
+    parser_pipeline_create.add_argument('--var', action='append', nargs=2, metavar=('KEY', 'VALUE'), 
+                                       help='Template variables as key-value pairs (can be used multiple times)')
+    parser_pipeline_create.add_argument('--trace-id', help='Trace ID to use (auto-generated if not provided)')
+    parser_pipeline_create.add_argument('--session-id', help='Session ID for the trace')
+    parser_pipeline_create.add_argument('--user-id', help='User ID for the trace')
+    parser_pipeline_create.add_argument('--export-env', action='store_true', help='Export environment variables for pipeline workflows')
+    parser_pipeline_create.add_argument('--dry-run', action='store_true', help='Show what would be created without actually creating')
+    
+    parser_pipeline_init = sub_pipeline.add_parser('init', help='Create a new pipeline template')
+    parser_pipeline_init.add_argument('template_name', help='Name for the new template')
+    parser_pipeline_init.add_argument('--from', dest='base_template', help='Base template to extend from')
+    parser_pipeline_init.add_argument('--location', choices=['user', 'project'], default='user',
+                                     help='Where to save the template (user: ~/.coaia/templates, project: ./.coaia/templates)')
+    parser_pipeline_init.add_argument('--format', choices=['json', 'yaml'], default='json', help='Template file format')
+
+    # Environment variable management commands
+    parser_env = subparsers.add_parser('env', help='Manage environment variables for pipeline workflows')
+    sub_env = parser_env.add_subparsers(dest='env_action')
+    
+    parser_env_init = sub_env.add_parser('init', help='Initialize environment file with default variables')
+    parser_env_init.add_argument('--name', help='Environment name (default environment if not specified)')
+    parser_env_init.add_argument('--location', choices=['project', 'global'], default='project', 
+                                help='Environment location (project: .coaia-env, global: ~/.coaia/global.env)')
+    parser_env_init.add_argument('--format', choices=['json', 'env'], default='json', help='Environment file format')
+    
+    parser_env_list = sub_env.add_parser('list', help='List available environment files and their variables')
+    parser_env_list.add_argument('--name', help='Show specific environment')
+    parser_env_list.add_argument('--location', choices=['project', 'global'], help='Filter by location')
+    parser_env_list.add_argument('--json', action='store_true', help='Output in JSON format')
+    
+    parser_env_source = sub_env.add_parser('source', help='Load environment variables into current session')
+    parser_env_source.add_argument('--name', help='Environment name to source')
+    parser_env_source.add_argument('--location', choices=['project', 'global'], default='project', help='Environment location')
+    parser_env_source.add_argument('--export', action='store_true', help='Output shell export commands')
+    
+    parser_env_set = sub_env.add_parser('set', help='Set an environment variable')
+    parser_env_set.add_argument('key', help='Variable name')
+    parser_env_set.add_argument('value', help='Variable value')
+    parser_env_set.add_argument('--name', help='Environment name')
+    parser_env_set.add_argument('--location', choices=['project', 'global'], default='project', help='Environment location')
+    parser_env_set.add_argument('--format', choices=['json', 'env'], default='json', help='File format')
+    parser_env_set.add_argument('--temp', action='store_true', help="Don't persist to file, just set for current session")
+    
+    parser_env_get = sub_env.add_parser('get', help='Get an environment variable value')
+    parser_env_get.add_argument('key', help='Variable name')
+    parser_env_get.add_argument('--name', help='Environment name')
+    parser_env_get.add_argument('--location', choices=['project', 'global'], default='project', help='Environment location')
+    
+    parser_env_unset = sub_env.add_parser('unset', help='Remove an environment variable')
+    parser_env_unset.add_argument('key', help='Variable name')
+    parser_env_unset.add_argument('--name', help='Environment name')
+    parser_env_unset.add_argument('--location', choices=['project', 'global'], default='project', help='Environment location')
+    parser_env_unset.add_argument('--format', choices=['json', 'env'], default='json', help='File format')
+    parser_env_unset.add_argument('--temp', action='store_true', help="Don't persist to file, just unset for current session")
+    
+    parser_env_clear = sub_env.add_parser('clear', help='Clear/remove environment file')
+    parser_env_clear.add_argument('--name', help='Environment name to clear')
+    parser_env_clear.add_argument('--location', choices=['project', 'global'], default='project', help='Environment location')
+    parser_env_clear.add_argument('--confirm', action='store_true', help='Skip confirmation prompt')
+    
+    parser_env_save = sub_env.add_parser('save', help='Save current context as environment template')
+    parser_env_save.add_argument('--name', help='Environment name to save as')
+    parser_env_save.add_argument('--location', choices=['project', 'global'], default='project', help='Environment location')
+    parser_env_save.add_argument('--context-name', help='Descriptive name for this context')
 
     args = parser.parse_args()
 
@@ -646,6 +727,437 @@ def main():
                     status=getattr(args, 'status', None)
                 )
                 print(result)
+    elif args.command == 'pipeline':
+        loader = TemplateLoader()
+        renderer = TemplateRenderer()
+        
+        if args.pipeline_action == 'list':
+            templates = loader.list_templates(include_path=args.path)
+            if args.json:
+                print(json.dumps(templates, indent=2))
+            else:
+                # Format as table
+                if not templates:
+                    print("No templates found.")
+                    return
+                
+                # Calculate column widths
+                max_name = max([len(t.get('name', '')) for t in templates] + [len('Name')])
+                max_desc = max([len(t.get('description', '') or '') for t in templates] + [len('Description')])
+                max_version = max([len(t.get('version', '') or '') for t in templates] + [len('Version')])
+                max_author = max([len(t.get('author', '') or '') for t in templates] + [len('Author')])
+                
+                # Print header
+                separator = f"+{'-' * (max_name + 2)}+{'-' * (max_desc + 2)}+{'-' * (max_version + 2)}+{'-' * (max_author + 2)}+"
+                print(separator)
+                print(f"| {'Name':<{max_name}} | {'Description':<{max_desc}} | {'Version':<{max_version}} | {'Author':<{max_author}} |")
+                print(separator)
+                
+                # Print templates
+                for template in templates:
+                    name = (template.get('name', '') or '')[:max_name]
+                    desc = (template.get('description', '') or '')[:max_desc]
+                    version = (template.get('version', '') or '')[:max_version]
+                    author = (template.get('author', '') or '')[:max_author]
+                    print(f"| {name:<{max_name}} | {desc:<{max_desc}} | {version:<{max_version}} | {author:<{max_author}} |")
+                
+                print(separator)
+                print(f"Total templates: {len(templates)}")
+                
+                if args.path:
+                    print("\nTemplate locations:")
+                    for template in templates:
+                        if 'path' in template:
+                            print(f"  {template['name']}: {template['path']}")
+        
+        elif args.pipeline_action == 'show':
+            template = loader.load_template(args.template_name)
+            if not template:
+                print(f"Template '{args.template_name}' not found.")
+                return
+            
+            # Display template information
+            print(f"Template: {template.name}")
+            print(f"Version: {template.version}")
+            print(f"Description: {template.description or 'No description'}")
+            print(f"Author: {template.author or 'Unknown'}")
+            if template.extends:
+                print(f"Extends: {template.extends}")
+            print()
+            
+            # Display variables
+            print("Variables:")
+            if not template.variables:
+                print("  (No variables defined)")
+            else:
+                for var in template.variables:
+                    required_text = "required" if var.required else "optional"
+                    default_text = f" (default: {var.default})" if var.default is not None else ""
+                    choices_text = f" (choices: {var.choices})" if var.choices else ""
+                    print(f"  {var.name} ({var.type}, {required_text}){default_text}{choices_text}")
+                    if var.description:
+                        print(f"    {var.description}")
+            print()
+            
+            # Display steps
+            print("Pipeline Steps:")
+            for i, step in enumerate(template.steps, 1):
+                step_info = f"{i}. {step.name} ({step.observation_type})"
+                if step.parent:
+                    step_info += f" → parent: {step.parent}"
+                if step.conditional:
+                    step_info += f" → conditional: {step.conditional}"
+                print(f"  {step_info}")
+                if step.description:
+                    print(f"     {step.description}")
+            
+            # Show preview if requested
+            if args.preview:
+                print("\n" + "="*50)
+                print("PREVIEW (with example variables)")
+                print("="*50)
+                
+                # Create example variables
+                example_vars = {}
+                for var in template.variables:
+                    if var.default is not None:
+                        example_vars[var.name] = var.default
+                    elif var.choices:
+                        example_vars[var.name] = var.choices[0]
+                    elif var.type == "string":
+                        example_vars[var.name] = f"example_{var.name}"
+                    elif var.type == "number":
+                        example_vars[var.name] = 42
+                    elif var.type == "boolean":
+                        example_vars[var.name] = True
+                    elif var.type == "list":
+                        example_vars[var.name] = ["item1", "item2"]
+                
+                try:
+                    rendered_observations = renderer.render_template(template, example_vars)
+                    print(f"Example variables: {json.dumps(example_vars, indent=2)}")
+                    print(f"\nRendered observations:")
+                    for obs in rendered_observations:
+                        print(f"  {obs['name']} ({obs['type']})")
+                        if obs.get('parent'):
+                            print(f"    → parent: {obs['parent']}")
+                        if obs.get('variables'):
+                            print(f"    → variables: {json.dumps(obs['variables'])}")
+                except Exception as e:
+                    print(f"Preview error: {str(e)}")
+        
+        elif args.pipeline_action == 'create':
+            template = loader.load_template(args.template_name)
+            if not template:
+                print(f"Template '{args.template_name}' not found.")
+                return
+            
+            # Parse variables
+            variables = {}
+            if args.var:
+                for key, value in args.var:
+                    # Try to parse as JSON, fallback to string
+                    try:
+                        variables[key] = json.loads(value)
+                    except json.JSONDecodeError:
+                        variables[key] = value
+            
+            # Validate variables
+            try:
+                errors = template.validate_variables(variables)
+                if errors:
+                    print(f"Template validation failed:")
+                    for error in errors:
+                        print(f"  - {error}")
+                    return
+                
+                # Render template
+                rendered_observations = renderer.render_template(template, variables)
+                
+                if args.dry_run:
+                    print(f"DRY RUN: Would create {len(rendered_observations)} observations")
+                    print(f"Template: {template.name}")
+                    print(f"Variables: {json.dumps(variables, indent=2)}")
+                    print("\nObservations to create:")
+                    for obs in rendered_observations:
+                        print(f"  - {obs['name']} ({obs['type']})")
+                        if obs.get('parent'):
+                            print(f"    → parent: {obs['parent']}")
+                    return
+                
+                # Generate trace ID if not provided
+                trace_id = args.trace_id if args.trace_id else str(uuid.uuid4())
+                
+                # Create trace first
+                trace_result = add_trace(
+                    trace_id=trace_id,
+                    user_id=args.user_id,
+                    session_id=args.session_id,
+                    name=f"Pipeline: {template.name}",
+                    metadata={
+                        "template_name": template.name,
+                        "template_version": template.version,
+                        "variables": variables
+                    }
+                )
+                
+                print(f"Created trace: {trace_id}")
+                
+                # Create observations
+                observation_ids = {}  # Track created observations for parent references
+                
+                for obs_data in rendered_observations:
+                    # Generate observation ID
+                    obs_id = str(uuid.uuid4())
+                    
+                    # Resolve parent reference
+                    parent_id = None
+                    if obs_data.get('parent'):
+                        parent_name = obs_data['parent']
+                        if parent_name in observation_ids:
+                            parent_id = observation_ids[parent_name]
+                    
+                    # Create observation
+                    obs_result = add_observation(
+                        observation_id=obs_id,
+                        trace_id=trace_id,
+                        observation_type=obs_data['type'],
+                        name=obs_data['name'],
+                        input_data=obs_data['variables'].get('input') if obs_data.get('variables') else None,
+                        output_data=obs_data['variables'].get('output') if obs_data.get('variables') else None,
+                        metadata=obs_data.get('metadata'),
+                        parent_observation_id=parent_id
+                    )
+                    
+                    # Store observation ID for future parent references
+                    observation_ids[obs_data['name']] = obs_id
+                    print(f"Created observation: {obs_data['name']} ({obs_id})")
+                
+                # Export environment variables if requested
+                if args.export_env:
+                    print(f"export COAIA_TRACE_ID='{trace_id}'")
+                    if args.session_id:
+                        print(f"export COAIA_SESSION_ID='{args.session_id}'")
+                    if args.user_id:
+                        print(f"export COAIA_USER_ID='{args.user_id}'")
+                    # Export last created observation ID
+                    if observation_ids:
+                        last_obs_id = list(observation_ids.values())[-1]
+                        print(f"export COAIA_LAST_OBSERVATION_ID='{last_obs_id}'")
+                
+            except Exception as e:
+                print(f"Error creating pipeline: {str(e)}")
+        
+        elif args.pipeline_action == 'init':
+            # Create a new template
+            base_template = None
+            if args.base_template:
+                base_template = loader.load_template(args.base_template)
+                if not base_template:
+                    print(f"Base template '{args.base_template}' not found.")
+                    return
+            
+            # Create new template structure
+            if base_template:
+                # Extend from base template
+                new_template = PipelineTemplate(
+                    name=args.template_name,
+                    description=f"Extended from {base_template.name}",
+                    extends=base_template.name,
+                    variables=base_template.variables.copy(),
+                    steps=base_template.steps.copy(),
+                    author="User-created"
+                )
+            else:
+                # Create minimal template
+                new_template = PipelineTemplate(
+                    name=args.template_name,
+                    description=f"Custom template: {args.template_name}",
+                    author="User-created",
+                    variables=[
+                        PipelineVariable(
+                            name="user_id",
+                            type="string",
+                            required=False,
+                            description="User running the pipeline"
+                        )
+                    ],
+                    steps=[
+                        PipelineStep(
+                            name=f"{args.template_name} Main Task",
+                            observation_type="EVENT",
+                            description=f"Main task for {args.template_name}",
+                            variables={
+                                "input": {"task": args.template_name},
+                                "output": {"status": "complete"}
+                            },
+                            metadata={
+                                "template": args.template_name,
+                                "created_by": "{{user_id or 'system'}}"
+                            }
+                        )
+                    ]
+                )
+            
+            # Save template
+            try:
+                saved_path = loader.save_template(new_template, args.location, args.format)
+                print(f"Template '{args.template_name}' created at: {saved_path}")
+                print(f"Edit the template file to customize variables and steps.")
+            except Exception as e:
+                print(f"Error creating template: {str(e)}")
+    
+    elif args.command == 'env':
+        env_manager = EnvironmentManager()
+        
+        if args.env_action == 'init':
+            try:
+                file_path = env_manager.init_environment(
+                    env_name=args.name,
+                    location=args.location,
+                    format=args.format
+                )
+                print(f"Environment file initialized: {file_path}")
+                print("Default variables created:")
+                env_vars = env_manager.load_environment(args.name, args.location)
+                print(format_environment_table(env_vars))
+            except Exception as e:
+                print(f"Error initializing environment: {str(e)}")
+        
+        elif args.env_action == 'list':
+            if args.name:
+                # Show specific environment
+                try:
+                    location = args.location or 'project'
+                    env_vars = env_manager.load_environment(args.name, location)
+                    if args.json:
+                        print(json.dumps(env_vars, indent=2))
+                    else:
+                        env_name = args.name or 'default'
+                        print(f"Environment: {env_name} ({location})")
+                        print(format_environment_table(env_vars))
+                except Exception as e:
+                    print(f"Error loading environment '{args.name}': {str(e)}")
+            else:
+                # List all environments
+                environments = env_manager.list_environments()
+                
+                if args.json:
+                    print(json.dumps(environments, indent=2))
+                else:
+                    has_envs = False
+                    for location, env_list in environments.items():
+                        if env_list:
+                            if not has_envs:
+                                print("Available environments:")
+                                has_envs = True
+                            print(f"\n{location.title()}:")
+                            for env_name in env_list:
+                                try:
+                                    env_vars = env_manager.load_environment(env_name if env_name != 'default' else None, location)
+                                    var_count = len([k for k in env_vars.keys() if not k.startswith('_COAIA_ENV_')])
+                                    print(f"  {env_name} ({var_count} variables)")
+                                except:
+                                    print(f"  {env_name} (error reading)")
+                    
+                    if not has_envs:
+                        print("No environment files found.")
+                        print("Run 'coaia env init' to create a default environment.")
+        
+        elif args.env_action == 'source':
+            try:
+                env_vars = env_manager.source_environment(args.name, args.location)
+                if args.export:
+                    # Output shell export commands
+                    commands = env_manager.export_shell_commands(args.name, args.location)
+                    for cmd in commands:
+                        print(cmd)
+                else:
+                    print(f"Sourced {len(env_vars)} environment variables")
+                    if env_vars:
+                        print(format_environment_table(env_vars))
+            except Exception as e:
+                print(f"Error sourcing environment: {str(e)}")
+        
+        elif args.env_action == 'set':
+            try:
+                env_vars = env_manager.set_variable(
+                    key=args.key,
+                    value=args.value,
+                    env_name=args.name,
+                    location=args.location,
+                    persist=not args.temp,
+                    format=args.format
+                )
+                if args.temp:
+                    print(f"Set {args.key}={args.value} (session only)")
+                else:
+                    print(f"Set {args.key}={args.value} (persisted)")
+            except Exception as e:
+                print(f"Error setting variable: {str(e)}")
+        
+        elif args.env_action == 'get':
+            try:
+                value = env_manager.get_variable(args.key, args.name, args.location)
+                if value is not None:
+                    print(value)
+                else:
+                    print(f"Variable '{args.key}' not found")
+                    return 1
+            except Exception as e:
+                print(f"Error getting variable: {str(e)}")
+                return 1
+        
+        elif args.env_action == 'unset':
+            try:
+                env_vars = env_manager.unset_variable(
+                    key=args.key,
+                    env_name=args.name,
+                    location=args.location,
+                    persist=not args.temp,
+                    format=args.format
+                )
+                if args.temp:
+                    print(f"Unset {args.key} (session only)")
+                else:
+                    print(f"Unset {args.key} (persisted)")
+            except Exception as e:
+                print(f"Error unsetting variable: {str(e)}")
+        
+        elif args.env_action == 'clear':
+            env_name = args.name or 'default'
+            if not args.confirm:
+                response = input(f"Are you sure you want to clear environment '{env_name}' ({args.location})? [y/N]: ")
+                if response.lower() not in ['y', 'yes']:
+                    print("Cancelled")
+                    return
+            
+            try:
+                env_manager.clear_environment(args.name, args.location)
+                print(f"Environment '{env_name}' ({args.location}) cleared")
+            except Exception as e:
+                print(f"Error clearing environment: {str(e)}")
+        
+        elif args.env_action == 'save':
+            try:
+                file_path = env_manager.save_current_context(
+                    env_name=args.name,
+                    location=args.location,
+                    name=args.context_name
+                )
+                print(f"Current context saved to: {file_path}")
+                
+                # Show what was saved
+                current_context = env_manager.get_current_context()
+                active_vars = {k: v for k, v in current_context.items() if v is not None}
+                if active_vars:
+                    print("Saved variables:")
+                    print(format_environment_table(active_vars))
+                else:
+                    print("No active COAIA variables found in current context")
+            except Exception as e:
+                print(f"Error saving context: {str(e)}")
+    
     else:
         parser.print_help()
 

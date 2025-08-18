@@ -1,0 +1,119 @@
+{
+  "name": "llm-chain",
+  "version": "1.0",
+  "description": "Sequential LLM calls with context passing",
+  "author": "CoaiaPy Built-in", 
+  "variables": [
+    {
+      "name": "chain_name",
+      "type": "string",
+      "required": true,
+      "description": "Name for the LLM chain"
+    },
+    {
+      "name": "model_name",
+      "type": "string",
+      "required": false,
+      "default": "gpt-4",
+      "choices": ["gpt-4", "gpt-3.5-turbo", "claude-3", "llama-2"],
+      "description": "LLM model to use"
+    },
+    {
+      "name": "initial_prompt",
+      "type": "string",
+      "required": true,
+      "description": "Initial prompt for the chain"
+    },
+    {
+      "name": "user_id",
+      "type": "string",
+      "required": false,
+      "description": "User running the chain"
+    },
+    {
+      "name": "temperature",
+      "type": "number",
+      "required": false,
+      "default": 0.7,
+      "description": "Temperature setting for model"
+    }
+  ],
+  "steps": [
+    {
+      "name": "LLM Chain: {{chain_name}}",
+      "observation_type": "SPAN",
+      "description": "Sequential LLM processing chain using {{model_name}}",
+      "variables": {
+        "input": {"chain_name": "{{chain_name}}", "model": "{{model_name}}"},
+        "output": {"status": "chain_started"}
+      },
+      "metadata": {
+        "template": "llm-chain",
+        "model": "{{model_name}}",
+        "temperature": "{{temperature}}",
+        "user_id": "{{user_id}}"
+      }
+    },
+    {
+      "name": "Initial Generation",
+      "observation_type": "GENERATION",
+      "description": "First LLM call in {{chain_name}}",
+      "parent": "LLM Chain: {{chain_name}}",
+      "variables": {
+        "input": {"prompt": "{{initial_prompt}}", "model": "{{model_name}}"},
+        "output": {"response": "Initial generation complete", "tokens_used": 150}
+      },
+      "metadata": {
+        "step": "initial",
+        "model": "{{model_name}}",
+        "temperature": "{{temperature}}",
+        "usage": {"prompt_tokens": 50, "completion_tokens": 100, "total_tokens": 150}
+      }
+    },
+    {
+      "name": "Context Processing", 
+      "observation_type": "EVENT",
+      "description": "Processing context from previous generation",
+      "parent": "LLM Chain: {{chain_name}}",
+      "variables": {
+        "input": {"action": "process_context", "previous_response": "from_initial_generation"},
+        "output": {"processed_context": "Enhanced context for next call"}
+      },
+      "metadata": {
+        "step": "context_processing",
+        "context_length": 200
+      }
+    },
+    {
+      "name": "Follow-up Generation",
+      "observation_type": "GENERATION", 
+      "description": "Second LLM call with enhanced context",
+      "parent": "LLM Chain: {{chain_name}}",
+      "variables": {
+        "input": {"prompt": "Enhanced prompt with context", "model": "{{model_name}}"},
+        "output": {"response": "Follow-up generation complete", "tokens_used": 180}
+      },
+      "metadata": {
+        "step": "followup",
+        "model": "{{model_name}}",
+        "temperature": "{{temperature}}",
+        "usage": {"prompt_tokens": 80, "completion_tokens": 100, "total_tokens": 180}
+      }
+    },
+    {
+      "name": "Final Synthesis",
+      "observation_type": "EVENT",
+      "description": "Synthesizing results from LLM chain",
+      "parent": "LLM Chain: {{chain_name}}",
+      "variables": {
+        "input": {"action": "synthesize", "responses": ["initial", "followup"]},
+        "output": {"final_result": "Chain synthesis complete", "confidence": 0.95}
+      },
+      "metadata": {
+        "step": "synthesis",
+        "total_tokens": 330,
+        "chain_complete": true
+      }
+    }
+  ]
+}
