@@ -15,7 +15,7 @@ from cofuse import (
     create_session_and_save, add_trace_node_and_save,
     load_session_file,
     create_score, apply_score_to_trace, create_score_for_target, list_scores, format_scores_table,
-    list_score_configs, get_score_config, create_score_config, format_score_configs_table,
+    list_score_configs, get_score_config, create_score_config, export_score_configs, format_score_configs_table,
     list_prompts, get_prompt, create_prompt, format_prompts_table, format_prompt_display,
     list_datasets, get_dataset, create_dataset, format_datasets_table,
     list_dataset_items, format_dataset_display, format_dataset_for_finetuning,
@@ -180,6 +180,10 @@ def main():
     parser_fuse_scc_create.add_argument('--min-value', type=float, help="Minimum value for numeric scores")
     parser_fuse_scc_create.add_argument('--max-value', type=float, help="Maximum value for numeric scores")
     parser_fuse_scc_create.add_argument('--categories', help="Categories for categorical scores (JSON format: [{\"label\": \"Good\", \"value\": 1}])")
+
+    parser_fuse_scc_export = sub_fuse_scc.add_parser('export')
+    parser_fuse_scc_export.add_argument('-o', '--output', help="Output file path (optional, defaults to stdout)")
+    parser_fuse_scc_export.add_argument('--no-metadata', action='store_true', help="Exclude Langfuse metadata (cleaner for sharing)")
 
     parser_fuse_traces = sub_fuse.add_parser('traces', help="List or manage traces and observations in Langfuse")
     parser_fuse_traces.add_argument('--json', action='store_true', help="Output in JSON format (default: table format)")
@@ -479,6 +483,16 @@ def main():
                     max_value=getattr(args, 'max_value', None)
                 )
                 print(result)
+            elif args.score_configs_action == 'export':
+                include_metadata = not args.no_metadata  # Invert the flag
+                result = export_score_configs(
+                    output_file=args.output,
+                    include_metadata=include_metadata
+                )
+                if not args.output:  # If no output file, print to stdout
+                    print(result)
+                else:
+                    print(f"Score configs exported to {args.output}")
         elif args.fuse_command == 'traces':
             if args.trace_action == 'create':
                 # Parse JSON data, fallback to plain text if not JSON

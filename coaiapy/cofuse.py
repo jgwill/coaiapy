@@ -1,10 +1,160 @@
 import requests
 from requests.auth import HTTPBasicAuth
-from .coaiamodule import read_config
+from coaiamodule import read_config
 import datetime
 import yaml
 import json
 import re
+from dataclasses import dataclass, field
+from typing import Optional, List, Dict, Any, Union
+
+@dataclass
+class ScoreCategory:
+    """Represents a category in a categorical score configuration"""
+    label: str
+    value: Union[int, float]
+
+@dataclass
+class ScoreConfigMetadata:
+    """Metadata for score configurations from Langfuse"""
+    id: Optional[str] = None
+    created_at: Optional[str] = None
+    updated_at: Optional[str] = None
+    project_id: Optional[str] = None
+    is_archived: Optional[bool] = None
+
+@dataclass 
+class ScoreConfig:
+    """Represents a score configuration with all its properties"""
+    name: str
+    data_type: str  # "NUMERIC", "CATEGORICAL", "BOOLEAN"
+    description: Optional[str] = None
+    categories: Optional[List[ScoreCategory]] = None
+    min_value: Optional[float] = None
+    max_value: Optional[float] = None
+    metadata: Optional[ScoreConfigMetadata] = None
+    
+    def to_dict(self, include_metadata: bool = True) -> Dict[str, Any]:
+        """Convert to dictionary format suitable for JSON export/import"""
+        result = {
+            "name": self.name,
+            "dataType": self.data_type,
+            "description": self.description,
+            "minValue": self.min_value,
+            "maxValue": self.max_value
+        }
+        
+        # Convert categories to dict format
+        if self.categories:
+            result["categories"] = [
+                {"label": cat.label, "value": cat.value} 
+                for cat in self.categories
+            ]
+        else:
+            result["categories"] = None
+        
+        # Include metadata if requested
+        if include_metadata and self.metadata:
+            result["metadata"] = {
+                "id": self.metadata.id,
+                "createdAt": self.metadata.created_at,
+                "updatedAt": self.metadata.updated_at,
+                "projectId": self.metadata.project_id,
+                "isArchived": self.metadata.is_archived
+            }
+        
+        return result
+    
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> 'ScoreConfig':
+        """Create ScoreConfig from dictionary (e.g., from JSON import)"""
+        # Parse categories
+        categories = None
+        if data.get("categories"):
+            categories = [
+                ScoreCategory(label=cat["label"], value=cat["value"])
+                for cat in data["categories"]
+            ]
+        
+        # Parse metadata if present
+        metadata = None
+        if data.get("metadata"):
+            meta_data = data["metadata"]
+            metadata = ScoreConfigMetadata(
+                id=meta_data.get("id"),
+                created_at=meta_data.get("createdAt"),
+                updated_at=meta_data.get("updatedAt"),
+                project_id=meta_data.get("projectId"),
+                is_archived=meta_data.get("isArchived")
+            )
+        
+        return cls(
+            name=data["name"],
+            data_type=data["dataType"],
+            description=data.get("description"),
+            categories=categories,
+            min_value=data.get("minValue"),
+            max_value=data.get("maxValue"),
+            metadata=metadata
+        )
+    
+    def to_create_command(self) -> str:
+        """Generate CLI command to create this score config"""
+        cmd_parts = [
+            "coaia fuse score-configs create",
+            f'"{self.name}"',
+            self.data_type
+        ]
+        
+        if self.description:
+            cmd_parts.append(f'--description "{self.description}"')
+        
+        if self.min_value is not None:
+            cmd_parts.append(f'--min-value {self.min_value}')
+            
+        if self.max_value is not None:
+            cmd_parts.append(f'--max-value {self.max_value}')
+        
+        if self.categories:
+            categories_json = json.dumps([
+                {"label": cat.label, "value": cat.value} 
+                for cat in self.categories
+            ])
+            cmd_parts.append(f"--categories '{categories_json}'")
+        
+        return " ".join(cmd_parts)
+
+@dataclass
+class ScoreConfigExport:
+    """Represents an export file containing multiple score configurations"""
+    version: str = "1.0"
+    exported_at: Optional[str] = None
+    total_configs: Optional[int] = None
+    configs: List[ScoreConfig] = field(default_factory=list)
+    
+    def to_dict(self, include_metadata: bool = True) -> Dict[str, Any]:
+        """Convert to dictionary format for JSON export"""
+        return {
+            "version": self.version,
+            "exportedAt": self.exported_at or datetime.datetime.utcnow().isoformat() + 'Z',
+            "totalConfigs": len(self.configs),
+            "configs": [config.to_dict(include_metadata) for config in self.configs]
+        }
+    
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> 'ScoreConfigExport':
+        """Create from dictionary (e.g., from JSON import)"""
+        configs = [
+            ScoreConfig.from_dict(config_data) 
+            for config_data in data.get("configs", [])
+        ]
+        
+        return cls(
+            version=data.get("version", "1.0"),
+            exported_at=data.get("exportedAt"),
+            total_configs=data.get("totalConfigs"),
+            configs=configs
+        )
 
 def parse_tlid_to_iso(tlid_str):
     """
@@ -1446,6 +1596,61 @@ def create_score_config(name, data_type, description=None, categories=None, min_
     
     r = requests.post(url, json=data, auth=auth)
     return r.text
+
+def export_score_configs(output_file=None, include_metadata=True):
+    """
+    Export all score configs to JSON format
+    
+    Args:
+        output_file: Optional file path to save the export
+        include_metadata: Whether to include Langfuse-specific metadata (id, timestamps, etc.)
+    
+    Returns:
+        JSON string of exported score configs
+    """
+    configs_data = list_score_configs()
+    configs = json.loads(configs_data)
+    
+    # Clean up the data for export
+    exported_configs = []
+    for config in configs:
+        exported_config = {
+            "name": config.get("name"),
+            "dataType": config.get("dataType"),
+            "description": config.get("description"),
+            "categories": config.get("categories"),
+            "minValue": config.get("minValue"),
+            "maxValue": config.get("maxValue")
+        }
+        
+        # Include metadata if requested
+        if include_metadata:
+            exported_config["metadata"] = {
+                "id": config.get("id"),
+                "createdAt": config.get("createdAt"),
+                "updatedAt": config.get("updatedAt"),
+                "projectId": config.get("projectId"),
+                "isArchived": config.get("isArchived")
+            }
+        
+        exported_configs.append(exported_config)
+    
+    # Create export structure
+    export_data = {
+        "version": "1.0",
+        "exportedAt": datetime.datetime.utcnow().isoformat() + 'Z',
+        "totalConfigs": len(exported_configs),
+        "configs": exported_configs
+    }
+    
+    result_json = json.dumps(export_data, indent=2)
+    
+    # Save to file if specified
+    if output_file:
+        with open(output_file, 'w') as f:
+            f.write(result_json)
+    
+    return result_json
 
 def load_session_file(path):
     try:
