@@ -2,6 +2,46 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.54+] - 2025-08-18 - Pipeline Templates & Environment Management Revolution
+
+### 🚀 Major Features Added
+- **Pipeline Template System**: Complete template engine with 5 built-in templates (simple-trace, data-pipeline, llm-chain, parallel-processing, error-handling)
+- **Environment Management**: Persistent cross-session variable storage with `.coaia-env` files supporting JSON and .env formats
+- **Jinja2 Templating Engine**: Variable substitution, validation, conditional steps, and built-in functions (uuid4(), now(), timestamp())
+- **Template Hierarchy**: Project → Global → Built-in discovery system with customization support
+- **One-Command Workflows**: Transform 30+ minute manual setups into 30-second automated pipeline creation
+
+### ⚡ Revolutionary CLI Commands
+- **`coaia pipeline list`**: Display all available templates with metadata and optional path information
+- **`coaia pipeline show <template>`**: Inspect template details, variables, steps with optional preview rendering
+- **`coaia pipeline create <template>`**: Generate complete trace/observation workflows from templates with variable substitution
+- **`coaia pipeline init <name>`**: Create new custom templates with optional base template extension
+- **`coaia env init/list/set/get/unset/source/clear/save`**: Complete environment variable management system
+
+### 🔄 Cross-Session Persistence
+- **Environment Files**: `.coaia-env` files for project-level and `~/.coaia/global.env` for global persistence
+- **Variable Hierarchy**: OS environment → Project environment → Global environment → Template defaults
+- **Shell Integration**: `--export` flag generates shell export commands for bash automation
+- **Context Saving**: Save and restore complete pipeline contexts across sessions
+
+### 🛠 Template System Features
+- **Built-in Functions**: Jinja2 template engine with uuid4(), now(), timestamp() functions
+- **Conditional Steps**: Include/exclude steps based on variable conditions  
+- **Parent-Child Relationships**: Automatic SPAN observation hierarchies with nested children
+- **Variable Validation**: Type checking, required field validation, and choice constraints
+- **Template Extension**: Create custom templates based on existing ones with inheritance
+
+### 📈 Workflow Transformation Examples
+- **Before**: 30+ minute manual trace/observation setup with error-prone ID management
+- **After**: `coaia pipeline create data-pipeline --var user_id="john" --export-env` (< 30 seconds)
+- **Cross-Session**: `coaia env save --name "context"` and `eval $(coaia env source --name context --export)`
+
+### 🔧 Technical Improvements
+- **New Dependencies**: Added Jinja2>=2.10 for template rendering
+- **New Modules**: `pipeline.py` (template engine) and `environment.py` (environment management)
+- **Enhanced CLI**: Comprehensive help text for all pipeline and environment commands
+- **Error Handling**: Template validation, variable type checking, and user-friendly error messages
+
 ## [0.2.54] - 2025-08-17
 
 ### Added

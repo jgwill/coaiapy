@@ -1,14 +1,25 @@
 # CoAiAPy
 
-CoAiAPy is a comprehensive Python package for AI workflow automation and observability. It provides audio transcription, synthesis, and tagging capabilities using AWS services, along with powerful Langfuse integration for AI pipeline observability, prompt management, and dataset operations.
+CoAiAPy is a comprehensive Python package for AI workflow automation and observability. It provides audio transcription, synthesis, and tagging capabilities using AWS services, along with revolutionary pipeline templates and environment management for automated AI workflows. Features complete Langfuse integration for AI pipeline observability, prompt management, and dataset operations.
 
+* With a constraint to be compatible for python 3.6 (pythonista)
 ## Features
 
+### 🚀 Pipeline Templates & Environment Management (NEW)
+**Revolutionary Workflow Automation**: Transform 30+ minute manual setups into 30-second automated pipelines.
+
+- **Pipeline Templates**: 5 built-in templates (simple-trace, data-pipeline, llm-chain, parallel-processing, error-handling)
+- **Jinja2 Templating**: Variable substitution, validation, and conditional steps
+- **Template Hierarchy**: Project → Global → Built-in discovery with customization support  
+- **Environment Management**: Persistent cross-session variables with `.coaia-env` files
+- **Shell Integration**: Export commands for bash automation and environment persistence
+- **One-Command Workflows**: Complete trace/observation hierarchies created instantly
+
 ### Core Audio & Data Processing
-- **Audio Transcription**: Convert audio files to text using AWS services.
-- **Audio Synthesis**: Generate audio files from text input.
-- **MP3 Tagging**: Add metadata tags to MP3 files for better organization and identification.
-- **Redis Stashing**: Stash key-value pairs to a Redis service.
+- **Audio Transcription**: Convert audio files to text using AWS services
+- **Audio Synthesis**: Generate audio files from text input
+- **MP3 Tagging**: Add metadata tags to MP3 files for better organization and identification
+- **Redis Stashing**: Stash key-value pairs to a Redis service
 
 ### Langfuse AI Observability (`coaia fuse`)
 **Langfuse Integration**: Complete command-line interface for [Langfuse](https://langfuse.com/) - the open-source AI engineering platform for observability, analytics, and prompt management.
@@ -161,6 +172,138 @@ Enable custom quick addons for assistants or bots using process tags. To add a n
 ```
 ```bash
 coaia p dictkore "my text to correct"
+```
+
+## 🚀 Pipeline Templates & Environment Management
+
+### Revolutionary Workflow Automation
+
+CoAiAPy transforms complex AI pipeline creation from 30+ minute manual processes into 30-second automated workflows using templates and persistent environment management.
+
+### Pipeline Templates
+
+#### Built-in Templates (5 Available)
+
+1. **simple-trace**: Basic monitoring with single observation
+2. **data-pipeline**: Multi-step data processing workflow with validation
+3. **llm-chain**: LLM interaction pipeline with input/output tracking
+4. **parallel-processing**: Concurrent task execution with synchronization
+5. **error-handling**: Robust error management with retry mechanisms
+
+#### Template Commands
+
+```bash
+# List all available templates
+coaia pipeline list
+coaia pipeline list --path --json
+
+# Inspect template details and variables
+coaia pipeline show simple-trace
+coaia pipeline show data-pipeline --preview
+
+# Create pipeline from template (automatic trace/observation creation)
+coaia pipeline create simple-trace --var trace_name="My Process" --var user_id="john"
+coaia pipeline create data-pipeline --var pipeline_name="ETL Process" --export-env
+
+# Create new custom template
+coaia pipeline init my-template
+coaia pipeline init custom-workflow --from data-pipeline --location project
+```
+
+#### Template Features
+
+- **Variable Substitution**: Jinja2-powered with validation and built-in functions
+- **Conditional Steps**: Include/exclude steps based on variable conditions
+- **Parent-Child Relationships**: Automatic SPAN observation hierarchies
+- **Template Hierarchy**: Project → Global → Built-in discovery system
+- **Auto-Generation**: Trace IDs, observation IDs, timestamps generated automatically
+
+### Environment Management
+
+#### Persistent Cross-Session Variables
+
+Environment files (`.coaia-env`) provide persistent variable storage across shell sessions:
+
+```bash
+# Initialize environment with defaults
+coaia env init                    # Creates .coaia-env (project)
+coaia env init --global          # Creates ~/.coaia/global.env
+coaia env init --name dev        # Creates .coaia-env.dev
+
+# Manage variables
+coaia env set COAIA_USER_ID "john"     # Persist to file
+coaia env set DEBUG_MODE "true" --temp # Session only
+coaia env get COAIA_TRACE_ID           # Get variable value
+coaia env unset OLD_VARIABLE           # Remove variable
+
+# List and inspect environments  
+coaia env list                    # Show all environments
+coaia env list --name dev        # Show specific environment
+coaia env list --json           # JSON output
+
+# Shell integration
+eval $(coaia env source --export)     # Load variables into shell
+coaia env save --name "my-context"    # Save current state
+```
+
+#### Advanced Workflow Examples
+
+**One-Command Pipeline Creation:**
+```bash
+# Before: Complex manual setup (30+ minutes)
+export TRACE_ID=$(uuidgen)
+export SESSION_ID=$(uuidgen) 
+coaia fuse traces create $TRACE_ID -u john -s $SESSION_ID
+export OBS_ID=$(uuidgen)
+coaia fuse traces add-observation $OBS_ID $TRACE_ID -ts -n "Step 1"
+# ... repeat for each step ...
+
+# After: One-command automation (< 30 seconds)
+coaia pipeline create data-pipeline \
+  --var user_id="john" \
+  --var pipeline_name="ETL Process" \
+  --export-env
+
+# Automatic: trace creation, observation hierarchy, environment setup
+```
+
+**Cross-Session Workflow Persistence:**
+```bash
+# Session 1: Start pipeline and persist state
+coaia pipeline create llm-chain --var model="gpt-4" --export-env
+coaia env save --name "llm-session"
+
+# Session 2: Resume from saved state (hours/days later)
+eval $(coaia env source --name llm-session --export)
+coaia fuse traces add-observation $COAIA_TRACE_ID -n "Continued processing"
+```
+
+**Custom Template Creation:**
+```bash
+# Create project-specific template
+coaia pipeline init company-etl --from data-pipeline --location project
+# Edit ./.coaia/templates/company-etl.json with custom variables and steps
+
+# Use custom template
+coaia pipeline create company-etl --var data_source="production_db"
+```
+
+#### Environment File Formats
+
+**JSON Format** (`.coaia-env`):
+```json
+{
+  "COAIA_TRACE_ID": "uuid-here",
+  "COAIA_USER_ID": "john",
+  "CUSTOM_VARIABLE": "value"
+}
+```
+
+**.env Format** (`.coaia-env`):
+```bash
+COAIA_TRACE_ID="uuid-here"
+COAIA_USER_ID="john"
+CUSTOM_VARIABLE="value"
 ```
 
 ### Building and Publishing

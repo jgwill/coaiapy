@@ -75,6 +75,35 @@ This document outlines the features of CoAiAPy, marking them as completed, in pr
 - `[x]` **Response Cleanup**: API responses show actual IDs instead of internal event identifiers.
 - `[x]` **Enhanced Help**: Detailed parameter descriptions and usage examples.
 
+## Pipeline Templates & Environment Management ✅ **COMPLETED**
+
+### Pipeline Template System
+
+- `[x]` **List Templates**: (`coaia pipeline list`) Display all available templates with metadata.
+- `[x]` **Show Template**: (`coaia pipeline show`) Inspect template details, variables, and steps.
+- `[x]` **Create Pipeline**: (`coaia pipeline create`) Generate complete trace/observation workflows from templates.
+- `[x]` **Initialize Template**: (`coaia pipeline init`) Create new custom templates with optional base templates.
+- `[x]` **Template Features**:
+  - `[x]` 5 built-in templates: simple-trace, data-pipeline, llm-chain, parallel-processing, error-handling.
+  - `[x]` Jinja2 variable substitution with validation and built-in functions.
+  - `[x]` Conditional step inclusion based on variables.
+  - `[x]` Parent-child observation relationships with SPAN support.
+  - `[x]` Template hierarchy: Project → Global → Built-in discovery.
+
+### Environment Management System
+
+- `[x]` **Initialize Environment**: (`coaia env init`) Create environment files with default variables.
+- `[x]` **List Environments**: (`coaia env list`) Show available environment files and variables.
+- `[x]` **Variable Management**: (`coaia env set/get/unset`) Manage environment variables.
+- `[x]` **Source Environment**: (`coaia env source`) Load variables into current session.
+- `[x]` **Clear Environment**: (`coaia env clear`) Remove environment files.
+- `[x]` **Save Context**: (`coaia env save`) Save current environment as template.
+- `[x]` **Environment Features**:
+  - `[x]` Cross-session variable persistence with `.coaia-env` files.
+  - `[x]` JSON and .env file format support.
+  - `[x]` Shell export command generation for bash automation.
+  - `[x]` Hierarchical environment resolution (OS → Project → Global).
+
 ## Planned Features
 
 ### V1.0: Fine-Tuning Management
@@ -84,14 +113,32 @@ This document outlines the features of CoAiAPy, marking them as completed, in pr
 - `[ ]` **`coaia fuse finetune status <job_id>`**: Check the status of a specific job.
 - `[ ]` **`coaia fuse finetune cancel <job_id>`**: Cancel an ongoing job.
 
-### V1.1: Advanced Pipeline Features
+### V1.1: Advanced Pipeline Features ✅ **COMPLETED**
 
-- `[ ]` **Environment File Management**: Persistent environment file (`.coaia-env`) for cross-session workflows.
+- `[x]` **Environment File Management**: Persistent environment file (`.coaia-env`) for cross-session workflows.
+- `[x]` **Pipeline Templates**: Pre-built templates for common AI workflow patterns (5 built-in templates).
+- `[x]` **Template Hierarchy**: Project → Global → Built-in template discovery system.
+- `[x]` **Jinja2 Templating**: Variable substitution, validation, and conditional steps.
+- `[x]` **Cross-Session Persistence**: Environment variables persist across shell sessions.
+- `[x]` **One-Command Workflows**: Complete pipeline creation from templates in seconds.
+
+### V1.2: Advanced Automation & Integration
+
+- `[ ]` **Template Sharing**: Community template repository and sharing system.
 - `[ ]` **Bash Completion**: Shell completion for commands and parameters.
-- `[ ]` **Pipeline Templates**: Pre-built templates for common AI workflow patterns.
 - `[ ]` **Multi-Environment Support**: Support for development, staging, production environment configurations.
+- `[ ]` **Workflow Orchestration**: Automated pipeline scheduling and execution.
+- `[ ]` **CI/CD Integration**: Template deployment and validation in CI/CD pipelines.
 
-### V1.2: Advanced CLI Features
+### V1.3: Enterprise Features
+
+- `[ ]` **Encrypted Environment Files**: Secure credential storage with encryption.
+- `[ ]` **Interactive Setup**: Interactive `coaia init --interactive` configuration.
+- `[ ]` **Template Validation**: Testing framework for pipeline templates.
+- `[ ]` **Performance Monitoring**: Pipeline execution monitoring and optimization.
+- `[ ]` **Cross-Service Integration**: Unified configuration for AWS, Redis, OpenAI services.
+
+### V1.4: Advanced CLI Features
 
 - `[ ]` **Interactive Mode**: An interactive shell for running commands.
 - `[ ]` **Direct Model Execution**: A `coaia run <prompt_name>` command to execute prompts directly against AI models.
