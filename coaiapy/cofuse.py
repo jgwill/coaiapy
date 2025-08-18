@@ -1,6 +1,6 @@
 import requests
 from requests.auth import HTTPBasicAuth
-from coaiamodule import read_config
+from .coaiamodule import read_config
 import datetime
 import yaml
 import json
