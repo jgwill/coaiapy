@@ -249,6 +249,7 @@ make upload         # Upload to production PyPI
 
 - [GitHub Repository](https://github.com/jgwill/coaiapy)
 - [PyPI Package](https://pypi.org/project/coaiapy/)
+- [llms.txt (AI Documentation)](https://coaiapy.jgwill.com/llms.txt)
 - [Documentation Wiki](https://github.com/jgwill/coaiapy/wiki)
 - [Pipeline Templates Guide](https://github.com/jgwill/coaiapy/wiki/Pipeline-Templates)
 - [Environment Management Guide](https://github.com/jgwill/coaiapy/wiki/Environment-Management)
