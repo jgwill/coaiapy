@@ -143,3 +143,12 @@ This document outlines the features of CoAiAPy, marking them as completed, in pr
 - `[ ]` **Interactive Mode**: An interactive shell for running commands.
 - `[ ]` **Direct Model Execution**: A `coaia run <prompt_name>` command to execute prompts directly against AI models.
 - `[ ]` **Testing Suite**: A full `pytest` suite for robust testing.
+
+## V2.0: Separation into Modules Refactoring
+
+### Fuse Module
+
+* submodule for Langfuse integration into 'git@github.com:jgwill/cofuse.git'
+* Consideration to think about for the whole 'configuration' layer that cofuse will use that is probably embedded into 'coaiamodule' that obviously if this coaiapy package depends on this new 'cofuse' module package, it wont have access to the configuration layer but do we need it in cofule ? Would that be ok if it just look for common langfuse environment variables ? Try to load in .env, otherwise in $HOME/.env and config error if not, that is it.  It seems the right way todo it for now, simple therefore, any package that needs the 'cofuse' features (which is quite extensive) will benefits with its whole logics without having to worry about the configuration layer.  I am just worried about the 'template' of the 'coaia fuse pipeline' which we might have to think about how that could be abstracted adequatly.  Having a common 'configuration_layer' module that both 'cofuse' and 'coaiamodule' could use would be the best solution but I am not sure how to do it yet. jgwill/jgtcore will need the 'cofuse' feature that is for sure, no dependencies to boto3 and all these other dependencies that 'coaiamodule' has.
+
+
