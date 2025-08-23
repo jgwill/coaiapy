@@ -16,6 +16,7 @@ from cofuse import (
     load_session_file,
     create_score, apply_score_to_trace, create_score_for_target, list_scores, format_scores_table,
     list_score_configs, get_score_config, create_score_config, export_score_configs, format_score_configs_table,
+    import_score_configs, format_import_preview,
     list_presets, get_preset_by_name, format_presets_table, format_preset_display, install_preset, install_presets_interactive,
     list_prompts, get_prompt, create_prompt, format_prompts_table, format_prompt_display,
     list_datasets, get_dataset, create_dataset, format_datasets_table,
@@ -188,6 +189,13 @@ def main():
     parser_fuse_scc_export.add_argument('-o', '--output', help="Output file path (optional, defaults to stdout)")
     parser_fuse_scc_export.add_argument('--no-metadata', action='store_true', help="Exclude Langfuse metadata (cleaner for sharing)")
 
+    parser_fuse_scc_import = sub_fuse_scc.add_parser('import', help="Import score configs from JSON file")
+    parser_fuse_scc_import.add_argument('file', help="JSON file to import from")
+    parser_fuse_scc_import.add_argument('--select', nargs='*', help="Select specific config names to import")
+    parser_fuse_scc_import.add_argument('--allow-duplicates', action='store_true', help="Allow importing configs with existing names (creates additional configs, does NOT replace)")
+    parser_fuse_scc_import.add_argument('--no-guidance', action='store_true', help="Skip guidance messages about duplicate handling")
+    parser_fuse_scc_import.add_argument('--preview', action='store_true', help="Preview what would be imported without actually importing")
+
     parser_fuse_scc_presets = sub_fuse_scc.add_parser('presets', help="Manage built-in score configuration presets")
     sub_fuse_scc_presets = parser_fuse_scc_presets.add_subparsers(dest='presets_action')
     
@@ -203,7 +211,7 @@ def main():
     parser_fuse_scc_presets_install.add_argument('preset_names', nargs='*', help="Preset names to install (if none provided, installs all)")
     parser_fuse_scc_presets_install.add_argument('--category', choices=['narrative', 'ai', 'general', 'technical', 'specialized', 'numeric', 'boolean'], 
                                                help="Install all presets from a specific category")
-    parser_fuse_scc_presets_install.add_argument('--force', action='store_true', help="Force installation even if duplicates exist")
+    parser_fuse_scc_presets_install.add_argument('--allow-duplicates', action='store_true', help="Allow installing presets with existing names (creates additional configs, does NOT replace)")
     parser_fuse_scc_presets_install.add_argument('--interactive', action='store_true', help="Interactive mode with duplicate checking")
 
     parser_fuse_traces = sub_fuse.add_parser('traces', help="List or manage traces and observations in Langfuse")
@@ -593,6 +601,20 @@ def main():
                     print(result)
                 else:
                     print(f"Score configs exported to {args.output}")
+            elif args.score_configs_action == 'import':
+                if args.preview:
+                    # Show preview only
+                    result = format_import_preview(args.file)
+                    print(result)
+                else:
+                    # Perform actual import
+                    result = import_score_configs(
+                        import_file=args.file,
+                        show_guidance=not getattr(args, 'no_guidance', False),
+                        allow_duplicates=getattr(args, 'allow_duplicates', False),
+                        selected_configs=args.select
+                    )
+                    print(result)
             elif args.score_configs_action == 'presets':
                 if args.presets_action == 'list':
                     presets = list_presets(category=args.category)
@@ -610,7 +632,7 @@ def main():
                             # Single preset installation
                             result = install_preset(
                                 args.preset_names[0], 
-                                check_duplicates=not args.force,
+                                check_duplicates=not getattr(args, 'allow_duplicates', False),
                                 interactive=args.interactive
                             )
                             print(result)

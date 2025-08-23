@@ -1982,9 +1982,9 @@ def install_preset(preset_name, check_duplicates=True, interactive=False):
             if interactive:
                 # In a real CLI, this would prompt the user
                 # For now, we'll return a message indicating what would happen
-                return f"{duplicate_msg}\n\nTo install anyway, use: coaia fuse score-configs presets install '{preset_name}' --force"
+                return f"{duplicate_msg}\n\n⚠️  Note: --allow-duplicates creates additional configs with same names, not replacements.\nTo install anyway, use: coaia fuse score-configs presets install '{preset_name}' --allow-duplicates"
             else:
-                return f"{duplicate_msg}\n\nSkipping installation. Use --force to override."
+                return f"{duplicate_msg}\n\n⚠️  Langfuse API does not support replacing configs.\nSkipping installation. Use --allow-duplicates to create additional config with same name."
     
     # Install the preset
     try:
@@ -2221,6 +2221,304 @@ def export_score_configs(output_file=None, include_metadata=True):
             f.write(result_json)
     
     return result_json
+
+def import_score_configs(import_file, show_guidance=True, allow_duplicates=False, selected_configs=None):
+    """
+    Import score configs from JSON file
+    
+    Args:
+        import_file: Path to JSON file containing score configs
+        show_guidance: Whether to show guidance about handling duplicates (formerly 'interactive')
+        allow_duplicates: Whether to create new configs even if names already exist (formerly 'force')
+                         WARNING: This creates additional configs with same names, not replacements!
+        selected_configs: Optional list of config names to import
+    
+    Returns:
+        Import results summary
+    """
+    try:
+        with open(import_file, 'r') as f:
+            import_data = json.load(f)
+    except FileNotFoundError:
+        return f"❌ Import file '{import_file}' not found."
+    except json.JSONDecodeError as e:
+        return f"❌ Invalid JSON in import file: {str(e)}"
+    
+    # Parse import data structure
+    if isinstance(import_data, dict) and 'configs' in import_data:
+        # ScoreConfigExport format
+        configs_to_import = import_data['configs']
+        import_metadata = {
+            'version': import_data.get('version', 'unknown'),
+            'exported_at': import_data.get('exportedAt', 'unknown'),
+            'total_configs': import_data.get('totalConfigs', len(configs_to_import))
+        }
+    elif isinstance(import_data, list):
+        # Direct list of configs
+        configs_to_import = import_data
+        import_metadata = {
+            'version': 'unknown',
+            'exported_at': 'unknown', 
+            'total_configs': len(configs_to_import)
+        }
+    else:
+        return "❌ Invalid import file format. Expected export file with 'configs' array or direct config array."
+    
+    if not configs_to_import:
+        return "❌ No score configs found in import file."
+    
+    # Convert to ScoreConfig objects for validation
+    try:
+        parsed_configs = []
+        for i, config_data in enumerate(configs_to_import):
+            try:
+                score_config = ScoreConfig.from_dict(config_data)
+                parsed_configs.append(score_config)
+            except Exception as e:
+                return f"❌ Invalid config at index {i}: {str(e)}"
+    except Exception as e:
+        return f"❌ Error parsing configs: {str(e)}"
+    
+    # Filter configs if specific ones were selected
+    if selected_configs:
+        selected_names = set(name.lower() for name in selected_configs)
+        filtered_configs = [c for c in parsed_configs if c.name.lower() in selected_names]
+        not_found = [name for name in selected_configs if name.lower() not in {c.name.lower() for c in parsed_configs}]
+        if not_found:
+            return f"❌ Configs not found in import file: {', '.join(not_found)}"
+        configs_to_process = filtered_configs
+    else:
+        configs_to_process = parsed_configs
+    
+    # Check for duplicates with existing configs
+    existing_configs = json.loads(list_score_configs())
+    existing_names = {c['name'].lower(): c for c in existing_configs}
+    
+    duplicates = []
+    new_imports = []
+    
+    for config in configs_to_process:
+        if config.name.lower() in existing_names:
+            duplicates.append({
+                'import_config': config,
+                'existing': existing_names[config.name.lower()]
+            })
+        else:
+            new_imports.append(config)
+    
+    # Build results
+    results = []
+    
+    # Show import file info
+    results.append(f"📁 IMPORT FILE: {import_file}")
+    results.append(f"   Version: {import_metadata['version']}")
+    results.append(f"   Exported: {import_metadata['exported_at']}")
+    results.append(f"   Total configs in file: {import_metadata['total_configs']}")
+    results.append("")
+    
+    if duplicates and not allow_duplicates:
+        results.append(f"⚠️  Found {len(duplicates)} duplicate name(s):")
+        for dup in duplicates:
+            results.append(f"   - '{dup['import_config'].name}' (existing ID: {dup['existing'].get('id', 'unknown')})")
+        results.append("")
+        
+        if show_guidance and not selected_configs:
+            results.append("⚠️  IMPORTANT: Langfuse API does NOT support replacing/updating score configs!")
+            results.append("")
+            results.append("Available options:")
+            results.append("   1. Skip duplicates (default) - import only new configs")
+            results.append("   2. Create duplicates (--allow-duplicates) - creates new configs with same names")
+            results.append("   3. Select specific configs (--select) to import only certain configs")
+            results.append("")
+            results.append("⚠️  Using --allow-duplicates will create ADDITIONAL configs with the same names,")
+            results.append("    not replace existing ones. This may cause confusion in your Langfuse project.")
+            results.append("")
+            results.append("Use --allow-duplicates to proceed anyway, or --select to specify configs to import.")
+    
+    if new_imports or allow_duplicates:
+        configs_to_create = new_imports if not allow_duplicates else configs_to_process
+        
+        if allow_duplicates and duplicates:
+            results.append("⚠️  WARNING: Creating duplicate configs (same names, different IDs)!")
+            results.append("")
+        
+        results.append(f"✅ Importing {len(configs_to_create)} config(s):")
+        
+        imported_count = 0
+        failed_count = 0
+        
+        for config in configs_to_create:
+            try:
+                result = create_score_config(
+                    name=config.name,
+                    data_type=config.data_type,
+                    description=config.description,
+                    categories=None if not config.categories else [
+                        {"label": cat.label, "value": cat.value} for cat in config.categories
+                    ],
+                    min_value=config.min_value,
+                    max_value=config.max_value
+                )
+                
+                result_data = json.loads(result)
+                if 'id' in result_data:
+                    results.append(f"   ✅ '{config.name}' (ID: {result_data['id']})")
+                    imported_count += 1
+                else:
+                    results.append(f"   ❌ '{config.name}' - Import failed")
+                    failed_count += 1
+            except Exception as e:
+                results.append(f"   ❌ '{config.name}' - Error: {str(e)}")
+                failed_count += 1
+        
+        results.append("")
+        results.append(f"📊 SUMMARY: {imported_count} imported, {failed_count} failed, {len(duplicates)} skipped (duplicates)")
+    else:
+        if duplicates:
+            results.append("No new configs to import (all names already exist).")
+            results.append("Use --allow-duplicates to create additional configs with the same names,")
+            results.append("or --select to choose specific configs to import.")
+        else:
+            results.append("No configs selected for import.")
+    
+    return "\n".join(results)
+
+def import_score_configs_legacy(import_file, interactive=True, force=False, selected_configs=None):
+    """
+    DEPRECATED: Legacy wrapper for backwards compatibility.
+    Use import_score_configs() with new parameter names instead.
+    
+    This function maps old parameter names to new ones:
+    - interactive -> show_guidance (but interactive mode was never actually implemented)
+    - force -> allow_duplicates (but force doesn't replace, it creates duplicates!)
+    """
+    import warnings
+    warnings.warn(
+        "import_score_configs_legacy() is deprecated. "
+        "Use import_score_configs() with show_guidance/allow_duplicates parameters. "
+        "Note: 'force' creates duplicates, doesn't replace configs!",
+        DeprecationWarning,
+        stacklevel=2
+    )
+    
+    return import_score_configs(
+        import_file=import_file,
+        show_guidance=interactive,
+        allow_duplicates=force,
+        selected_configs=selected_configs
+    )
+
+def format_import_preview(import_file):
+    """
+    Preview what would be imported from a JSON file without actually importing
+    
+    Args:
+        import_file: Path to JSON file containing score configs
+    
+    Returns:
+        Preview summary string
+    """
+    try:
+        with open(import_file, 'r') as f:
+            import_data = json.load(f)
+    except FileNotFoundError:
+        return f"❌ Import file '{import_file}' not found."
+    except json.JSONDecodeError as e:
+        return f"❌ Invalid JSON in import file: {str(e)}"
+    
+    # Parse import data structure
+    if isinstance(import_data, dict) and 'configs' in import_data:
+        configs_to_import = import_data['configs']
+        import_metadata = {
+            'version': import_data.get('version', 'unknown'),
+            'exported_at': import_data.get('exportedAt', 'unknown'),
+            'total_configs': import_data.get('totalConfigs', len(configs_to_import))
+        }
+    elif isinstance(import_data, list):
+        configs_to_import = import_data
+        import_metadata = {
+            'version': 'unknown',
+            'exported_at': 'unknown',
+            'total_configs': len(configs_to_import)
+        }
+    else:
+        return "❌ Invalid import file format."
+    
+    if not configs_to_import:
+        return "❌ No score configs found in import file."
+    
+    # Build preview
+    results = []
+    results.append(f"📁 IMPORT PREVIEW: {import_file}")
+    results.append(f"   Version: {import_metadata['version']}")
+    results.append(f"   Exported: {import_metadata['exported_at']}")
+    results.append(f"   Total configs: {import_metadata['total_configs']}")
+    results.append("")
+    
+    # Preview table of configs
+    results.append("📋 CONFIGS TO IMPORT:")
+    headers = ["Name", "Type", "Categories/Range", "Description"]
+    
+    # Calculate column widths
+    max_name = max([len(c.get('name', '')) for c in configs_to_import] + [len(headers[0])])
+    max_type = max([len(c.get('dataType', '')) for c in configs_to_import] + [len(headers[1])])
+    max_range = 20  # Fixed width
+    max_desc = max([len((c.get('description', '') or '')[:40]) for c in configs_to_import] + [len(headers[3])])
+    
+    # Minimum widths
+    max_name = max(max_name, 15)
+    max_type = max(max_type, 10)
+    max_desc = max(max_desc, 25)
+    
+    # Format table
+    separator = f"+{'-' * (max_name + 2)}+{'-' * (max_type + 2)}+{'-' * (max_range + 2)}+{'-' * (max_desc + 2)}+"
+    header_row = f"| {headers[0]:<{max_name}} | {headers[1]:<{max_type}} | {headers[2]:<{max_range}} | {headers[3]:<{max_desc}} |"
+    
+    results.append(separator)
+    results.append(header_row)
+    results.append(separator)
+    
+    for config in configs_to_import:
+        name = (config.get('name', '') or 'N/A')[:max_name]
+        data_type = (config.get('dataType', '') or 'N/A')[:max_type]
+        description = (config.get('description', '') or 'N/A')[:max_desc]
+        
+        # Format range/categories summary
+        if config.get('dataType') == 'CATEGORICAL' and config.get('categories'):
+            range_info = f"{len(config['categories'])} categories"
+        elif config.get('dataType') == 'NUMERIC':
+            min_val = config.get('minValue', 'N/A')
+            max_val = config.get('maxValue', 'N/A')
+            range_info = f"{min_val}-{max_val}"
+        elif config.get('dataType') == 'BOOLEAN':
+            range_info = "True/False"
+        else:
+            range_info = "N/A"
+        
+        range_info = range_info[:max_range]
+        
+        row = f"| {name:<{max_name}} | {data_type:<{max_type}} | {range_info:<{max_range}} | {description:<{max_desc}} |"
+        results.append(row)
+    
+    results.append(separator)
+    results.append("")
+    
+    # Check for potential duplicates
+    existing_configs = json.loads(list_score_configs())
+    existing_names = {c['name'].lower() for c in existing_configs}
+    
+    potential_duplicates = [c for c in configs_to_import if c.get('name', '').lower() in existing_names]
+    
+    if potential_duplicates:
+        results.append(f"⚠️  POTENTIAL DUPLICATES ({len(potential_duplicates)}):")
+        for config in potential_duplicates:
+            results.append(f"   - '{config.get('name', 'unknown')}'")
+        results.append("")
+        results.append("Use --force to replace duplicates during import.")
+    else:
+        results.append("✅ No duplicate conflicts detected.")
+    
+    return "\n".join(results)
 
 def load_session_file(path):
     try:
