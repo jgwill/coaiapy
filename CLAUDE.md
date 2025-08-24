@@ -569,3 +569,20 @@ coaia pipeline create company-workflow --var environment="production"
 
 **Last Updated**: 2025-08-18  
 **Next Action**: Advanced template sharing and enterprise integration features
+
+------
+APPENDIX and Extras
+------
+
+## LLMS-txt
+
+in `./llms/` the GIST : https://gist.github.com/jgwill/23adc41724854a151b7a9199daa7ffb5 is cloned and contains the following files:
+
+
+`llms/llms-creative-orientation.txt` - Guidance for LLM that should always be read for any work for how to formulate and work.
+`llms/llms-rise-framework.txt` - Guidance for LLM about the RISE framework (used in development to reverse-code into specification in natural language and part of a Software 3.0 approach)
+`llms/llms-non-creative-orientation-approach-to-convert.txt` - Potential Guidance for kind of formatting non-creative approaches into creative orientation methods (when compatible, as LLM have mostly been trained on problem-solving orientation data, they are biased and use other approaches that just dont work but my hypothesis is that they can be converted because of their semantic similarities, they just need the additional prompting context to complete the 3 phases of the creative process and mostly report in the adequate language which is getting better and betterly described in `llms/llms-creative-orientation.txt`).
+`llms/llms-narrative-remixing.txt` - Guidance for LLM about narrative remixing, which is a method to create new narratives by doing contextual transpositions.
+
+
+
