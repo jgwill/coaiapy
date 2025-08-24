@@ -16,7 +16,7 @@ from cofuse import (
     load_session_file,
     create_score, apply_score_to_trace, create_score_for_target, list_scores, format_scores_table,
     list_score_configs, get_score_config, create_score_config, export_score_configs, format_score_configs_table,
-    import_score_configs, format_import_preview,
+    import_score_configs, format_import_preview, apply_score_config, list_available_configs, validate_score_value, get_config_with_auto_refresh,
     list_presets, get_preset_by_name, format_presets_table, format_preset_display, install_preset, install_presets_interactive,
     list_prompts, get_prompt, create_prompt, format_prompts_table, format_prompt_display,
     list_datasets, get_dataset, create_dataset, format_datasets_table,
@@ -26,6 +26,43 @@ from cofuse import (
 )
 from .pipeline import TemplateLoader, TemplateRenderer, PipelineTemplate, PipelineVariable, PipelineStep
 from .environment import EnvironmentManager, format_environment_table
+
+# Security validation functions
+def validate_uuid(value, field_name="ID"):
+    """Validate UUID format to prevent injection attacks"""
+    if not value:
+        return None  # Allow None/empty values
+    
+    try:
+        # Attempt to parse as UUID - will raise ValueError if invalid
+        uuid_obj = uuid.UUID(value)
+        # Return string representation to ensure consistent format
+        return str(uuid_obj)
+    except ValueError:
+        raise ValueError(f"Invalid {field_name} format. Must be a valid UUID (e.g., 12345678-1234-1234-1234-123456789abc)")
+
+def validate_identifier(value, field_name="identifier", max_length=100):
+    """Validate general string identifiers for security"""
+    if not value:
+        return None
+    
+    if not isinstance(value, str):
+        raise ValueError(f"{field_name} must be a string")
+    
+    value = value.strip()
+    if not value:
+        return None
+    
+    if len(value) > max_length:
+        raise ValueError(f"{field_name} too long (max {max_length} characters)")
+    
+    # Check for suspicious patterns
+    suspicious_patterns = ['../', '..\\', '<script', 'javascript:', 'data:', 'file:']
+    for pattern in suspicious_patterns:
+        if pattern.lower() in value.lower():
+            raise ValueError(f"{field_name} contains potentially dangerous content")
+    
+    return value
 
 EPILOG = """see: https://github.com/jgwill/coaiapy/wiki for more details."""
 EPILOG1 = """
@@ -160,9 +197,13 @@ def main():
     parser_fuse_sc_create.add_argument('-v','--value', type=float, default=1.0)
 
     parser_fuse_sc_apply = sub_fuse_sc.add_parser('apply')
-    parser_fuse_sc_apply.add_argument('trace_id')
-    parser_fuse_sc_apply.add_argument('score_id')
-    parser_fuse_sc_apply.add_argument('-v','--value', type=float, default=1.0)
+    parser_fuse_sc_apply.add_argument('--trace-id', help="Trace ID to apply score to")
+    parser_fuse_sc_apply.add_argument('--session-id', help="Session ID to apply score to")
+    parser_fuse_sc_apply.add_argument('--observation-id', help="Optional observation ID (for trace scores only)")
+    parser_fuse_sc_apply.add_argument('--name', help="Score name")
+    parser_fuse_sc_apply.add_argument('--score-id', help="Score ID (alternative to name)")
+    parser_fuse_sc_apply.add_argument('-v','--value', type=float, default=1.0, help="Score value")
+    parser_fuse_sc_apply.add_argument('-c', '--comment', help="Optional comment for the score")
 
     parser_fuse_sc_list = sub_fuse_sc.add_parser('list')
     parser_fuse_sc_list.add_argument('--json', action='store_true', help="Output in JSON format (default: table format)")
@@ -213,6 +254,24 @@ def main():
                                                help="Install all presets from a specific category")
     parser_fuse_scc_presets_install.add_argument('--allow-duplicates', action='store_true', help="Allow installing presets with existing names (creates additional configs, does NOT replace)")
     parser_fuse_scc_presets_install.add_argument('--interactive', action='store_true', help="Interactive mode with duplicate checking")
+
+    parser_fuse_scc_apply = sub_fuse_scc.add_parser('apply', help="Apply a score using score configuration with validation")
+    parser_fuse_scc_apply.add_argument('config_name_or_id', help="Score config name or ID")
+    parser_fuse_scc_apply.add_argument('--trace-id', help="Trace ID to apply score to")
+    parser_fuse_scc_apply.add_argument('--session-id', help="Session ID to apply score to")
+    parser_fuse_scc_apply.add_argument('--observation-id', help="Optional observation ID (for trace scores only)")
+    parser_fuse_scc_apply.add_argument('-v', '--value', required=True, help="Score value to apply")
+    parser_fuse_scc_apply.add_argument('-c', '--comment', help="Optional comment for the score")
+
+    parser_fuse_scc_available = sub_fuse_scc.add_parser('available', help="List available score configs with optional filtering")
+    parser_fuse_scc_available.add_argument('--category', help="Filter by category (searches in name and description)")
+    parser_fuse_scc_available.add_argument('--cached-only', action='store_true', help="Only show cached configs")
+    parser_fuse_scc_available.add_argument('--json', action='store_true', help="Output in JSON format")
+
+    parser_fuse_scc_show = sub_fuse_scc.add_parser('show', help="Show detailed config information with validation requirements")
+    parser_fuse_scc_show.add_argument('config_name_or_id', help="Score config name or ID")
+    parser_fuse_scc_show.add_argument('--requirements', action='store_true', help="Show detailed validation requirements")
+    parser_fuse_scc_show.add_argument('--json', action='store_true', help="Output in JSON format")
 
     parser_fuse_traces = sub_fuse.add_parser('traces', help="List or manage traces and observations in Langfuse")
     parser_fuse_traces.add_argument('--json', action='store_true', help="Output in JSON format (default: table format)")
@@ -537,9 +596,24 @@ def main():
                 print(result)
         elif args.fuse_command == 'sessions':
             if args.sessions_action == 'create':
-                print(create_session_and_save(args.file, args.session_id, args.user_id, args.name))
+                try:
+                    session_id = validate_uuid(args.session_id, "Session ID")
+                    user_id = validate_identifier(args.user_id, "User ID") if args.user_id else None
+                    name = validate_identifier(args.name, "Name") if args.name else None
+                    print(create_session_and_save(args.file, session_id, user_id, name))
+                except ValueError as e:
+                    print(f"Error: {e}")
+                    return
             elif args.sessions_action == 'addnode':
-                print(add_trace_node_and_save(args.file, args.session_id, args.trace_id, args.user_id, args.name))
+                try:
+                    session_id = validate_uuid(args.session_id, "Session ID")
+                    trace_id = validate_uuid(args.trace_id, "Trace ID")
+                    user_id = validate_identifier(args.user_id, "User ID") if args.user_id else None
+                    name = validate_identifier(args.name, "Name") if args.name else None
+                    print(add_trace_node_and_save(args.file, session_id, trace_id, user_id, name))
+                except ValueError as e:
+                    print(f"Error: {e}")
+                    return
             elif args.sessions_action == 'view':
                 data = load_session_file(args.file)
                 print(data)
@@ -547,7 +621,43 @@ def main():
             if args.scores_action == 'create':
                 print(create_score(args.score_id, args.name, args.value))
             elif args.scores_action == 'apply':
-                print(apply_score_to_trace(args.trace_id, args.score_id, args.value))
+                try:
+                    # Validate that exactly one target is specified
+                    targets = [args.trace_id, args.session_id]
+                    specified_targets = [t for t in targets if t is not None]
+                    
+                    if len(specified_targets) != 1:
+                        print("Error: Must specify exactly one of --trace-id or --session-id")
+                        return
+                    
+                    # Validate and determine target type
+                    if args.trace_id:
+                        target_type = "trace"
+                        target_id = validate_uuid(args.trace_id, "Trace ID")
+                    else:
+                        target_type = "session"
+                        target_id = validate_uuid(args.session_id, "Session ID")
+                    
+                    # Validate other IDs
+                    score_id = validate_identifier(args.score_id, "Score ID") if args.score_id else None
+                    observation_id = validate_uuid(args.observation_id, "Observation ID") if args.observation_id else None
+                    score_name = validate_identifier(args.name, "Score Name") if args.name else None
+                    comment = validate_identifier(args.comment, "Comment", max_length=500) if args.comment else None
+                    
+                    # Apply score using create_score_for_target
+                    result = create_score_for_target(
+                        target_type=target_type,
+                        target_id=target_id,
+                        score_id=score_id,
+                        score_value=args.value,
+                        score_name=score_name,
+                        observation_id=observation_id,
+                        comment=comment
+                    )
+                except ValueError as e:
+                    print(f"Error: {e}")
+                    return
+                print(result)
             elif args.scores_action == 'list':
                 scores_data = list_scores()
                 if args.json:
@@ -650,6 +760,79 @@ def main():
                         # Install all presets (interactive by default)
                         result = install_presets_interactive()
                         print(result)
+            elif args.score_configs_action == 'apply':
+                # Validate that exactly one target is specified
+                targets = [args.trace_id, args.session_id]
+                specified_targets = [t for t in targets if t is not None]
+                
+                if len(specified_targets) != 1:
+                    print("Error: Must specify exactly one of --trace-id or --session-id")
+                    return
+                
+                # Determine target type
+                if args.trace_id:
+                    target_type = "trace"
+                    target_id = args.trace_id
+                else:
+                    target_type = "session"
+                    target_id = args.session_id
+                
+                result = apply_score_config(
+                    config_name_or_id=args.config_name_or_id,
+                    target_type=target_type,
+                    target_id=target_id,
+                    value=args.value,
+                    observation_id=args.observation_id,
+                    comment=args.comment
+                )
+                print(result)
+            elif args.score_configs_action == 'available':
+                configs = list_available_configs(
+                    category=args.category,
+                    cached_only=args.cached_only
+                )
+                if args.json:
+                    print(json.dumps(configs, indent=2))
+                else:
+                    print(format_score_configs_table(json.dumps(configs)))
+            elif args.score_configs_action == 'show':
+                config = get_config_with_auto_refresh(args.config_name_or_id)
+                if not config:
+                    print(f"Config '{args.config_name_or_id}' not found")
+                    return
+                
+                if args.json:
+                    print(json.dumps(config, indent=2))
+                else:
+                    # Format detailed display
+                    print(f"Score Config: {config.get('name', 'N/A')}")
+                    print(f"ID: {config.get('id', 'N/A')}")
+                    print(f"Type: {config.get('dataType', 'N/A')}")
+                    print(f"Description: {config.get('description', 'N/A')}")
+                    
+                    if args.requirements:
+                        print("\nValidation Requirements:")
+                        data_type = config.get('dataType', '').upper()
+                        
+                        if data_type == 'BOOLEAN':
+                            print("  - Accepts: true/false, 1/0, yes/no, on/off")
+                        elif data_type == 'CATEGORICAL':
+                            categories = config.get('categories', [])
+                            if categories:
+                                print("  - Valid options:")
+                                for cat in categories:
+                                    print(f"    • '{cat.get('label')}' (value: {cat.get('value')})")
+                        elif data_type == 'NUMERIC':
+                            min_val = config.get('minValue')
+                            max_val = config.get('maxValue')
+                            if min_val is not None and max_val is not None:
+                                print(f"  - Range: {min_val} to {max_val}")
+                            elif min_val is not None:
+                                print(f"  - Minimum: {min_val}")
+                            elif max_val is not None:
+                                print(f"  - Maximum: {max_val}")
+                            else:
+                                print("  - Any numeric value")
         elif args.fuse_command == 'traces':
             if args.trace_action == 'create':
                 # Parse JSON data, fallback to plain text if not JSON

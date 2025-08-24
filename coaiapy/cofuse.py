@@ -5,6 +5,8 @@ import datetime
 import yaml
 import json
 import re
+import os
+from pathlib import Path
 from dataclasses import dataclass, field
 from typing import Optional, List, Dict, Any, Union
 
@@ -2613,3 +2615,549 @@ def create_dataset_item(dataset_name, input_data, expected_output=None, metadata
     
     r = requests.post(url, json=data, auth=auth)
     return r.text
+
+
+# ============================================================================
+# Project-Aware Smart Caching System for Score Configs (Phase 2)
+# ============================================================================
+
+def get_current_project_info():
+    """Get current project ID and name from Langfuse API"""
+    try:
+        projects_json = list_projects()
+        projects = json.loads(projects_json)
+        
+        # Return the first project (assumes single project per API key)
+        if projects and isinstance(projects, list) and len(projects) > 0:
+            project = projects[0]
+            return {
+                'id': project.get('id'),
+                'name': project.get('name', 'unknown')
+            }
+        else:
+            return None
+    except Exception as e:
+        print(f"Warning: Could not get project info: {e}")
+        return None
+
+
+def get_project_cache_path(project_id):
+    """Generate project-specific cache file path with security validation"""
+    import re
+    
+    # Sanitize project_id to prevent path traversal attacks
+    if not project_id or not isinstance(project_id, str):
+        raise ValueError("Project ID must be a non-empty string")
+    
+    # Check for path traversal attempts before sanitization
+    if '..' in project_id or '/' in project_id or '\\' in project_id:
+        raise ValueError(f"Project ID contains path traversal characters: {project_id}")
+    
+    # Remove dangerous characters and path components
+    sanitized_id = re.sub(r'[^a-zA-Z0-9_-]', '_', project_id.strip())
+    
+    # Prevent empty or dangerous names after sanitization
+    if not sanitized_id or sanitized_id in ['.', '..', '_', '__']:
+        raise ValueError(f"Invalid project ID after sanitization: {project_id}")
+    
+    # Limit length to prevent filesystem issues
+    if len(sanitized_id) > 100:
+        sanitized_id = sanitized_id[:100]
+    
+    cache_dir = Path.home() / '.coaia' / 'score-configs'
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    return cache_dir / f'{sanitized_id}.json'
+
+
+def is_cache_stale(cached_config, max_age_hours=24):
+    """Check if cached config is stale based on age"""
+    try:
+        cached_at = datetime.datetime.fromisoformat(cached_config.get('cached_at', '').replace('Z', '+00:00'))
+        age_hours = (datetime.datetime.now(datetime.timezone.utc) - cached_at).total_seconds() / 3600
+        return age_hours > max_age_hours
+    except Exception:
+        return True  # Treat invalid timestamps as stale
+
+
+def load_project_cache(project_id):
+    """Load existing cache file for a project with validation"""
+    cache_path = get_project_cache_path(project_id)
+    
+    try:
+        if cache_path.exists():
+            with open(cache_path, 'r') as f:
+                data = json.load(f)
+                
+            # Validate cache structure to prevent malformed data attacks
+            if not isinstance(data, dict):
+                print(f"Warning: Invalid cache structure (not dict) in {cache_path}")
+                return None
+            
+            # Validate required fields and types
+            if 'configs' in data and not isinstance(data['configs'], list):
+                print(f"Warning: Invalid configs field (not list) in {cache_path}")
+                return None
+            
+            # Validate each config entry
+            if 'configs' in data:
+                for i, config in enumerate(data['configs']):
+                    if not isinstance(config, dict):
+                        print(f"Warning: Invalid config entry {i} (not dict) in {cache_path}")
+                        return None
+                    
+                    # Validate required config fields
+                    if 'name' not in config and 'id' not in config:
+                        print(f"Warning: Config entry {i} missing name/id in {cache_path}")
+                        return None
+            
+            return data
+        else:
+            return None
+    except json.JSONDecodeError as e:
+        print(f"Warning: Invalid JSON in cache {cache_path}: {e}")
+        return None
+    except Exception as e:
+        print(f"Warning: Could not load cache from {cache_path}: {e}")
+        return None
+
+
+def save_project_cache(project_id, cache_data):
+    """Save cache data to project-specific cache file"""
+    cache_path = get_project_cache_path(project_id)
+    
+    try:
+        with open(cache_path, 'w') as f:
+            json.dump(cache_data, f, indent=2)
+        return True
+    except Exception as e:
+        print(f"Warning: Could not save cache to {cache_path}: {e}")
+        return False
+
+
+def cache_score_config(cache_path, config):
+    """Store a single config in the project cache with atomic writes"""
+    import tempfile
+    import shutil
+    
+    try:
+        # Validate input config
+        if not isinstance(config, dict):
+            raise ValueError("Config must be a dictionary")
+        
+        if not config.get('name') and not config.get('id'):
+            raise ValueError("Config must have either name or id")
+        
+        # Load existing cache with validation
+        if cache_path.exists():
+            with open(cache_path, 'r') as f:
+                cache_data = json.load(f)
+                
+            # Validate loaded data structure
+            if not isinstance(cache_data, dict):
+                print(f"Warning: Corrupted cache file {cache_path}, reinitializing")
+                cache_data = {'configs': []}
+            elif 'configs' not in cache_data or not isinstance(cache_data['configs'], list):
+                print(f"Warning: Invalid cache structure in {cache_path}, reinitializing")
+                cache_data = {'configs': []}
+        else:
+            cache_data = {'configs': []}
+        
+        # Add cached_at timestamp to config (create copy to avoid modifying input)
+        config_copy = config.copy()
+        config_copy['cached_at'] = datetime.datetime.now(datetime.timezone.utc).isoformat()
+        
+        # Update or add config in cache
+        existing_index = None
+        for i, cached_config in enumerate(cache_data['configs']):
+            if (cached_config.get('id') and cached_config.get('id') == config_copy.get('id')) or \
+               (cached_config.get('name') and cached_config.get('name') == config_copy.get('name')):
+                existing_index = i
+                break
+        
+        if existing_index is not None:
+            cache_data['configs'][existing_index] = config_copy
+        else:
+            cache_data['configs'].append(config_copy)
+        
+        # Update cache metadata
+        cache_data['last_sync'] = datetime.datetime.now(datetime.timezone.utc).isoformat()
+        
+        # Atomic write using temporary file to prevent corruption
+        cache_dir = cache_path.parent
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.tmp', dir=cache_dir, delete=False) as tmp_file:
+            json.dump(cache_data, tmp_file, indent=2)
+            tmp_file.flush()
+            # Ensure data is written to disk before rename
+            import os
+            os.fsync(tmp_file.fileno())
+            tmp_path = tmp_file.name
+        
+        # Atomic rename (only works if tmp and target on same filesystem)
+        try:
+            shutil.move(tmp_path, cache_path)
+        except Exception as rename_error:
+            # Fallback: copy and remove (less atomic but more compatible)
+            try:
+                shutil.copy2(tmp_path, cache_path)
+                os.unlink(tmp_path)
+            except Exception as fallback_error:
+                # Clean up temporary file
+                try:
+                    os.unlink(tmp_path)
+                except:
+                    pass
+                raise fallback_error
+        
+        return True
+    except Exception as e:
+        print(f"Warning: Could not cache config: {e}")
+        return False
+
+
+def get_config_with_auto_refresh(config_name_or_id):
+    """
+    Smart cache-first retrieval with transparent auto-refresh.
+    Returns config data with automatic cache management.
+    
+    Args:
+        config_name_or_id: Either config name (string) or config ID
+        
+    Returns:
+        dict: Config data from cache or API, or None if not found
+    """
+    # Get current project info
+    project_info = get_current_project_info()
+    if not project_info:
+        print("Warning: Could not determine current project, falling back to API")
+        return _fetch_config_from_api(config_name_or_id)
+    
+    project_id = project_info['id']
+    project_name = project_info['name']
+    
+    # Load project cache
+    cache_data = load_project_cache(project_id)
+    
+    # Search cache first if available
+    if cache_data:
+        for cached_config in cache_data.get('configs', []):
+            # Match by ID or name
+            if (cached_config.get('id') == config_name_or_id or 
+                cached_config.get('name') == config_name_or_id):
+                
+                # Check if cache is stale
+                if not is_cache_stale(cached_config):
+                    print(f"Cache hit for config '{config_name_or_id}' in project '{project_name}'")
+                    return cached_config
+                else:
+                    print(f"Cache stale for config '{config_name_or_id}', refreshing from API")
+                    break
+    
+    # Cache miss or stale - fetch from API
+    print(f"Fetching config '{config_name_or_id}' from API for project '{project_name}'")
+    
+    # Try to find config by name first (list all configs)
+    try:
+        all_configs_json = list_score_configs()
+        all_configs = json.loads(all_configs_json)
+        
+        target_config = None
+        for config in all_configs:
+            if config.get('id') == config_name_or_id or config.get('name') == config_name_or_id:
+                target_config = config
+                break
+        
+        if not target_config:
+            print(f"Config '{config_name_or_id}' not found")
+            return None
+        
+        # Initialize cache structure if needed
+        if not cache_data:
+            cache_data = {
+                'project_id': project_id,
+                'project_name': project_name,
+                'last_sync': datetime.datetime.now(datetime.timezone.utc).isoformat(),
+                'configs': []
+            }
+        
+        # Add to cache
+        cache_path = get_project_cache_path(project_id)
+        if cache_score_config(cache_path, target_config):
+            print(f"Cached config '{config_name_or_id}' for project '{project_name}'")
+        
+        return target_config
+        
+    except Exception as e:
+        print(f"Error fetching config '{config_name_or_id}': {e}")
+        return None
+
+
+def _fetch_config_from_api(config_name_or_id):
+    """Fallback function to fetch config directly from API without caching"""
+    try:
+        # First try to get by ID if it looks like an ID
+        if isinstance(config_name_or_id, str) and (len(config_name_or_id) > 20 or config_name_or_id.startswith('cm')):
+            config_json = get_score_config(config_name_or_id)
+            return json.loads(config_json)
+        
+        # Otherwise search by name in all configs
+        all_configs_json = list_score_configs()
+        all_configs = json.loads(all_configs_json)
+        
+        for config in all_configs:
+            if config.get('name') == config_name_or_id:
+                return config
+                
+        return None
+    except Exception as e:
+        print(f"Error fetching config from API: {e}")
+        return None
+
+
+def validate_score_value(config, value):
+    """
+    Validate a score value against its configuration constraints.
+    
+    Args:
+        config: Score config dictionary from API
+        value: Value to validate (can be string, int, float, or bool)
+        
+    Returns:
+        tuple: (is_valid: bool, processed_value: any, error_message: str)
+    """
+    if not config:
+        return False, None, "Config not found"
+    
+    data_type = config.get('dataType', '').upper()
+    
+    if data_type == 'BOOLEAN':
+        # Accept various boolean representations
+        if isinstance(value, bool):
+            return True, value, None
+        elif isinstance(value, str):
+            if value.lower() in ['true', '1', 'yes', 'on']:
+                return True, True, None
+            elif value.lower() in ['false', '0', 'no', 'off']:
+                return True, False, None
+            else:
+                return False, None, f"Invalid boolean value '{value}'. Use true/false, 1/0, yes/no, or on/off"
+        elif isinstance(value, (int, float)):
+            if value in [0, 1]:
+                return True, bool(value), None
+            else:
+                return False, None, f"Invalid boolean value '{value}'. Use 1 for true or 0 for false"
+        else:
+            return False, None, f"Invalid boolean value '{value}'. Use true/false, 1/0, yes/no, or on/off"
+    
+    elif data_type == 'CATEGORICAL':
+        categories = config.get('categories', [])
+        if not categories:
+            return False, None, "No categories defined for categorical score"
+        
+        # Convert value to appropriate type for comparison
+        try:
+            # Try to convert to int/float first
+            if isinstance(value, str) and value.replace('.', '').replace('-', '').isdigit():
+                if '.' in value:
+                    numeric_value = float(value)
+                else:
+                    numeric_value = int(value)
+            else:
+                numeric_value = value
+        except:
+            numeric_value = value
+        
+        # Check if value matches any category value or label
+        valid_values = []
+        valid_labels = []
+        for category in categories:
+            cat_value = category.get('value')
+            cat_label = category.get('label', '')
+            valid_values.append(cat_value)
+            valid_labels.append(cat_label)
+            
+            # Match by value (exact)
+            if cat_value == numeric_value or cat_value == value:
+                return True, cat_value, None
+            
+            # Match by label (case-insensitive)
+            if isinstance(value, str) and cat_label.lower() == value.lower():
+                return True, cat_value, None
+        
+        # Format error message with valid options
+        valid_options = []
+        for category in categories:
+            valid_options.append(f"'{category.get('label')}' ({category.get('value')})")
+        
+        return False, None, f"Invalid categorical value '{value}'. Valid options: {', '.join(valid_options)}"
+    
+    elif data_type == 'NUMERIC':
+        # Convert to numeric with robust edge case handling
+        try:
+            if isinstance(value, (int, float)):
+                numeric_value = float(value)
+            elif isinstance(value, str):
+                # Strip whitespace and validate format
+                value = value.strip()
+                if not value:
+                    return False, None, "Numeric value cannot be empty"
+                
+                # Check for invalid patterns
+                if value in ['inf', '-inf', 'nan', '+inf']:
+                    return False, None, f"Invalid numeric value '{value}'. Infinity and NaN not allowed"
+                
+                # Handle scientific notation safely
+                if 'e' in value.lower():
+                    try:
+                        numeric_value = float(value)
+                        # Check if result is finite
+                        if not (numeric_value == numeric_value and abs(numeric_value) != float('inf')):
+                            return False, None, f"Numeric value '{value}' results in invalid number"
+                    except (ValueError, OverflowError):
+                        return False, None, f"Invalid numeric value '{value}'. Invalid scientific notation"
+                else:
+                    # Regular numeric parsing with overflow protection
+                    try:
+                        if '.' in value:
+                            numeric_value = float(value)
+                            # Check for overflow/underflow
+                            if abs(numeric_value) > 1e308:
+                                return False, None, f"Numeric value '{value}' is too large"
+                        else:
+                            # Try int first, fallback to float for large numbers
+                            try:
+                                int_value = int(value)
+                                # Check for extremely large integers that might cause issues
+                                if abs(int_value) > 9223372036854775807:  # sys.maxsize on 64-bit
+                                    numeric_value = float(int_value)
+                                else:
+                                    numeric_value = int_value
+                            except ValueError:
+                                numeric_value = float(value)
+                    except (ValueError, OverflowError):
+                        return False, None, f"Invalid numeric value '{value}'. Must be a valid number"
+                
+                # Final validation - ensure result is finite
+                if isinstance(numeric_value, float) and not (numeric_value == numeric_value and abs(numeric_value) != float('inf')):
+                    return False, None, f"Numeric value '{value}' results in invalid number"
+                    
+            else:
+                # Try to convert other types
+                numeric_value = float(value)
+                
+        except (ValueError, TypeError, OverflowError) as e:
+            return False, None, f"Invalid numeric value '{value}'. Must be a valid number"
+        
+        # Check min/max constraints
+        min_value = config.get('minValue')
+        max_value = config.get('maxValue')
+        
+        if min_value is not None and numeric_value < min_value:
+            range_info = f"minimum: {min_value}"
+            if max_value is not None:
+                range_info = f"range: {min_value} to {max_value}"
+            return False, None, f"Value {numeric_value} is below minimum. Valid {range_info}"
+        
+        if max_value is not None and numeric_value > max_value:
+            range_info = f"maximum: {max_value}"
+            if min_value is not None:
+                range_info = f"range: {min_value} to {max_value}"
+            return False, None, f"Value {numeric_value} is above maximum. Valid {range_info}"
+        
+        return True, numeric_value, None
+    
+    else:
+        return False, None, f"Unknown data type '{data_type}'. Expected BOOLEAN, CATEGORICAL, or NUMERIC"
+
+
+def apply_score_config(config_name_or_id, target_type, target_id, value, observation_id=None, comment=None):
+    """
+    Apply a score using a score configuration with value validation.
+    
+    Args:
+        config_name_or_id: Name or ID of the score config
+        target_type: "trace" or "session"
+        target_id: ID of the trace or session
+        value: Score value to apply
+        observation_id: Optional observation ID for trace scores
+        comment: Optional comment for the score
+        
+    Returns:
+        str: API response or error message
+    """
+    # Get the config using smart caching
+    config = get_config_with_auto_refresh(config_name_or_id)
+    if not config:
+        return f"Error: Score config '{config_name_or_id}' not found"
+    
+    # Validate the value
+    is_valid, processed_value, error_message = validate_score_value(config, value)
+    if not is_valid:
+        return f"Error: {error_message}"
+    
+    # Apply the score using the existing function
+    try:
+        result = create_score_for_target(
+            target_type=target_type,
+            target_id=target_id,
+            score_id=None,  # Use config instead
+            score_value=processed_value,
+            score_name=None,  # Use config instead
+            observation_id=observation_id,
+            config_id=config['id'],
+            comment=comment
+        )
+        
+        config_name = config.get('name', config_name_or_id)
+        target_desc = f"{target_type} '{target_id}'"
+        if observation_id:
+            target_desc += f" (observation '{observation_id}')"
+        
+        print(f"Applied score config '{config_name}' with value {processed_value} to {target_desc}")
+        return result
+        
+    except Exception as e:
+        return f"Error applying score: {e}"
+
+
+def list_available_configs(category=None, cached_only=False):
+    """
+    List available score configurations with optional filtering.
+    
+    Args:
+        category: Optional category filter (matches description content)
+        cached_only: If True, only return cached configs
+        
+    Returns:
+        list: List of score config dictionaries
+    """
+    if cached_only:
+        # Get from cache only
+        project_info = get_current_project_info()
+        if not project_info:
+            return []
+        
+        cache_data = load_project_cache(project_info['id'])
+        if not cache_data:
+            return []
+        
+        configs = cache_data.get('configs', [])
+    else:
+        # Get from API
+        try:
+            configs_json = list_score_configs()
+            configs = json.loads(configs_json)
+        except Exception as e:
+            print(f"Error fetching configs: {e}")
+            return []
+    
+    # Apply category filter if specified
+    if category:
+        filtered_configs = []
+        for config in configs:
+            description = config.get('description', '').lower()
+            config_name = config.get('name', '').lower()
+            if category.lower() in description or category.lower() in config_name:
+                filtered_configs.append(config)
+        configs = filtered_configs
+    
+    return configs
