@@ -36,6 +36,29 @@
       "required": false,
       "default": 0.7,
       "description": "Temperature setting for model"
+    },
+    {
+      "name": "enable_judge_evaluation",
+      "type": "boolean",
+      "required": false,
+      "default": false,
+      "description": "Enable automatic LLM judge evaluation of generated content"
+    },
+    {
+      "name": "judge_model",
+      "type": "string",
+      "required": false,
+      "default": "gpt-4",
+      "choices": ["gpt-4", "gpt-3.5-turbo", "claude-3", "gpt-4-turbo"],
+      "description": "LLM model to use as judge (when evaluation enabled)"
+    },
+    {
+      "name": "evaluation_criteria",
+      "type": "string",
+      "required": false,
+      "default": "helpfulness",
+      "choices": ["helpfulness", "correctness", "clarity", "relevance"],
+      "description": "Criteria for judge evaluation (when evaluation enabled)"
     }
   ],
   "steps": [
@@ -113,6 +136,71 @@
         "step": "synthesis",
         "total_tokens": 330,
         "chain_complete": true
+      }
+    },
+    {
+      "name": "Judge Initial Generation",
+      "observation_type": "GENERATION",
+      "description": "{{judge_model}} evaluating initial generation for {{evaluation_criteria}}",
+      "parent": "LLM Chain: {{chain_name}}",
+      "conditional": "{{enable_judge_evaluation}}",
+      "variables": {
+        "input": {
+          "content": "Initial generation response",
+          "evaluation_prompt": "Evaluate the initial generation for {{evaluation_criteria}}. Rate 1-10 and provide reasoning.",
+          "model": "{{judge_model}}"
+        },
+        "output": {"judge_score": 8.3, "judge_reasoning": "Strong {{evaluation_criteria}} with clear response structure"}
+      },
+      "metadata": {
+        "step": "judge_initial",
+        "model": "{{judge_model}}",
+        "evaluation_criteria": "{{evaluation_criteria}}",
+        "generation_step": "initial"
+      }
+    },
+    {
+      "name": "Judge Follow-up Generation",
+      "observation_type": "GENERATION",
+      "description": "{{judge_model}} evaluating follow-up generation for {{evaluation_criteria}}",
+      "parent": "LLM Chain: {{chain_name}}",
+      "conditional": "{{enable_judge_evaluation}}",
+      "variables": {
+        "input": {
+          "content": "Follow-up generation response",
+          "evaluation_prompt": "Evaluate the follow-up generation for {{evaluation_criteria}}. Rate 1-10 and provide reasoning.",
+          "model": "{{judge_model}}"
+        },
+        "output": {"judge_score": 8.7, "judge_reasoning": "Excellent {{evaluation_criteria}} with contextual enhancement"}
+      },
+      "metadata": {
+        "step": "judge_followup",
+        "model": "{{judge_model}}",
+        "evaluation_criteria": "{{evaluation_criteria}}",
+        "generation_step": "followup"
+      }
+    },
+    {
+      "name": "Chain Quality Summary",
+      "observation_type": "EVENT",
+      "description": "Summary of judge evaluations for the complete LLM chain",
+      "parent": "LLM Chain: {{chain_name}}",
+      "conditional": "{{enable_judge_evaluation}}",
+      "variables": {
+        "input": {"action": "summarize_chain_quality", "chain_name": "{{chain_name}}"},
+        "output": {
+          "overall_quality_score": 8.5,
+          "initial_score": 8.3,
+          "followup_score": 8.7,
+          "quality_trend": "improving",
+          "evaluation_complete": true
+        }
+      },
+      "metadata": {
+        "step": "chain_quality_summary",
+        "judge_model": "{{judge_model}}",
+        "evaluation_criteria": "{{evaluation_criteria}}",
+        "chain_evaluation_complete": true
       }
     }
   ]

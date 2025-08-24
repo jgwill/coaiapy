@@ -356,6 +356,7 @@ def main():
     parser_pipeline_create.add_argument('--user-id', help='User ID for the trace')
     parser_pipeline_create.add_argument('--export-env', action='store_true', help='Export environment variables for pipeline workflows')
     parser_pipeline_create.add_argument('--dry-run', action='store_true', help='Show what would be created without actually creating')
+    parser_pipeline_create.add_argument('--enable-judge', action='store_true', help='Enable LLM-as-a-Judge API integration for evaluation steps')
     
     parser_pipeline_init = sub_pipeline.add_parser('init', help='Create a new pipeline template')
     parser_pipeline_init.add_argument('template_name', help='Name for the new template')
@@ -1093,7 +1094,13 @@ def main():
                         example_vars[var.name] = ["item1", "item2"]
                 
                 try:
-                    rendered_observations = renderer.render_template(template, example_vars)
+                    # For preview, always show judge integration capabilities if template has judge steps
+                    has_judge_steps = any('judge' in step.name.lower() or 'evaluation' in step.name.lower() 
+                                        for step in template.steps)
+                    if has_judge_steps:
+                        rendered_observations = renderer.render_with_judge_integration(template, example_vars, enable_judge_calls=False)
+                    else:
+                        rendered_observations = renderer.render_template(template, example_vars)
                     print(f"Example variables: {json.dumps(example_vars, indent=2)}")
                     print(f"\nRendered observations:")
                     for obs in rendered_observations:
@@ -1130,8 +1137,12 @@ def main():
                         print(f"  - {error}")
                     return
                 
-                # Render template
-                rendered_observations = renderer.render_template(template, variables)
+                # Render template with optional judge integration
+                enable_judge = getattr(args, 'enable_judge', False)
+                if enable_judge:
+                    rendered_observations = renderer.render_with_judge_integration(template, variables, enable_judge_calls=True)
+                else:
+                    rendered_observations = renderer.render_template(template, variables)
                 
                 if args.dry_run:
                     print(f"DRY RUN: Would create {len(rendered_observations)} observations")

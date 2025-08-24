@@ -372,3 +372,94 @@ class TemplateRenderer:
                 rendered[key] = value
         
         return rendered
+    
+    def render_with_judge_integration(self, template: PipelineTemplate, 
+                                    variables: Dict[str, Any],
+                                    enable_judge_calls: bool = False) -> List[Dict[str, Any]]:
+        """Render template with optional LLM-as-a-Judge API integration"""
+        # First render normally
+        observations = self.render_template(template, variables)
+        
+        # If judge integration is enabled, process judge steps
+        if enable_judge_calls:
+            observations = self._process_judge_steps(observations, variables)
+        
+        return observations
+    
+    def _process_judge_steps(self, observations: List[Dict[str, Any]], 
+                           variables: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """Process steps that require LLM-as-a-Judge API calls"""
+        processed_observations = []
+        
+        for obs in observations:
+            # Check if this is a judge evaluation step
+            if self._is_judge_step(obs):
+                # TODO: Integrate with actual LLM-as-a-Judge API when available
+                # For now, enhance the observation with judge integration metadata
+                obs = self._prepare_judge_step(obs, variables)
+            
+            processed_observations.append(obs)
+        
+        return processed_observations
+    
+    def _is_judge_step(self, observation: Dict[str, Any]) -> bool:
+        """Check if an observation represents a judge evaluation step"""
+        step_name = observation.get('name', '').lower()
+        description = observation.get('description', '').lower()
+        metadata = observation.get('metadata', {})
+        
+        # Look for judge indicators
+        judge_indicators = ['judge', 'evaluation', 'assess', 'scoring', 'rating']
+        
+        return (
+            any(indicator in step_name for indicator in judge_indicators) or
+            any(indicator in description for indicator in judge_indicators) or
+            'judge_model' in metadata or
+            'evaluation_criteria' in metadata
+        )
+    
+    def _prepare_judge_step(self, observation: Dict[str, Any], 
+                           variables: Dict[str, Any]) -> Dict[str, Any]:
+        """Prepare observation for LLM-as-a-Judge integration"""
+        # Add judge integration metadata
+        if 'metadata' not in observation:
+            observation['metadata'] = {}
+        
+        observation['metadata']['judge_integration_ready'] = True
+        observation['metadata']['judge_api_placeholder'] = True
+        
+        # Extract judge parameters if available
+        metadata = observation.get('metadata', {})
+        judge_params = {}
+        
+        if 'judge_model' in metadata:
+            judge_params['model'] = metadata['judge_model']
+        if 'evaluation_criteria' in metadata:
+            judge_params['criteria'] = metadata['evaluation_criteria']
+        
+        # Add judge parameters to variables
+        if judge_params:
+            if 'variables' not in observation:
+                observation['variables'] = {}
+            if 'input' not in observation['variables']:
+                observation['variables']['input'] = {}
+            
+            observation['variables']['input']['judge_params'] = judge_params
+            
+            # TODO: When LLM-as-a-Judge API is available, this is where we would:
+            # 1. Extract content to evaluate from observation
+            # 2. Call LLM-as-a-Judge API with judge_params 
+            # 3. Update observation output with actual judge results
+            # 4. Store judge reasoning and scores
+            # 
+            # Example future integration:
+            # from cofuse import llm_judge_evaluate
+            # judge_result = llm_judge_evaluate(
+            #     content=observation['variables']['input'].get('content'),
+            #     model=judge_params.get('model', 'gpt-4'),
+            #     criteria=judge_params.get('criteria', 'helpfulness')
+            # )
+            # observation['variables']['output']['judge_score'] = judge_result['score']
+            # observation['variables']['output']['judge_reasoning'] = judge_result['reasoning']
+        
+        return observation

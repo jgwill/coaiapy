@@ -1,0 +1,135 @@
+{
+  "name": "judge-evaluation",
+  "version": "1.0",
+  "description": "Content creation with automatic LLM judge assessment",
+  "author": "CoaiaPy Built-in",
+  "variables": [
+    {
+      "name": "content_name",
+      "type": "string", 
+      "required": true,
+      "description": "Name for the content being evaluated"
+    },
+    {
+      "name": "content_to_evaluate",
+      "type": "string",
+      "required": true,
+      "description": "Content that will be judged for quality"
+    },
+    {
+      "name": "judge_model",
+      "type": "string",
+      "required": false,
+      "default": "gpt-4",
+      "choices": ["gpt-4", "gpt-3.5-turbo", "claude-3", "gpt-4-turbo"],
+      "description": "LLM model to use as judge"
+    },
+    {
+      "name": "evaluation_criteria",
+      "type": "string",
+      "required": false,
+      "default": "helpfulness",
+      "choices": ["helpfulness", "correctness", "hallucination", "relevance", "clarity"],
+      "description": "Evaluation criteria for the judge"
+    },
+    {
+      "name": "score_config_name",
+      "type": "string", 
+      "required": false,
+      "description": "Score configuration name to use for evaluation"
+    },
+    {
+      "name": "user_id",
+      "type": "string",
+      "required": false,
+      "description": "User requesting the evaluation"
+    }
+  ],
+  "steps": [
+    {
+      "name": "Content Evaluation: {{content_name}}",
+      "observation_type": "SPAN",
+      "description": "Evaluating {{content_name}} using {{judge_model}} with {{evaluation_criteria}} criteria",
+      "variables": {
+        "input": {"content": "{{content_to_evaluate}}", "criteria": "{{evaluation_criteria}}"},
+        "output": {"status": "evaluation_started", "judge_model": "{{judge_model}}"}
+      },
+      "metadata": {
+        "template": "judge-evaluation",
+        "judge_model": "{{judge_model}}",
+        "evaluation_criteria": "{{evaluation_criteria}}",
+        "user_id": "{{user_id}}"
+      }
+    },
+    {
+      "name": "Content Storage",
+      "observation_type": "EVENT", 
+      "description": "Storing content for evaluation",
+      "parent": "Content Evaluation: {{content_name}}",
+      "variables": {
+        "input": {"action": "store_content", "content": "{{content_to_evaluate}}"},
+        "output": {"content_id": "stored_{{content_name}}", "status": "stored"}
+      },
+      "metadata": {
+        "step": "content_storage",
+        "content_length": "{{content_to_evaluate | length}}"
+      }
+    },
+    {
+      "name": "Judge Assessment",
+      "observation_type": "GENERATION",
+      "description": "{{judge_model}} evaluating content using {{evaluation_criteria}} criteria", 
+      "parent": "Content Evaluation: {{content_name}}",
+      "variables": {
+        "input": {
+          "content": "{{content_to_evaluate}}", 
+          "evaluation_prompt": "Please evaluate the following content for {{evaluation_criteria}}. Provide a score and reasoning.",
+          "model": "{{judge_model}}"
+        },
+        "output": {"judge_score": 8.5, "judge_reasoning": "Content demonstrates high {{evaluation_criteria}} with clear explanations"}
+      },
+      "metadata": {
+        "step": "judge_assessment",
+        "model": "{{judge_model}}",
+        "evaluation_criteria": "{{evaluation_criteria}}",
+        "usage": {"prompt_tokens": 150, "completion_tokens": 75, "total_tokens": 225}
+      }
+    },
+    {
+      "name": "Score Application",
+      "observation_type": "EVENT",
+      "description": "Applying judge score to content using score configuration",
+      "parent": "Content Evaluation: {{content_name}}",
+      "conditional": "{{score_config_name}}",
+      "variables": {
+        "input": {"score_config": "{{score_config_name}}", "judge_score": 8.5, "reasoning": "from_judge"},
+        "output": {"score_applied": true, "score_id": "score_{{uuid4()}}"}
+      },
+      "metadata": {
+        "step": "score_application",
+        "score_config_name": "{{score_config_name}}",
+        "judge_model": "{{judge_model}}"
+      }
+    },
+    {
+      "name": "Evaluation Summary",
+      "observation_type": "EVENT",
+      "description": "Summarizing evaluation results for {{content_name}}",
+      "parent": "Content Evaluation: {{content_name}}",
+      "variables": {
+        "input": {"action": "summarize_evaluation", "content_name": "{{content_name}}"},
+        "output": {
+          "evaluation_complete": true, 
+          "judge_model": "{{judge_model}}",
+          "criteria": "{{evaluation_criteria}}",
+          "content_assessed": true
+        }
+      },
+      "metadata": {
+        "step": "evaluation_summary",
+        "evaluation_complete": true,
+        "timestamp": "{{now()}}"
+      }
+    }
+  ]
+}

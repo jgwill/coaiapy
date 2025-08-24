@@ -1,0 +1,180 @@
+{
+  "name": "judge-ensemble",
+  "version": "1.0", 
+  "description": "Multiple LLM judges evaluate same content with different criteria",
+  "author": "CoaiaPy Built-in",
+  "variables": [
+    {
+      "name": "content_name",
+      "type": "string",
+      "required": true,
+      "description": "Name for the content being evaluated"
+    },
+    {
+      "name": "content_to_evaluate", 
+      "type": "string",
+      "required": true,
+      "description": "Content that will be evaluated by multiple judges"
+    },
+    {
+      "name": "judge_models",
+      "type": "list",
+      "required": false,
+      "default": ["gpt-4", "claude-3"],
+      "description": "List of LLM models to use as judges"
+    },
+    {
+      "name": "evaluation_criteria",
+      "type": "list", 
+      "required": false,
+      "default": ["helpfulness", "correctness", "clarity"],
+      "description": "List of criteria for evaluation"
+    },
+    {
+      "name": "consensus_threshold",
+      "type": "number",
+      "required": false,
+      "default": 0.8,
+      "description": "Minimum agreement threshold for consensus scoring"
+    },
+    {
+      "name": "user_id",
+      "type": "string",
+      "required": false,
+      "description": "User requesting the ensemble evaluation"
+    }
+  ],
+  "steps": [
+    {
+      "name": "Judge Ensemble: {{content_name}}",
+      "observation_type": "SPAN",
+      "description": "Multi-judge evaluation of {{content_name}} using {{judge_models | length}} judges",
+      "variables": {
+        "input": {"content": "{{content_to_evaluate}}", "judges": "{{judge_models}}", "criteria": "{{evaluation_criteria}}"},
+        "output": {"status": "ensemble_started", "judge_count": "{{judge_models | length}}"}
+      },
+      "metadata": {
+        "template": "judge-ensemble",
+        "judge_models": "{{judge_models}}",
+        "evaluation_criteria": "{{evaluation_criteria}}", 
+        "consensus_threshold": "{{consensus_threshold}}",
+        "user_id": "{{user_id}}"
+      }
+    },
+    {
+      "name": "Content Preparation",
+      "observation_type": "EVENT",
+      "description": "Preparing content for multi-judge evaluation",
+      "parent": "Judge Ensemble: {{content_name}}",
+      "variables": {
+        "input": {"content": "{{content_to_evaluate}}", "prepare_for": "ensemble_evaluation"},
+        "output": {"content_prepared": true, "content_length": "{{content_to_evaluate | length}}"}
+      },
+      "metadata": {
+        "step": "content_preparation",
+        "criteria_count": "{{evaluation_criteria | length}}"
+      }
+    },
+    {
+      "name": "Helpfulness Judge",
+      "observation_type": "GENERATION",
+      "description": "Judge evaluation for helpfulness criteria",
+      "parent": "Judge Ensemble: {{content_name}}",
+      "conditional": "{{ 'helpfulness' in evaluation_criteria }}",
+      "variables": {
+        "input": {
+          "content": "{{content_to_evaluate}}",
+          "evaluation_prompt": "Evaluate this content for helpfulness. Rate 1-10 and provide reasoning.",
+          "model": "{{judge_models[0] if judge_models else 'gpt-4'}}"
+        },
+        "output": {"score": 8.2, "reasoning": "Content provides clear, actionable guidance", "criteria": "helpfulness"}
+      },
+      "metadata": {
+        "step": "helpfulness_judge",
+        "model": "{{judge_models[0] if judge_models else 'gpt-4'}}",
+        "criteria": "helpfulness"
+      }
+    },
+    {
+      "name": "Correctness Judge", 
+      "observation_type": "GENERATION",
+      "description": "Judge evaluation for correctness criteria",
+      "parent": "Judge Ensemble: {{content_name}}",
+      "conditional": "{{ 'correctness' in evaluation_criteria }}",
+      "variables": {
+        "input": {
+          "content": "{{content_to_evaluate}}",
+          "evaluation_prompt": "Evaluate this content for factual correctness. Rate 1-10 and provide reasoning.",
+          "model": "{{judge_models[1] if judge_models | length > 1 else judge_models[0] if judge_models else 'claude-3'}}"
+        },
+        "output": {"score": 9.1, "reasoning": "Information is accurate and well-sourced", "criteria": "correctness"}
+      },
+      "metadata": {
+        "step": "correctness_judge", 
+        "model": "{{judge_models[1] if judge_models | length > 1 else judge_models[0] if judge_models else 'claude-3'}}",
+        "criteria": "correctness"
+      }
+    },
+    {
+      "name": "Clarity Judge",
+      "observation_type": "GENERATION",
+      "description": "Judge evaluation for clarity criteria", 
+      "parent": "Judge Ensemble: {{content_name}}",
+      "conditional": "{{ 'clarity' in evaluation_criteria }}",
+      "variables": {
+        "input": {
+          "content": "{{content_to_evaluate}}",
+          "evaluation_prompt": "Evaluate this content for clarity and readability. Rate 1-10 and provide reasoning.",
+          "model": "{{judge_models[0] if judge_models else 'gpt-4'}}"
+        },
+        "output": {"score": 8.7, "reasoning": "Well-structured with clear explanations", "criteria": "clarity"}
+      },
+      "metadata": {
+        "step": "clarity_judge",
+        "model": "{{judge_models[0] if judge_models else 'gpt-4'}}",
+        "criteria": "clarity"
+      }
+    },
+    {
+      "name": "Consensus Analysis",
+      "observation_type": "EVENT",
+      "description": "Analyzing judge consensus and calculating ensemble score",
+      "parent": "Judge Ensemble: {{content_name}}",
+      "variables": {
+        "input": {"action": "analyze_consensus", "threshold": "{{consensus_threshold}}", "judge_scores": "collected"},
+        "output": {
+          "ensemble_score": 8.67,
+          "consensus_reached": true,
+          "score_variance": 0.45,
+          "judge_agreement": 0.85
+        }
+      },
+      "metadata": {
+        "step": "consensus_analysis",
+        "consensus_threshold": "{{consensus_threshold}}",
+        "judges_evaluated": "{{evaluation_criteria | length}}"
+      }
+    },
+    {
+      "name": "Ensemble Summary",
+      "observation_type": "EVENT",
+      "description": "Final summary of multi-judge evaluation for {{content_name}}",
+      "parent": "Judge Ensemble: {{content_name}}",
+      "variables": {
+        "input": {"action": "summarize_ensemble", "content_name": "{{content_name}}"},
+        "output": {
+          "evaluation_complete": true,
+          "final_ensemble_score": 8.67,
+          "judges_used": "{{judge_models | length}}",
+          "criteria_evaluated": "{{evaluation_criteria | length}}",
+          "consensus_quality": "high"
+        }
+      },
+      "metadata": {
+        "step": "ensemble_summary", 
+        "evaluation_complete": true,
+        "timestamp": "{{now()}}"
+      }
+    }
+  ]
+}
