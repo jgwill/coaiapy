@@ -23,6 +23,8 @@ setup(
         'requests',
         'markdown',
         'PyYAML',
+        'Jinja2>=2.10,<=2.11.3',
+        'MarkupSafe>=0.23,<2.0',
     ],
     classifiers=[
         'Programming Language :: Python :: 3',
