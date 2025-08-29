@@ -165,3 +165,20 @@ cython_debug/
 
 .env.tests
 .mcp.json
+
+
+# TEMP IGNORING for the coding session >>>
+.coaia-env
+.coaia-env.development
+IMPLEMENTATION_SUMMARY.md
+Mia-Cadence/
+SECURITY_FIXES_REPORT.md
+THT_TuningSet2406.jsonl
+_help.txt
+_historyc_2508162053.txt
+conversations/
+out.scorelist.txt
+*llmcon.*
+# <<< TEMP IGNORING for the coding session
+
+
