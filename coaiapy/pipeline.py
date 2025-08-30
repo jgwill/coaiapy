@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import Dict, List, Optional, Any, Union
 from dataclasses import dataclass, field
 import re
-from jinja2 import Template, Environment, BaseLoader, meta
+from .mobile_template import MobileTemplateEngine, MobileEnvironment, MobileTemplate
 
 
 @dataclass
@@ -295,13 +295,8 @@ class TemplateRenderer:
     """Handles variable substitution and template rendering"""
     
     def __init__(self):
-        self.env = Environment(loader=BaseLoader())
-        # Add built-in functions
-        self.env.globals.update({
-            'uuid4': lambda: str(uuid.uuid4()),
-            'now': lambda: datetime.utcnow().isoformat() + 'Z',
-            'timestamp': lambda: datetime.utcnow().isoformat() + 'Z'
-        })
+        self.env = MobileEnvironment()
+        # Built-in functions are automatically available in MobileEnvironment
     
     def render_template(self, template: PipelineTemplate, 
                        variables: Dict[str, Any]) -> List[Dict[str, Any]]:
@@ -357,21 +352,8 @@ class TemplateRenderer:
         if not data:
             return {}
         
-        rendered = {}
-        for key, value in data.items():
-            if isinstance(value, str):
-                rendered[key] = self._render_string(value, variables)
-            elif isinstance(value, dict):
-                rendered[key] = self._render_dict(value, variables)
-            elif isinstance(value, list):
-                rendered[key] = [
-                    self._render_string(item, variables) if isinstance(item, str) else item
-                    for item in value
-                ]
-            else:
-                rendered[key] = value
-        
-        return rendered
+        # Use mobile template engine's built-in dict rendering
+        return self.env.engine.render_dict(data, variables)
     
     def render_with_judge_integration(self, template: PipelineTemplate, 
                                     variables: Dict[str, Any],
