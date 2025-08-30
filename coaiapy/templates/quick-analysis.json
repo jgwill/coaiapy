@@ -1,0 +1,126 @@
+{
+  "name": "quick-analysis",
+  "version": "1.0",
+  "description": "Fast data analysis optimized for touch interfaces and mobile workflows",
+  "author": "CoaiaPy Mobile",
+  "variables": [
+    {
+      "name": "data_source",
+      "type": "string",
+      "required": true, 
+      "description": "Source of data to analyze (CSV file, JSON data, etc.)"
+    },
+    {
+      "name": "analysis_type",
+      "type": "string",
+      "required": false,
+      "default": "summary_stats",
+      "choices": ["summary_stats", "trends", "correlations", "outliers", "quick_viz"],
+      "description": "Type of analysis to perform"
+    },
+    {
+      "name": "output_format",
+      "type": "string", 
+      "required": false,
+      "default": "mobile_friendly",
+      "choices": ["mobile_friendly", "charts", "tables", "text_summary"],
+      "description": "How to format results for mobile viewing"
+    },
+    {
+      "name": "complexity_level",
+      "type": "string",
+      "required": false,
+      "default": "simple",
+      "choices": ["simple", "intermediate", "detailed"],
+      "description": "Complexity level appropriate for mobile context"
+    },
+    {
+      "name": "analyst_id",
+      "type": "string",
+      "required": false,
+      "description": "Identifier for the person performing analysis"
+    }
+  ],
+  "steps": [
+    {
+      "name": "Mobile Data Loading",
+      "observation_type": "SPAN", 
+      "description": "Loading {{data_source}} for {{analysis_type}} analysis on mobile device",
+      "variables": {
+        "input": "Loading data from {{data_source}} on iOS",
+        "expected_analysis": "{{analysis_type}}",
+        "mobile_context": true
+      },
+      "metadata": {
+        "template": "quick-analysis",
+        "mobile_optimized": true,
+        "start_time": "{{touch_timestamp()}}",
+        "battery_efficient": true
+      }
+    },
+    {
+      "name": "Data Validation",
+      "observation_type": "EVENT",
+      "description": "Quick validation of {{data_source}} for mobile analysis",
+      "parent": "Mobile Data Loading",
+      "variables": {
+        "validation_type": "mobile_quick_check",
+        "data_quality": "checking",
+        "mobile_memory_usage": "monitored"
+      },
+      "metadata": {
+        "validation_timestamp": "{{now()}}",
+        "mobile_constraints": "memory_and_battery_aware"
+      }
+    },
+    {
+      "name": "{{analysis_type|title}} Analysis",
+      "observation_type": "EVENT",
+      "description": "Performing {{analysis_type}} analysis with {{complexity_level}} complexity",
+      "parent": "Mobile Data Loading",
+      "variables": {
+        "analysis_method": "{{analysis_type}}",
+        "complexity": "{{complexity_level}}",
+        "mobile_processing": true,
+        "touch_optimized": true
+      },
+      "metadata": {
+        "processing_efficient": "mobile_optimized",
+        "analysis_timestamp": "{{now()}}"
+      }
+    },
+    {
+      "name": "Mobile Result Formatting",
+      "observation_type": "EVENT",
+      "description": "Formatting results as {{output_format}} for mobile viewing",
+      "parent": "Mobile Data Loading",
+      "variables": {
+        "format_type": "{{output_format}}",
+        "mobile_display": true,
+        "touch_friendly": true,
+        "screen_size_optimized": true
+      },
+      "metadata": {
+        "formatting_type": "mobile_responsive",
+        "display_timestamp": "{{touch_timestamp()}}"
+      }
+    },
+    {
+      "name": "Analysis Complete",
+      "observation_type": "EVENT",
+      "description": "{{analysis_type}} analysis of {{data_source}} completed for mobile viewing",
+      "parent": "Mobile Data Loading",
+      "variables": {
+        "output": "{{analysis_type}} analysis complete - results formatted for {{output_format}}",
+        "mobile_ready": true,
+        "analyst_id": "{{analyst_id or 'mobile_user'}}",
+        "shareable": true
+      },
+      "metadata": {
+        "completion_time": "{{now()}}",
+        "mobile_notification": "Analysis of {{data_source}} is ready",
+        "results_accessible": "touch_friendly_interface"
+      }
+    }
+  ]
+}

@@ -1,0 +1,123 @@
+{
+  "name": "mobile-transcription",
+  "version": "1.0", 
+  "description": "Audio processing workflows optimized for iPhone/iPad recording and transcription",
+  "author": "CoaiaPy Mobile",
+  "variables": [
+    {
+      "name": "audio_source",
+      "type": "string",
+      "required": true,
+      "description": "Source of the audio (meeting, interview, voice memo, etc.)"
+    },
+    {
+      "name": "recording_duration", 
+      "type": "string",
+      "required": false,
+      "default": "unknown",
+      "description": "Duration of the recording"
+    },
+    {
+      "name": "language",
+      "type": "string",
+      "required": false,
+      "default": "en-US",
+      "choices": ["en-US", "es-ES", "fr-FR", "de-DE", "ja-JP", "zh-CN"],
+      "description": "Language for transcription"
+    },
+    {
+      "name": "quality_preference",
+      "type": "string",
+      "required": false,
+      "default": "balanced",
+      "choices": ["fast", "balanced", "accurate"],
+      "description": "Balance between speed and accuracy for mobile processing"
+    },
+    {
+      "name": "user_id",
+      "type": "string",
+      "required": false,
+      "description": "User identifier for this transcription session"
+    }
+  ],
+  "steps": [
+    {
+      "name": "Mobile Recording Processing",
+      "observation_type": "SPAN",
+      "description": "Processing {{audio_source}} recording with {{quality_preference}} quality",
+      "variables": {
+        "input": "iOS audio recording from {{audio_source}}",
+        "duration": "{{recording_duration}}",
+        "device_type": "mobile"
+      },
+      "metadata": {
+        "template": "mobile-transcription",
+        "processing_start": "{{now()}}",
+        "mobile_optimized": true,
+        "battery_conscious": true
+      }
+    },
+    {
+      "name": "Audio Preprocessing",
+      "observation_type": "EVENT",
+      "description": "Optimizing audio quality for mobile transcription",
+      "parent": "Mobile Recording Processing",
+      "variables": {
+        "noise_reduction": true,
+        "mobile_optimization": true,
+        "format": "m4a_to_wav"
+      },
+      "metadata": {
+        "processing_type": "mobile_audio_enhancement",
+        "timestamp": "{{touch_timestamp()}}"
+      }
+    },
+    {
+      "name": "Cloud Transcription",
+      "observation_type": "EVENT", 
+      "description": "Transcribing {{audio_source}} in {{language}}",
+      "parent": "Mobile Recording Processing",
+      "variables": {
+        "service": "AWS Polly/Transcribe",
+        "language": "{{language}}",
+        "quality": "{{quality_preference}}",
+        "mobile_upload": true
+      },
+      "metadata": {
+        "transcription_service": "cloud_based",
+        "mobile_network_efficient": true
+      }
+    },
+    {
+      "name": "Text Processing",
+      "observation_type": "EVENT",
+      "description": "Processing transcribed text for mobile viewing",
+      "parent": "Mobile Recording Processing", 
+      "variables": {
+        "text_formatting": "mobile_friendly",
+        "paragraph_breaks": true,
+        "timestamp_markers": "{% if recording_duration != 'unknown' %}true{% endif %}"
+      },
+      "metadata": {
+        "mobile_text_optimization": true,
+        "readable_on_small_screen": true
+      }
+    },
+    {
+      "name": "Mobile Results",
+      "observation_type": "EVENT",
+      "description": "Transcription completed and ready for mobile viewing",
+      "parent": "Mobile Recording Processing",
+      "variables": {
+        "output": "Transcribed {{audio_source}} ready for iOS viewing",
+        "mobile_formatted": true,
+        "user_id": "{{user_id or 'anonymous'}}"
+      },
+      "metadata": {
+        "completion_time": "{{now()}}",
+        "mobile_notification": "{{audio_source}} transcription complete",
+        "share_ready": true
+      }
+    }
+  ]
+}

@@ -1,0 +1,99 @@
+{
+  "name": "ios-data-sync",
+  "version": "1.0",
+  "description": "Sync data between Pythonista and cloud services with mobile-optimized workflows",
+  "author": "CoaiaPy Mobile",
+  "variables": [
+    {
+      "name": "sync_name",
+      "type": "string", 
+      "required": true,
+      "description": "Name for this sync operation"
+    },
+    {
+      "name": "cloud_service",
+      "type": "string",
+      "required": false,
+      "default": "iCloud",
+      "choices": ["iCloud", "Dropbox", "Google Drive", "OneDrive"],
+      "description": "Cloud service to sync with"
+    },
+    {
+      "name": "data_type",
+      "type": "string",
+      "required": false,
+      "default": "documents",
+      "choices": ["documents", "photos", "audio", "json_data", "csv_data"],
+      "description": "Type of data being synchronized"
+    },
+    {
+      "name": "device_id",
+      "type": "string",
+      "required": false,
+      "default": "{{mobile_id()}}",
+      "description": "Unique identifier for this iOS device"
+    }
+  ],
+  "steps": [
+    {
+      "name": "Sync Preparation",
+      "observation_type": "SPAN",
+      "description": "Preparing {{data_type}} sync with {{cloud_service}} for {{sync_name}}",
+      "variables": {
+        "input": "Starting sync preparation on iOS device {{device_id}}",
+        "sync_service": "{{cloud_service}}",
+        "data_category": "{{data_type}}"
+      },
+      "metadata": {
+        "template": "ios-data-sync",
+        "device_type": "iOS",
+        "mobile_optimized": true,
+        "sync_timestamp": "{{touch_timestamp()}}"
+      }
+    },
+    {
+      "name": "Cloud Authentication",
+      "observation_type": "EVENT",
+      "description": "Authenticating with {{cloud_service}}",
+      "parent": "Sync Preparation",
+      "variables": {
+        "service": "{{cloud_service}}",
+        "auth_method": "mobile_oauth"
+      },
+      "metadata": {
+        "security_level": "mobile_secure",
+        "auth_timestamp": "{{now()}}"
+      }
+    },
+    {
+      "name": "Data Upload", 
+      "observation_type": "EVENT",
+      "description": "Uploading {{data_type}} to {{cloud_service}}",
+      "parent": "Sync Preparation",
+      "variables": {
+        "operation": "upload",
+        "data_type": "{{data_type}}",
+        "destination": "{{cloud_service}}"
+      },
+      "metadata": {
+        "mobile_network": "cellular_or_wifi",
+        "battery_efficient": true
+      }
+    },
+    {
+      "name": "Sync Completion",
+      "observation_type": "EVENT", 
+      "description": "{{sync_name}} sync completed successfully",
+      "parent": "Sync Preparation",
+      "variables": {
+        "output": "Sync completed for {{data_type}} with {{cloud_service}}",
+        "success": true,
+        "device_id": "{{device_id}}"
+      },
+      "metadata": {
+        "completion_time": "{{now()}}",
+        "mobile_notification": "Sync complete for {{sync_name}}"
+      }
+    }
+  ]
+}

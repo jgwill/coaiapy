@@ -1,0 +1,124 @@
+{
+  "name": "gesture-pipeline", 
+  "version": "1.0",
+  "description": "Touch gesture-triggered workflows optimized for iPhone/iPad interaction patterns",
+  "author": "CoaiaPy Mobile",
+  "variables": [
+    {
+      "name": "gesture_type",
+      "type": "string",
+      "required": true,
+      "choices": ["tap", "double_tap", "long_press", "swipe_right", "swipe_left", "pinch", "rotate"],
+      "description": "Type of gesture that triggered this workflow"
+    },
+    {
+      "name": "workflow_name",
+      "type": "string", 
+      "required": true,
+      "description": "Name of the workflow triggered by the gesture"
+    },
+    {
+      "name": "app_context",
+      "type": "string",
+      "required": false,
+      "default": "Pythonista",
+      "choices": ["Pythonista", "Shortcuts", "Files", "Safari", "Notes"],
+      "description": "iOS app context where gesture was performed"
+    },
+    {
+      "name": "gesture_data",
+      "type": "string",
+      "required": false,
+      "description": "Additional data from the gesture (coordinates, velocity, etc.)"
+    },
+    {
+      "name": "user_session",
+      "type": "string",
+      "required": false,
+      "default": "{{mobile_id()}}",
+      "description": "User session identifier for gesture tracking"
+    }
+  ],
+  "steps": [
+    {
+      "name": "Gesture Recognition",
+      "observation_type": "SPAN",
+      "description": "Processing {{gesture_type}} gesture for {{workflow_name}} in {{app_context}}",
+      "variables": {
+        "input": "{{gesture_type}} gesture detected in {{app_context}}",
+        "gesture_details": "{{gesture_data or 'standard_gesture'}}",
+        "mobile_context": true
+      },
+      "metadata": {
+        "template": "gesture-pipeline", 
+        "gesture_timestamp": "{{touch_timestamp()}}",
+        "mobile_interaction": true,
+        "touch_responsive": true
+      }
+    },
+    {
+      "name": "Context Analysis", 
+      "observation_type": "EVENT",
+      "description": "Analyzing {{app_context}} context for {{gesture_type}} gesture",
+      "parent": "Gesture Recognition",
+      "variables": {
+        "app_state": "{{app_context}}", 
+        "gesture_interpretation": "{{gesture_type}}_in_{{app_context}}",
+        "touch_context": true
+      },
+      "metadata": {
+        "context_timestamp": "{{now()}}",
+        "ios_native_integration": true
+      }
+    },
+    {
+      "name": "Workflow Trigger",
+      "observation_type": "EVENT",
+      "description": "Triggering {{workflow_name}} based on {{gesture_type}}",
+      "parent": "Gesture Recognition", 
+      "variables": {
+        "workflow": "{{workflow_name}}",
+        "trigger_method": "gesture_based",
+        "gesture_type": "{{gesture_type}}",
+        "immediate_response": true
+      },
+      "metadata": {
+        "trigger_timestamp": "{{now()}}",
+        "mobile_workflow": true,
+        "gesture_responsive": true
+      }
+    },
+    {
+      "name": "{% if gesture_type == 'long_press' %}Haptic Feedback{% else %}Visual Feedback{% endif %}",
+      "observation_type": "EVENT",
+      "description": "Providing {% if gesture_type == 'long_press' %}haptic{% else %}visual{% endif %} feedback for {{gesture_type}}",
+      "parent": "Gesture Recognition",
+      "variables": {
+        "feedback_type": "{% if gesture_type == 'long_press' %}haptic_vibration{% else %}visual_highlight{% endif %}",
+        "user_confirmation": true,
+        "mobile_ux": true
+      },
+      "metadata": {
+        "feedback_timestamp": "{{touch_timestamp()}}",
+        "ios_native_feedback": true
+      }
+    },
+    {
+      "name": "Gesture Workflow Complete",
+      "observation_type": "EVENT",
+      "description": "{{workflow_name}} completed via {{gesture_type}} in {{app_context}}",
+      "parent": "Gesture Recognition",
+      "variables": {
+        "output": "{{workflow_name}} successfully triggered by {{gesture_type}} gesture",
+        "completion_method": "gesture_workflow",
+        "user_session": "{{user_session}}",
+        "mobile_success": true
+      },
+      "metadata": {
+        "completion_time": "{{now()}}",
+        "gesture_workflow_success": true,
+        "mobile_notification": "{{workflow_name}} completed via gesture"
+      }
+    }
+  ]
+}
