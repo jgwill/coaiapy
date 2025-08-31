@@ -72,3 +72,23 @@ Claude has implemented the `_apply_filter` method, which was previously identifi
 **Updated Pending Items:**
 *   Advanced conditional logic (`elif`, `else`, `and`, `or`) is still pending.
 *   Loop support (`{% for ... %}`) is still pending.
+
+## 2025-08-29 - `llms.txt` Upgrade
+
+The `llms.txt` file has been upgraded to reflect the new features in `coaiapy` v0.2.69 and to align with the Creative Orientation and RISE frameworks.
+
+### Phase 1: Content and Feature Updates
+- Replaced all mentions of "Jinja2" with "MobileTemplateEngine".
+- Updated the "Built-in Pipeline Templates" section to include the new mobile-specific templates.
+- Removed `jinja2` from the "Python Compatibility" section.
+- Added a new section for "Mobile-Specific Features".
+
+### Phase 2: Creative Orientation Rewrite
+- Rewrote the introduction and "Key Features" section to focus on what `coaiapy` enables users to *create*.
+- Reframed the CLI command descriptions to be more creation-oriented.
+- Applied the RISE framework to describe the package's value proposition.
+
+### Phase 3: Compliance and Formatting
+- Added unique section identifiers to all major sections.
+- Added "Key Takeaway" blockquotes to major sections.
+- Added a new section for "LLM Interaction Guidelines".
