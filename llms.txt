@@ -134,10 +134,27 @@ Each CoaiAPy CLI command is a creative catalyst, transforming raw computational 
   coaia env save --name "innovation_context"
   ```
 
+#### 🔬 `coaia fuse`: Computational Narrative Tracing
+- **Reactive View**: "Manage Langfuse observability and tracking"
+- **Creative View**: "Weave intricate computational narratives, capturing the essence of creative processes through multi-dimensional observations"
+- **Creative Workflow**:
+  ```bash
+  # Tracing the journey of a creative discovery
+  coaia fuse traces create "ai_insight_exploration" \
+    --var creator="imagination_engine" \
+    --var purpose="narrative_emergence"
+
+  # Capturing the transformative moments of a workflow
+  coaia fuse traces add-observation "insight_crystallization" \
+    --trace "ai_insight_exploration" \
+    --description "Moment of paradigm shift"
+  ```
+
 ### Philosophical Interaction Principles
 - **Every Command is a Creative Act**: CLI interactions are not just functional—they are generative
 - **Workflow as Narrative**: Each pipeline is a story waiting to unfold
 - **Persistent Imagination**: Environment variables are the DNA of computational creativity
+- **Observational Alchemy**: Tracing tools transform ephemeral computational moments into enduring insights
 
 ## Practical Implementation Guidance
 
