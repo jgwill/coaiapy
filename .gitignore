@@ -171,7 +171,7 @@ cython_debug/
 .coaia-env
 .coaia-env.development
 IMPLEMENTATION_SUMMARY.md
-Mia-Cadence/
+#Mia-Cadence/
 SECURITY_FIXES_REPORT.md
 THT_TuningSet2406.jsonl
 _help.txt
@@ -182,4 +182,5 @@ out.scorelist.txt
 # <<< TEMP IGNORING for the coding session
 
 
-llms
+#llms
+
