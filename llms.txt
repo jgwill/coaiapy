@@ -224,9 +224,95 @@ add_observation(trace_id, "revision_complete", metadata={"revisions": 3})
 
 **Other Application Types**: Novel writing, screenplay development, podcast production, content creation workflows, research documentation, educational content development
 
-- **`pipeline`**: Manifest workflow templates
-  - Create reusable creative automation frameworks
-  - Transform complex processes into generative templates
+- **`pipeline`**: Advanced template-driven workflow automation system
+  - **Core Library**: `pipeline.py` - Full template engine with Jinja2 rendering
+  - **CLI Interface**: `coaia pipeline` - Command-line template management
+  - **Built-in Templates**: 11 pre-configured templates for common workflows
+
+#### Pipeline Core Capabilities {#pipeline-capabilities}
+- **Template Management**: Discover, create, and customize workflow templates
+  - `pipeline list`: Explore available templates with descriptions
+  - `pipeline show <template>`: Inspect template structure and variables
+  - `pipeline create <template> --var key=value`: Execute template with parameters
+  - `pipeline init <name>`: Create new custom templates
+  - Library usage: `from coaiapy.pipeline import TemplateLoader, TemplateRenderer`
+
+- **Template Features**:
+  - **Variable Validation**: Type checking, required variables, default values, choices
+  - **Conditional Steps**: Include/exclude steps based on Jinja2 conditions
+  - **Parent-Child Relationships**: SPAN observations with nested hierarchies
+  - **Built-in Functions**: `uuid4()`, `now()`, `timestamp()` in templates
+  - **Template Inheritance**: Extend base templates with custom modifications
+  - **Multi-format Support**: JSON and YAML template definitions
+
+#### Built-in Template Collection {#built-in-templates}
+- **`simple-trace`**: Basic monitoring with single observation
+- **`data-pipeline`**: Multi-step data processing with validation
+- **`llm-chain`**: Sequential LLM calls with context passing
+- **`judge-evaluation`**: Content assessment using LLM-as-a-Judge
+- **`judge-ensemble`**: Multi-judge consensus evaluation
+- **`parallel-processing`**: Concurrent task execution with synchronization
+- **`error-handling`**: Robust error management with retry mechanisms
+- **`mobile-transcription`**: Audio processing workflows for mobile platforms
+- **`ios-data-sync`**: iOS-specific data synchronization patterns
+- **`gesture-pipeline`**: Touch/gesture interaction tracking
+- **`quick-analysis`**: Rapid content analysis and insights
+
+#### Template Hierarchy Discovery {#template-discovery}
+Templates discovered in priority order:
+1. **Project templates** (highest): `./.coaia/templates/`
+2. **User global templates**: `~/.coaia/templates/`  
+3. **Built-in templates** (lowest): Package installation
+
+#### Judge Integration System {#judge-integration}
+- **LLM-as-a-Judge Support**: Automatic content evaluation capabilities
+- **Multi-criteria Assessment**: helpfulness, correctness, hallucination, relevance, clarity
+- **Judge Model Selection**: gpt-4, claude-3, gpt-4-turbo support
+- **Score Configuration**: Integration with Langfuse score configs
+- **Ensemble Evaluation**: Multiple judge consensus for higher reliability
+
+#### Example: Storytelling Pipeline Usage {#storytelling-pipeline-example}
+**Scenario**: Story development with automated quality assessment
+
+**CLI Usage**:
+```bash
+# Create story development pipeline with judge evaluation
+coaia pipeline create llm-chain \
+  --var chain_name="story_chapter_1" \
+  --var model_name="claude-3" \
+  --var initial_prompt="Write opening chapter of sci-fi novel" \
+  --var enable_judge_evaluation=true \
+  --var judge_model="gpt-4" \
+  --var evaluation_criteria="creativity"
+
+# Evaluate existing story content
+coaia pipeline create judge-evaluation \
+  --var content_name="chapter_draft" \
+  --var content_to_evaluate="$(cat chapter1.txt)" \
+  --var evaluation_criteria="narrative_quality"
+```
+
+**Library Integration**:
+```python
+from coaiapy.pipeline import TemplateLoader, TemplateRenderer
+from coaiapy.cofuse import create_trace
+
+# Load storytelling template
+loader = TemplateLoader()
+template = loader.load_template("llm-chain")
+
+# Render with story-specific variables
+renderer = TemplateRenderer()
+observations = renderer.render_template(template, {
+    "chain_name": "story_development",
+    "initial_prompt": "Develop character backstory",
+    "enable_judge_evaluation": True
+})
+
+# Execute rendered observations through cofuse
+for obs in observations:
+    create_observation(obs)
+```
 
 - **`env`**: Manage creative context variables
   - Persist and manipulate workflow environment
