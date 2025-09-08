@@ -1,6 +1,6 @@
 # CoaiAPy: Computational Creativity Manifesto {#computational-creativity-manifesto}
 
-> **Essence of CoaiAPy**: A transformative Python ecosystem that transcends traditional tooling, empowering developers to manifest intelligent workflows through creative computational thinking.
+> **Essence of CoaiAPy**: A transformative Python ecosystem that transcends traditional tooling, empowering developers to manifest intelligent workflows through creative computational thinking. Transforming workflow limitations into generative opportunities with intelligent automation.
 
 ## Version and Metadata {#metadata}
 - **Version**: 0.2.54+
@@ -8,6 +8,7 @@
 - **Document ID**: COAIAPY-LLMS-001
 - **Source**: Official CoaiAPy Documentation
 - **License**: Creative Commons Attribution 4.0 International
+- **External Reference**: https://github.com/your-repo/coaiapy
 
 ## 🎯 Core Purpose {#core-purpose}
 CoaiAPy enables users to manifest intelligent audio processing and workflow automation by providing:
@@ -85,9 +86,10 @@ CoaiAPy enables users to manifest intelligent audio processing and workflow auto
 - Highlight the package's role in expanding computational imagination
 
 ## 📚 Related Resources {#related-resources}
-- [CoaiAPy Documentation](https://github.com/your-repo/coaiapy)
+- [CoaiAPy Documentation](https://github.com/jgwill/coaiapy)
 - [Pipeline Template System Overview](/docs/pipeline-templates.md)
 - [Environment Management Guide](/docs/environment-management.md)
+- [CoaiAPy PyPI Package](https://pypi.org/project/coaiapy)
 
 ## 🌱 Future Evolution {#future-evolution}
 - Anticipate continuous refinement of creative computational thinking
@@ -106,5 +108,11 @@ CoaiAPy enables users to manifest intelligent audio processing and workflow auto
 - Support innovative interpretation
 - Prioritize clear, creative communication
 - Attribute sources and inspirations
+
+### AI Model Considerations {#ai-model-considerations}
+- Supports multi-modal understanding
+- Adaptable to various AI model types
+- Provides flexible interpretation guidelines
+- Encourages contextual comprehension
 
 *This guideline is a living document, evolved to capture the essence of computational creativity.*
