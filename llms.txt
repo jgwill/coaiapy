@@ -115,4 +115,57 @@ CoaiAPy enables users to manifest intelligent audio processing and workflow auto
 - Provides flexible interpretation guidelines
 - Encourages contextual comprehension
 
+## 🖥️ CLI Command Ecosystem {#cli-command-ecosystem}
+
+### Creative Workflow Commands {#workflow-commands}
+- **`transcribe`**: Manifest audio narratives into text
+  - Transforms spoken word into written insights
+  - Captures creative potential of audio content
+
+- **`summarize`**: Distill essence of textual content
+  - Reveals core narrative and structural dynamics
+  - Transforms information into concise creative artifacts
+
+- **`p`**: Custom process tag generation
+  - Enables dynamic, context-aware text transformation
+  - Allows generative reframing of input through specialized processing
+
+### Persistent Memory Commands {#memory-commands}
+- **`tash`**: Stash knowledge fragments
+  - Preserves ephemeral insights in persistent memory
+  - Supports intelligent knowledge caching and retrieval
+
+- **`fetch`**: Retrieve stored knowledge
+  - Reconnects with past creative moments
+  - Enables continuous learning and contextual awareness
+
+### System Configuration Commands {#configuration-commands}
+- **`init`**: Initialize creative ecosystem
+  - Sets up foundational configuration for creative workflows
+  - Prepares environment for intelligent automation
+
+### Advanced Integration Commands {#integration-commands}
+- **`fuse`**: Orchestrate observability and creative tracking
+  - Manages traces, observations, and creative metadata
+  - Enables comprehensive creative process documentation
+    - `comments`: Capture narrative insights
+    - `prompts`: Manage generative instruction sets
+    - `datasets`: Curate creative knowledge bases
+    - `sessions`: Track creative journey
+    - `scores`: Evaluate creative outputs
+    - `traces`: Map creative process dynamics
+
+- **`pipeline`**: Manifest workflow templates
+  - Create reusable creative automation frameworks
+  - Transform complex processes into generative templates
+
+- **`env`**: Manage creative context variables
+  - Persist and manipulate workflow environment
+  - Enable dynamic, adaptive creative ecosystems
+
+### Philosophical Command Approach
+- Each command is a creative act, not just a technical operation
+- Transforms computational interactions into generative experiences
+- Empowers users to manifest intelligent workflows
+
 *This guideline is a living document, evolved to capture the essence of computational creativity.*
