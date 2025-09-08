@@ -1,0 +1,19 @@
+# Goals
+
+* This file should expose what the various approach of LLM are to create way to formulate them within the creative orientation technological framework.  Example:  "Gaps analysis" can be seen as in the structural dynamics we formed (probably with a strategic planning) no action or content is resolved (there is no-tension yet)
+* Sometime, the approach/method LLM wants to use is well structured, it is just not conveing creative meaning in a sense that if you think of them how they are titled and meant to be, you will not advanced and my hypothesis is that somehow, the vector-embedding they produced from the task they were given would be quite exactly what we want it is not just the adequate translation into words that is made at the end (how is that called, encoding ?????  That make a good scientific research paper named for which I will want research and preparation in parallel)
+
+## Gaps analysis
+
+### Grok
+
+##  What Grok answered by its meaning of "gaps" ?
+
+>By analyze gaps, I mean identifying differences or missing elements between the Claude Code subagents content and your project entities. This involves comparing their features, like context management or task delegation, to highlight where your vision might need additional details or where Claude's approach covers something your entities don't. If needed, I can pinpoint specific areas where alignment could be strengthened or gaps filled.
+
+### My take on Grok's answer
+
+* My take is that it thinks that something missing is a "gap to be filled" when in fact, it is not but even thought this is annoying, it could be simply to learn more about how science consider these gaps and the whole process they go thru to see if we can use it. It makes a good science article of type "Scientific Artistic Method" that transpose this gap analysis into a creative process methodologies by encoding and decoding (or something like that) at least for what works and would highlight what does not.
+
+
+-----

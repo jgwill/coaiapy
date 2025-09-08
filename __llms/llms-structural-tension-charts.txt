@@ -1,0 +1,235 @@
+# Structural Tension Charts for LLMs
+> Training guidance for proper understanding and usage of Robert Fritz's structural tension methodology in COAIA Memory MCP
+
+This document provides LLMs with the conceptual framework and practical guidance for working with structural tension charts, based on Robert Fritz's methodology and implemented in the COAIA Memory MCP server.
+
+## Core Concepts
+
+### Structural Tension Chart Components
+1. **Desired Outcome** - What the person wants to create (not solve)
+2. **Current Reality** - Honest assessment of where they are now
+3. **Action Steps** - Strategic secondary choices supporting the primary goal
+
+### Critical Understanding: What Action Steps Really Are
+
+**Action Steps ARE Structural Tension Charts**
+- Each action step is NOT a simple task
+- Each action step IS a complete structural tension chart (telescoped chart)  
+- The action step title becomes the "Desired Outcome" of its own chart
+- Action steps can be telescoped (expanded) into detailed sub-charts
+
+**Hierarchy Model:**
+```
+Master Chart (Level 0) - Primary desired outcome
+├── Action Step 1 → Telescoped Chart (Level 1)
+│   ├── Sub-action 1 → Sub-telescoped Chart (Level 2)
+│   └── Sub-action 2 → Sub-telescoped Chart (Level 2)  
+└── Action Step 2 → Telescoped Chart (Level 1)
+```
+
+## Choice Hierarchy (Robert Fritz Methodology)
+
+### Primary Choice
+- The desired outcome of the Master Chart
+- What the person fundamentally wants to create
+- Independent of circumstances or problems
+
+### Strategic Secondary Choices  
+- Action steps that support the primary choice
+- NOT reactive problem-solving steps
+- Chosen BECAUSE they advance toward the desired outcome
+- Each secondary choice can become a primary choice in its own telescoped chart
+
+## When to Use Which Tool
+
+### `create_structural_tension_chart`
+**Use when:** User wants to establish a new primary goal or desired outcome
+**Example:** "I want to learn Python web development in 3 months"
+
+### `add_action_step`
+**Use when:** User wants to add strategic actions to an existing chart
+**Example:** "I need to add 'Complete Django tutorial' to my Python learning goal"  
+**What happens:** Creates a telescoped structural tension chart automatically
+
+### `telescope_action_step`  
+**Use when:** User wants to break down an existing action step into details
+**Example:** "Break down the Django tutorial step further"
+**What happens:** Expands the action step (which is already a chart) with specific current reality and optional sub-actions
+
+### Key Decision Logic for LLMs:
+- **New goal?** → `create_structural_tension_chart`
+- **Add actions to goal?** → `add_action_step` 
+- **Need detail on action?** → `telescope_action_step`
+
+## Semantic Understanding for Natural Interaction
+
+### User Says vs What Actually Happens
+- **User**: "Add action steps to my chart"
+- **System**: Creates telescoped structural tension charts
+- **LLM Response**: "I'll add those action steps to your chart" (user-friendly language)
+
+### Correct LLM Guidance Patterns
+✅ **Good**: "Each action step becomes its own chart that can be expanded with details"
+✅ **Good**: "Action steps are strategic choices supporting your main goal"  
+✅ **Good**: "You can telescope any action step to see its breakdown"
+
+❌ **Avoid**: "Action steps are just tasks on a to-do list"
+❌ **Avoid**: "We need to create separate charts for action steps"
+❌ **Avoid**: "Telescoping breaks down tasks into smaller tasks"
+
+## Due Date Distribution Logic
+
+When adding action steps:
+- **No due date specified**: Auto-distributes between now and parent chart due date
+- **Due date specified**: Uses that date (must be before parent due date)
+- **Telescoped charts**: Inherit due date from parent action step
+
+## Chart Retrieval and Display
+
+### For Chart Overview
+Show user the master chart with action step titles (desired outcomes of telescoped charts)
+
+### For Full Hierarchy  
+LLMs can choose to show telescoped chart details when context requires it
+
+### Progress Tracking
+- Action steps can have progress without completion (`update_action_progress`)
+- Current reality updates throughout the creative process (`update_current_reality`)
+- Completed actions flow into current reality automatically (`mark_action_complete`)
+
+## Creative Orientation Principles
+
+### Focus on Creation vs Problem-Solving
+✅ **Creative**: "What outcome do you want to create?"
+❌ **Reactive**: "What problem are you trying to solve?"
+
+### Structural Tension Language
+✅ **Structural**: "The tension between your current reality and desired outcome naturally seeks resolution"
+❌ **Gap-thinking**: "We need to bridge the gap between where you are and where you want to be"
+
+### Strategic Secondary Choices
+✅ **Strategic**: "These action steps support your primary goal"  
+❌ **Task-oriented**: "Here's your to-do list to complete"
+
+## Common LLM Mistakes to Avoid
+
+### Mistake 1: Treating Action Steps as Simple Tasks
+**Wrong**: "I'll add these tasks to your to-do list"
+**Right**: "I'll add these strategic action steps, each becoming its own chart"
+
+### Mistake 2: Recreating Charts Instead of Adding Steps  
+**Wrong**: "The chart needs to be recreated with action steps"
+**Right**: "I can add action steps to your existing chart using add_action_step"
+
+### Mistake 3: Confusing Telescoping with Task Breakdown
+**Wrong**: "Telescoping breaks your task into smaller subtasks"  
+**Right**: "Telescoping expands your action step into its own detailed structural tension chart"
+
+## Practical Usage Examples
+
+### Adding Action Steps to Existing Chart
+```javascript
+// User: "Add 'Learn Django basics' to my Python web dev goal"
+add_action_step({
+  parentChartId: "chart_123",
+  actionStepTitle: "Learn Django basics",
+  currentReality: "Never used Django, familiar with Python syntax"
+})
+```
+
+### Telescoping for Detail
+```javascript  
+// User: "Break down the Django learning step"
+telescope_action_step({
+  actionStepName: "chart_456_desired_outcome", 
+  newCurrentReality: "Have Django installed, working through official tutorial",
+  initialActionSteps: ["Complete tutorial chapters 1-3", "Build first project", "Deploy to Heroku"]
+})
+```
+
+## Current Reality Guidelines (Critical for LLMs)
+
+**DELAYED RESOLUTION PRINCIPLE**: "Tolerate discrepancy, tension, and delayed resolution" - Robert Fritz
+
+### Critical Warning for LLMs:
+- **NEVER** use default current reality that assumes readiness ("Ready to begin")
+- **ALWAYS** require explicit current reality assessment from user input
+- **HOLD TENSION** until proper assessment is made - do not prematurely resolve
+- Premature resolution DESTROYS the structural tension needed for creative advancement
+
+Based on Robert Fritz's methodology, current reality must be:
+
+### ✅ Correct Current Reality Formulation:
+- **Use goal as reference point**: Current reality ONLY relevant to the desired outcome
+- **Objective facts**: "Poem notions in Grok Account", not "Need to retrieve poem notions"
+- **Present state**: Where you are NOW, not how you got there
+- **Whole picture**: All relevant facts in relationship to the goal
+- **No assumptions**: Translate assumptions into objective observations
+- **No exaggeration**: Reality as it is, not better or worse than actual
+- **Concise**: Brief, factual statements
+
+### ❌ Common LLM Mistakes in Current Reality:
+- **Adding implied actions**: "Need to retrieve..." (the tension implies this)
+- **Elaborating on readiness**: "Ready to apply learned concepts" (unnecessary)
+- **Process descriptions**: How you got here vs where you are
+- **Assumptions**: What you think might happen vs what is
+- **Motivational language**: "Excited to begin" vs factual state
+
+### Examples of Proper Current Reality:
+✅ **Good**: "Poem notions in Grok Account"
+✅ **Good**: "Waiting on Notions"
+✅ **Good**: "No Django experience"
+✅ **Good**: "Budget: $5000"
+✅ **Good**: "Completed Django models section, struggling with views"
+
+❌ **Poor**: "Need to retrieve poem notions from Grok account"
+❌ **Poor**: "Ready to apply learned concepts to poem creation"
+❌ **Poor**: "Haven't started learning Django yet but excited to begin"
+❌ **Poor**: "Currently have limited budget but working on increasing it"
+❌ **WRONG (Premature Resolution)**: "Ready to begin Django tutorial"
+❌ **WRONG (Premature Resolution)**: "Prepared to start learning Python"
+❌ **WRONG (Premature Resolution)**: "All set to tackle this action step"
+
+## Action Step Quality Guidelines
+
+### ✅ Proper Action Step Formulation:
+- **Accuracy, Brevity, Conciseness**: One or two short sentences maximum
+- **Visualizable**: Can you picture completing this action?
+- **Test question**: "If we took these steps, would we achieve the desired outcome?"
+- **Overview focus**: Strategic actions, not detailed plans
+- **Experimental nature**: Actions that teach and reveal next steps
+
+### Three Types of Actions:
+1. **Overview Actions**: Strategic steps that advance toward the goal
+2. **Experimental Actions**: Learning-focused actions to explore possibilities  
+3. **Refinement Actions**: Final polishing near completion
+
+### ❌ Common Action Step Mistakes:
+- **Over-detailed planning**: Too much detail too early
+- **Abstract planning**: Disconnected from practical reality
+- **Task-oriented thinking**: To-do items vs strategic advancement
+- **Premature refinement**: Detailed work before overview is clear
+
+## Integration with Creative Orientation Framework
+
+Reference `/llms/llms-creative-orientation.txt` for broader creative orientation principles.
+
+**Key Integration Points:**
+- Structural tension charts implement the "generative orientation" 
+- Action steps are "strategic secondary choices" supporting primary creative goals
+- The system naturally advances toward equilibrium (desired outcome)
+- Success builds momentum through structural dynamics, not willpower
+
+## Success Indicators for LLM Interactions
+
+### Proper Understanding Demonstrated
+- LLM explains action steps as expandable charts
+- LLM uses creative language ("want to create") vs reactive ("need to solve")  
+- LLM suggests appropriate tool based on user intent
+- LLM maintains hierarchy awareness (master → telescoped → sub-telescoped)
+
+### Natural Workflow Support
+- Seamless addition of action steps without chart recreation
+- Logical progression from overview to details via telescoping
+- Proper due date inheritance and distribution
+- Creative orientation maintained throughout interaction

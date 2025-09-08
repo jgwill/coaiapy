@@ -1,0 +1,165 @@
+# Pythonista LLM Development Guide
+> A comprehensive guide for LLMs to understand and generate creative, functional, and idiomatic applications for the Pythonista iOS environment. This document follows the RISE framework, focusing on what can be created.
+
+- **Version:** 0.1.0
+- **Source:** Combination of official documentation, community examples, and internal analysis of the `./Examples` directory.
+- **ID:** llms-pythonista-full.gemini.txt
+
+---
+
+### 1. Core Concepts & Creative Orientation (`#concepts`)
+- **1.1. How to Use This Document (`#concepts-usage`):** This guide is your primary source for generating Pythonista code. Prioritize patterns and recipes found here over general Python knowledge for UI/app development. When a user requests an app, first formulate a Creative Advancement Scenario, then consult this guide to find the appropriate modules and patterns to realize their vision.
+- **1.2. The Pythonista Creative Vision (`#concepts-vision`):** Pythonista enables the rapid creation of native-feeling iOS utilities, custom UIs, 2D games, complex animations, and powerful automations directly on an iPad or iPhone. It is a self-contained environment for bringing ideas to life without a separate computer.
+- **1.3. The Event-Driven Model (`#concepts-event-driven`):** Pythonista UI applications are not linear scripts. They are event-driven. You define UI elements and write functions (`actions` or `delegate` methods) that respond to user interactions like button taps or slider drags. The app then waits for these events to happen.
+- **1.4. Script Types (`#concepts-script-types`):** Understand the context of the user's request. A "script" could be a simple console utility, a full-screen UI application, a share-sheet extension, a home screen widget, or a custom keyboard. Each has a different entry point and capabilities.
+
+### 2. Foundational Modules (`#modules`)
+- **2.1. The `ui` Module: Crafting User Interfaces (`#module-ui`)
+  - **2.1.1. `ui.View` (`#ui-view`):** The fundamental building block for all visual elements. Subclassing `ui.View` is the standard way to create custom UI components or entire application screens.
+    - **Key Properties:**
+      - `frame`: A `(x, y, width, height)` tuple defining the view's position and size.
+      - `bounds`: A `(0, 0, width, height)` tuple representing the view's internal coordinate system.
+      - `background_color`: A `ui.Color` object or string (e.g., 'white').
+      - `tint_color`: Affects the color of subviews like buttons.
+      - `alpha`: Opacity (0.0 to 1.0).
+      - `hidden`: Boolean, whether the view is visible.
+      - `flex`: A string (e.g., 'WH', 'LRTB') controlling how the view resizes with its superview. Crucial for responsive layouts.
+      - `name`: A string identifier, useful for debugging or `load_view` from `.pyui`.
+      - `tag`: An integer identifier.
+    - **Key Methods:**
+      - `add_subview(view)`: Adds a view as a child.
+      - `remove_from_superview()`: Removes the view from its parent.
+      - `present(style='sheet', hide_title_bar=False)`: Displays the view. Common styles are 'sheet', 'fullscreen', 'panel'.
+      - `set_needs_display()`: Marks the view as needing to be redrawn. Triggers the `draw()` method.
+      - `layout()`: Called when the view's size changes. Override for custom layout logic, especially with `flex`.
+  - **2.1.2. UI Controls (`#ui-controls`):** Interactive elements that respond to user input.
+    - `ui.Button`: A tappable button. Its `action` property should be set to a method that takes the button itself as an argument.
+    - `ui.TextField`: Single-line text input. `keyboard_type` (e.g., 'default', 'number_pad', 'decimal_pad', 'url', 'email') and `delegate` are important.
+    - `ui.TextView`: Multi-line text input. Also uses a `delegate`.
+    - `ui.Slider`: For selecting a value from a range. `action` property.
+    - `ui.Switch`: A toggle switch. `action` property.
+    - `ui.SegmentedControl`: A horizontal control with multiple segments. `action` property.
+    - `ui.DatePicker`: For selecting dates and times. `action` property.
+  - **2.1.3. Data Display (`#ui-data`):**
+    - `ui.Label`: Displays static text.
+    - `ui.ImageView`: Displays images.
+    - `ui.TableView`: Displays scrollable lists of data. Requires a `datasource` (to provide data) and a `delegate` (to handle row selection, etc.). Both are typically objects with specific methods.
+    - `ui.WebView`: Displays web content.
+  - **2.1.4. Navigation & Presentation (`#ui-navigation`):**
+    - `ui.NavigationView`: Manages a stack of views, providing a navigation bar with a title and back button. Use `push_view()` and `pop_view()`.
+    - `present(style='sheet', ...)`: The primary method to display a top-level view. Styles like 'sheet', 'fullscreen', 'panel' control its appearance.
+  - **2.1.5. Custom Drawing (`#ui-drawing`):** For creating unique visual elements.
+    - Override the `draw()` method of a `ui.View` subclass.
+    - Use `ui.Path` to define shapes (lines, rectangles, circles, arcs).
+    - Use `ui.Image.draw_as_image()` or `ui.Image.draw_in_rect()` to render images.
+    - `ui.set_color()` sets the current drawing color.
+    - Always call `set_needs_display()` on the view to trigger a redraw after data changes.
+  - **2.1.6. The `.pyui` File Format (`#pyui-format`):** A JSON-based format for defining UI layouts visually using Pythonista's UI editor.
+    - `ui.load_view(filename)`: Loads a `.pyui` file and returns the `ui.View` object defined within it.
+    - **Key Attributes in `.pyui`:**
+      - `"name"`: A string identifier for the UI element, used to reference it from Python code (e.g., `view['my_button_name']`).
+      - `"action"`: For controls like `Button`, `Slider`, `Switch`, this specifies the name of the Python function or method in the associated script that will be called when the control is interacted with.
+      - `"class"`: Specifies the `ui` class (e.g., `"Button"`, `"TextField"`, `"View"`).
+      - `"frame"`: Defines the position and size `{{x, y}, {width, height}}`.
+      - `"flex"`: Defines auto-resizing behavior.
+    - Useful for separating UI design from Python logic, allowing for rapid iteration on layout.
+
+- **2.2. The `scene` Module: Creating Games & Animations (`#module-scene`)**
+  - **2.2.1. `scene.Scene` (`#scene-scene`):** The main class for a game or animation. Subclass this and implement `setup()`, `update()`, and `draw()` methods. The `update()` method is called every frame.
+  - **2.2.2. Nodes (`#scene-nodes`):** The building blocks of a scene. `scene.SpriteNode` (for images), `scene.ShapeNode` (for vector shapes), and `scene.LabelNode` (for text) are the most common. Nodes are added as children to the scene or other nodes.
+  - **2.2.3. Physics (`#scene-physics`):** Nodes can have physics bodies attached to them, enabling simulation of gravity, collisions, and forces.
+  - **2.2.4. `scene.Action` (`#scene-actions`):** A powerful system for creating animations. Actions can move, scale, rotate, fade, or run custom code over a specific duration. Actions can be sequenced or grouped.
+
+- **2.3. The `objc_util` Module: Native iOS Integration (`#module-objc`)**
+  - **2.3.1. Introduction & Safety (`#objc-intro`):** This is an advanced module for accessing underlying iOS frameworks written in Objective-C. It is extremely powerful but can cause crashes if used incorrectly.
+  - **2.3.2. Core Functions (`#objc-core`):** `ObjCClass(...)` gets a reference to a native class (e.g., `UIApplication`). `ObjCInstance(...)` wraps a native object. Methods are called on these objects.
+  - **2.3.3. Common Recipes (`#objc-recipes`):** Accessing the camera, system brightness, advanced clipboard functions, and interacting with other apps' data.
+
+- **2.4. Other Essential Modules (`#module-other`)
+  - `#module-console`: For text formatting and clearing the console output.
+  - `#module-clipboard`: For getting and setting the iOS clipboard content.
+  - `#module-sound`: For playing short sound effects and MIDI notes. Also includes `sound.Recorder` for audio input and `sound.play_effect` for playing audio files.
+  - `#module-motion`: For accessing accelerometer and gyroscope data.
+  - `#module-dialogs`: For presenting standard iOS alerts, popovers, and pickers.
+  - `#module-os`: Provides access to operating system-dependent functionality, crucial for file and directory management (`os.path.join`, `os.makedirs`, `os.path.exists`, `os.getcwd`).
+  - `#module-requests`: A powerful and easy-to-use HTTP library for making web requests (e.g., interacting with APIs like OpenAI).
+  - `#module-json`: For encoding and decoding JSON data, commonly used with API responses and configuration files.
+
+### 3. Creative Recipes & Advancing Patterns (`#recipes`)
+- **3.1. Building User Interfaces (`#recipe-ui`):**
+  - *Examples: Calculator.py, ColorMixer.py, Sketch.py*
+- **3.2. Crafting Animations (`#recipe-animation`):**
+  - *Examples: AnalogClock.py, SimplexNoise.py, Swarm.py*
+- **3.3. Developing Games (`#recipe-games`):**
+  - *Examples: BrickBreaker.py, Match3.py, game_levels.py*
+- **3.4. Creating App Extensions & Widgets (`#recipe-extensions`):**
+  - *Examples: Copy Photo Location.py, URL to QR Code.py, Recent Photos.py (Widget)*
+- **3.5. Plotting & Data Visualization (`#recipe-plotting`):
+  - *Examples: Histogram Demo.py, 3D Plot Demo.py, XKCD Plot.py*
+- **3.6. LLM Integration Patterns (`#recipe-llm-integration`):
+  - **3.6.1. Basic LLM API Calls (`#llm-api-calls`):** Using `requests` to interact with OpenAI or other LLM providers.
+  - **3.6.2. Config-Driven LLM Processes (`#llm-config-driven`):** Loading LLM instructions and parameters from external `config.json` files.
+  - **3.6.3. Audio Transcription & Synthesis (`#llm-audio`):** Integrating `sound.Recorder` and `boto3` (for AWS Polly) with LLM services for speech-to-text and text-to-speech.
+  - **3.6.4. Text Transformation Workflows (`#llm-text-transform`):** Examples of using LLMs for tasks like summarization, correction (Dictkore), and detail extraction (D2S).
+- **3.7. Upgrading to `coaiapy` Package (`#recipe-upgrade-coaiapy-app`):**
+  - **Goal:** Replace local `coaiamodule` and `coaiauimodule` imports with direct imports from the installed `coaiapy` Python package.
+  - **Steps:**
+    1.  **Remove `sys.path.append("../lib")`:** This line becomes obsolete as the package is installed globally.
+    2.  **Update Imports:**
+        - Change `import coaiamodule` to `from coaiapy import coaiamodule` (or `import coaiapy.coaiamodule as coaiamodule` if `coaiamodule` is a submodule).
+        - Change `from coaiamodule import transcribe_audio` to `from coaiapy.coaiamodule import transcribe_audio` (or `from coaiapy import transcribe_audio`).
+        - If `coaiauimodule` is also part of `coaiapy`, update its import similarly. Otherwise, ensure its internal imports are updated.
+    3.  **Verify Function Calls:** Ensure all existing calls to `coaiamodule.function_name` remain valid.
+  - **Benefits:** Cleaner code, easier maintenance, leverages installed package benefits.
+  - **3.6. Advanced Application Architecture (`#recipe-advanced-app`)**
+  - **3.6.1. Linking `.pyui` and `.py` (`#pattern-linking-py-and-pyui`):** The standard method is to use `v = ui.load_view()` to load the UI definition. Then, access elements by name (e.g., `v['my_button']`) and assign their `.action` property to a Python function in the script.
+  - **3.6.2. Global State Management (`#pattern-state-management-global`):** For single-view applications, using global variables to hold state (like recorder status or file paths) is a common and direct pattern.
+  - **3.6.3. Separating API Services (`#pattern-separating-api-logic`):** For applications using external web services (like OpenAI), create a dedicated module (e.g., `coaiamodule`) to handle all `requests` calls, API key management, and data formatting. This keeps the main UI logic clean.
+  - **3.6.4. Dynamic File Path Management (`#pattern-dynamic-filepaths`):** For projects that save data, use `os.path.join` to construct paths. A robust pattern is to combine a base directory, a user-defined basename, and an incrementing sequence number to avoid overwriting files.
+  - **3.6.5. UI Helper Abstractions (`#pattern-ui-abstraction-helpers`):** When multiple UI buttons perform similar actions, create a helper function that inspects the `sender.name` to derive the specific action, reducing code duplication.
+
+- **3.7. Upgrading to `coaiapy` Package (`#recipe-upgrade-coaiapy-app`):**
+  - **Goal:** Replace local `coaiamodule` and `coaiauimodule` imports with direct imports from the installed `coaiapy` Python package.
+  - **Steps:**
+    1.  **Remove `sys.path.append("../lib")`:** This line becomes obsolete as the package is installed globally.
+    2.  **Update Imports:**
+        - Change `import coaiamodule` to `from coaiapy import coaiamodule` (or `import coaiapy.coaiamodule as coaiamodule` if `coaiamodule` is a submodule).
+        - Change `from coaiamodule import transcribe_audio` to `from coaiapy.coaiamodule import transcribe_audio` (or `from coaiapy import transcribe_audio`).
+        - If `coaiauimodule` is also part of `coaiapy`, update its import similarly. Otherwise, ensure its internal imports are updated.
+    3.  **Verify Function Calls:** Ensure all existing calls to `coaiamodule.function_name` remain valid.
+  - **Benefits:** Cleaner code, easier maintenance, leverages installed package benefits.
+
+### 4. LLM Interaction & Generation Guidelines (`#llm-guidelines`)
+- **4.1. AI Interaction Protocol (`#llm-protocol`):** When a user describes an app, your primary goal is to generate a single, complete, runnable Python script. First, clarify the desired outcome. Then, consult this guide to choose the right modules and patterns.
+- **4.2. Structural Anti-Patterns (`#llm-antipatterns`):**
+  - **DON'T:** Use blocking code (like `time.sleep()` or long loops) in UI action methods or the `scene.update()` method. This will freeze the app.
+  - **DO:** Subclass `ui.View` or `scene.Scene` as the main entry point for any visual application.
+  - **DON'T:** Assume standard desktop Python libraries for UI (like Tkinter, PyQT) are available. Only use the modules listed in this guide.
+  - **DO:** Place all UI setup code within a class structure, typically in the `__init__` method of a `ui.View` subclass.
+- **4.3. The App Generation Workflow (`#llm-workflow`):**
+  1.  Receive natural language request.
+  2.  Generate a "Creative Advancement Scenario" to confirm the user's intent.
+  3.  Consult sections `#modules` and `#recipes` to find appropriate patterns.
+  4.  Generate the full `.py` script, including necessary imports and a main execution block (`if __name__ == '__main__':`).
+  5.  If the user's request implies a complex visual layout, consider suggesting the use of a `.pyui` file and generate the corresponding JSON.
+- **4.4. Integrating `coaiapy` Python Package (`#llm-coaiapy-package-integration`):
+  - The `coaiapy` package provides direct Python access to LLM functionalities (transcription, summarization, etc.) previously found in `coaiamodule.py`.
+  - **Primary Integration Method:** Direct Python import.
+    - `from coaiapy import coaiamodule` (or specific functions like `transcribe_audio`).
+    - This allows direct function calls within your Pythonista script.
+  - **Advantages:** Direct function calls, better error handling, no shell overhead.
+  - **Alternative Integration (CLI):** The `coaia` CLI is also available via `subprocess` (or `run_shell_command` in this environment). This can be useful for quick tests or if a process is better managed externally.
+    - **Example `coaia` CLI Commands:**
+      - `coaia transcribe <audio_file_path>`: Transcribes audio.
+      - `coaia summarize <text_input>`: Summarizes text.
+      - `coaia p <process_tag> <input_message>`: Executes a custom LLM process (e.g., `coaia p dictkore "my text"`).
+  - **Temporary Documentation Goal:** The `src/corecorder/xrec2text03.py` script currently uses a local `coaiamodule`. A key goal is to refactor this script to directly import and use the `coaiapy` package, demonstrating the best practice for integrating external Python packages.
+
+### 5. Appendix (`#appendix`)
+- **5.1. Glossary (`#appendix-glossary`):**
+  - **Delegate:** An object that acts on behalf of another object. Used heavily in `ui.TableView` to provide data and handle actions.
+  - **Action:** In `scene`, a command that animates a Node over time.
+  - **Node:** In `scene`, any object that is part of the scene graph (e.g., a sprite, a shape).
+  - **Flex:** A property in `ui.View` that controls how a subview resizes when its parent view's size changes.
+- **5.2. External Resources (`#appendix-links`):**
+  - *Placeholder for links to the official Pythonista Forum, community tutorials, and other key resources.*
