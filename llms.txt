@@ -145,15 +145,84 @@ CoaiAPy enables users to manifest intelligent audio processing and workflow auto
   - Prepares environment for intelligent automation
 
 ### Advanced Integration Commands {#integration-commands}
-- **`fuse`**: Orchestrate observability and creative tracking
-  - Manages traces, observations, and creative metadata
-  - Enables comprehensive creative process documentation
-    - `comments`: Capture narrative insights
-    - `prompts`: Manage generative instruction sets
-    - `datasets`: Curate creative knowledge bases
-    - `sessions`: Track creative journey
-    - `scores`: Evaluate creative outputs
-    - `traces`: Map creative process dynamics
+- **`fuse`**: Comprehensive Langfuse observability and creative tracking system
+  - **Core Library**: `cofuse.py` - Full Python API for programmatic integration
+  - **CLI Interface**: `coaia fuse` - Command-line access to all functionality
+  - **Dual Usage**: Import as library OR use via CLI commands
+
+#### Fuse Core Capabilities {#fuse-capabilities}
+- **Traces Management**: Map complex creative processes and workflows
+  - `traces create <trace_id>`: Initialize new creative journey tracking
+  - `traces add-observation <obs_id> <trace_id>`: Document key moments
+  - `traces add-observations <trace_id>`: Batch document multiple stages
+  - Library usage: `from coaiapy.cofuse import create_trace, add_observation`
+
+- **Sessions Management**: Persistent creative journey tracking
+  - `sessions create <session_id>`: Start new creative session
+  - `sessions addnode <session_id> <node_data>`: Add progression points
+  - `sessions view <session_id>`: Inspect session details
+  - `sessions resume <session_id>`: Continue interrupted workflows
+  - Library usage: `from coaiapy.cofuse import create_session, add_session_node`
+
+- **Datasets Management**: Curate and organize creative knowledge
+  - `datasets create <name>`: Establish new knowledge collection
+  - `datasets add <dataset_id> <item>`: Include creative artifacts
+  - `datasets list`: Explore available collections
+  - Library usage: `from coaiapy.cofuse import create_dataset, add_dataset_item`
+
+- **Prompts Management**: Organize generative instruction systems
+  - `prompts list`: Explore available prompt templates
+  - `prompts get <prompt_id>`: Retrieve specific instructions
+  - `prompts create <name> <content>`: Define new generative templates
+  - Library usage: `from coaiapy.cofuse import get_prompt, create_prompt`
+
+- **Scores & Evaluation**: Assess creative output quality
+  - `scores create <name> <config>`: Define evaluation criteria
+  - `scores add <trace_id> <score>`: Evaluate creative moments
+  - `scores get <config_name>`: Retrieve evaluation framework
+  - Library usage: `from coaiapy.cofuse import create_score_config, add_score`
+
+- **Comments & Insights**: Capture narrative and reflective insights
+  - `comments add <trace_id> <comment>`: Document creative insights
+  - `comments list <trace_id>`: Review captured thoughts
+  - Library usage: `from coaiapy.cofuse import add_comment, get_comments`
+
+#### Example: Storytelling Application Integration {#storytelling-example}
+**Scenario**: A storytelling application tracking narrative creation from initial prompt to final story
+
+**CLI Usage Pattern**:
+```bash
+# Initialize storytelling session
+coaia fuse sessions create story_session_2025_09_08
+
+# Create trace for the narrative journey  
+coaia fuse traces create narrative_trace_001
+
+# Document major story milestones
+coaia fuse traces add-observation outline_created narrative_trace_001
+coaia fuse traces add-observation chapter1_drafted narrative_trace_001
+coaia fuse traces add-observation revision_complete narrative_trace_001
+
+# Add evaluative insights
+coaia fuse scores add narrative_trace_001 "creativity: 8/10"
+coaia fuse comments add narrative_trace_001 "Strong character development in Act 2"
+```
+
+**Library Integration Pattern**:
+```python
+from coaiapy.cofuse import create_session, create_trace, add_observation
+
+# Programmatic storytelling tracking
+session_id = create_session("story_session_2025_09_08")
+trace_id = create_trace("narrative_trace_001")
+
+# Track story development stages
+add_observation(trace_id, "outline_created", metadata={"chapters": 12})
+add_observation(trace_id, "chapter1_drafted", metadata={"word_count": 2500})
+add_observation(trace_id, "revision_complete", metadata={"revisions": 3})
+```
+
+**Other Application Types**: Novel writing, screenplay development, podcast production, content creation workflows, research documentation, educational content development
 
 - **`pipeline`**: Manifest workflow templates
   - Create reusable creative automation frameworks
