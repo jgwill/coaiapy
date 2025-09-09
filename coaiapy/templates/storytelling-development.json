@@ -1,0 +1,340 @@
+{
+  "name": "storytelling-development",
+  "version": "1.0",
+  "description": "Complete story development pipeline with narrative structure, character development, and quality assessment",
+  "author": "CoaiaPy Built-in",
+  "variables": [
+    {
+      "name": "story_title",
+      "type": "string",
+      "required": true,
+      "description": "Title or name for the story being developed"
+    },
+    {
+      "name": "story_prompt",
+      "type": "string",
+      "required": true,
+      "description": "Initial story concept or prompt"
+    },
+    {
+      "name": "narrative_model",
+      "type": "string",
+      "required": false,
+      "default": "claude-3",
+      "choices": ["gpt-4", "gpt-3.5-turbo", "claude-3", "llama-2"],
+      "description": "LLM model for story generation"
+    },
+    {
+      "name": "story_structure",
+      "type": "string",
+      "required": false,
+      "default": "three_act",
+      "choices": ["three_act", "hero_journey", "five_act", "episodic", "experimental"],
+      "description": "Narrative structure framework"
+    },
+    {
+      "name": "chapter_count",
+      "type": "number",
+      "required": false,
+      "default": 12,
+      "description": "Target number of chapters"
+    },
+    {
+      "name": "enable_character_development",
+      "type": "boolean",
+      "required": false,
+      "default": true,
+      "description": "Include character development tracking"
+    },
+    {
+      "name": "enable_story_evaluation",
+      "type": "boolean",
+      "required": false,
+      "default": true,
+      "description": "Enable automatic story quality assessment"
+    },
+    {
+      "name": "judge_model",
+      "type": "string",
+      "required": false,
+      "default": "gpt-4",
+      "choices": ["gpt-4", "gpt-3.5-turbo", "claude-3", "gpt-4-turbo"],
+      "description": "LLM model for story evaluation"
+    },
+    {
+      "name": "genre",
+      "type": "string",
+      "required": false,
+      "default": "general",
+      "choices": ["sci-fi", "fantasy", "mystery", "romance", "thriller", "literary", "general"],
+      "description": "Story genre for targeted evaluation"
+    },
+    {
+      "name": "target_length",
+      "type": "string",
+      "required": false,
+      "default": "novella",
+      "choices": ["short_story", "novella", "novel", "epic"],
+      "description": "Target story length"
+    },
+    {
+      "name": "session_id",
+      "type": "string",
+      "required": false,
+      "description": "Session ID for resumable story development"
+    },
+    {
+      "name": "user_id",
+      "type": "string",
+      "required": false,
+      "description": "Author/user developing the story"
+    }
+  ],
+  "steps": [
+    {
+      "name": "Story Development: {{story_title}}",
+      "observation_type": "SPAN",
+      "description": "Complete story development process using {{story_structure}} structure",
+      "variables": {
+        "input": {
+          "story_title": "{{story_title}}",
+          "story_prompt": "{{story_prompt}}",
+          "structure": "{{story_structure}}",
+          "genre": "{{genre}}"
+        },
+        "output": {"status": "story_development_started", "session_id": "{{session_id}}"}
+      },
+      "metadata": {
+        "template": "storytelling-development",
+        "story_title": "{{story_title}}",
+        "narrative_model": "{{narrative_model}}",
+        "story_structure": "{{story_structure}}",
+        "genre": "{{genre}}",
+        "target_length": "{{target_length}}",
+        "chapter_count": "{{chapter_count}}",
+        "user_id": "{{user_id}}",
+        "session_id": "{{session_id}}"
+      }
+    },
+    {
+      "name": "Story Premise Development",
+      "observation_type": "GENERATION",
+      "description": "Developing core story premise and themes from initial prompt",
+      "parent": "Story Development: {{story_title}}",
+      "variables": {
+        "input": {
+          "prompt": "Develop a compelling story premise based on: {{story_prompt}}. Focus on {{genre}} genre with {{story_structure}} structure.",
+          "model": "{{narrative_model}}"
+        },
+        "output": {"premise": "Developed story premise", "themes": ["theme1", "theme2"], "conflict": "central_conflict"}
+      },
+      "metadata": {
+        "step": "premise_development",
+        "model": "{{narrative_model}}",
+        "genre": "{{genre}}",
+        "story_structure": "{{story_structure}}"
+      }
+    },
+    {
+      "name": "Character Profile Creation",
+      "observation_type": "GENERATION",
+      "description": "Creating main character profiles and relationships",
+      "parent": "Story Development: {{story_title}}",
+      "conditional": "{{enable_character_development}}",
+      "variables": {
+        "input": {
+          "prompt": "Create detailed character profiles for {{story_title}}. Include protagonist, antagonist, and key supporting characters.",
+          "model": "{{narrative_model}}"
+        },
+        "output": {
+          "characters": ["protagonist", "antagonist", "supporting1", "supporting2"],
+          "relationships": "character_relationship_map",
+          "character_arcs": "development_paths"
+        }
+      },
+      "metadata": {
+        "step": "character_creation",
+        "model": "{{narrative_model}}",
+        "character_development_enabled": true
+      }
+    },
+    {
+      "name": "Story Outline Generation",
+      "observation_type": "GENERATION",
+      "description": "Creating detailed {{chapter_count}}-chapter outline using {{story_structure}} structure",
+      "parent": "Story Development: {{story_title}}",
+      "variables": {
+        "input": {
+          "prompt": "Create a detailed {{chapter_count}}-chapter outline for {{story_title}} using {{story_structure}} structure.",
+          "model": "{{narrative_model}}",
+          "context": "premise_and_characters"
+        },
+        "output": {
+          "outline": "detailed_chapter_outline",
+          "chapter_count": "{{chapter_count}}",
+          "structure_points": "key_narrative_beats"
+        }
+      },
+      "metadata": {
+        "step": "outline_generation",
+        "model": "{{narrative_model}}",
+        "story_structure": "{{story_structure}}",
+        "chapter_count": "{{chapter_count}}"
+      }
+    },
+    {
+      "name": "Chapter 1 Development",
+      "observation_type": "GENERATION",
+      "description": "Writing opening chapter with strong hook and character introduction",
+      "parent": "Story Development: {{story_title}}",
+      "variables": {
+        "input": {
+          "prompt": "Write Chapter 1 of {{story_title}}. Establish setting, introduce protagonist, create compelling opening hook.",
+          "model": "{{narrative_model}}",
+          "context": "outline_and_characters"
+        },
+        "output": {
+          "chapter_content": "chapter_1_draft",
+          "word_count": 2500,
+          "narrative_elements": ["hook", "setting", "character_intro"]
+        }
+      },
+      "metadata": {
+        "step": "chapter_1_development",
+        "chapter_number": 1,
+        "model": "{{narrative_model}}",
+        "target_word_count": 2500
+      }
+    },
+    {
+      "name": "Evaluate Story Premise",
+      "observation_type": "GENERATION",
+      "description": "{{judge_model}} evaluating story premise for originality and engagement",
+      "parent": "Story Development: {{story_title}}",
+      "conditional": "{{enable_story_evaluation}}",
+      "variables": {
+        "input": {
+          "content": "story_premise_content",
+          "evaluation_prompt": "Evaluate this {{genre}} story premise for originality, engagement potential, and thematic depth. Rate 1-10 and provide constructive feedback.",
+          "model": "{{judge_model}}"
+        },
+        "output": {
+          "premise_score": 8.2,
+          "judge_reasoning": "Strong premise with unique {{genre}} elements and compelling conflict",
+          "improvement_suggestions": ["strengthen_themes", "enhance_originality"]
+        }
+      },
+      "metadata": {
+        "step": "judge_premise",
+        "model": "{{judge_model}}",
+        "evaluation_type": "premise_quality",
+        "genre": "{{genre}}"
+      }
+    },
+    {
+      "name": "Evaluate Character Development",
+      "observation_type": "GENERATION", 
+      "description": "{{judge_model}} evaluating character profiles for depth and relatability",
+      "parent": "Story Development: {{story_title}}",
+      "conditional": "{{enable_character_development and enable_story_evaluation}}",
+      "variables": {
+        "input": {
+          "content": "character_profiles_content",
+          "evaluation_prompt": "Evaluate these character profiles for depth, relatability, and narrative potential in a {{genre}} story. Rate 1-10 and provide feedback.",
+          "model": "{{judge_model}}"
+        },
+        "output": {
+          "character_score": 8.7,
+          "judge_reasoning": "Well-developed characters with clear motivations and growth potential",
+          "character_strengths": ["realistic_dialogue", "compelling_backstories"],
+          "improvement_areas": ["add_character_flaws", "strengthen_relationships"]
+        }
+      },
+      "metadata": {
+        "step": "judge_characters",
+        "model": "{{judge_model}}",
+        "evaluation_type": "character_quality",
+        "genre": "{{genre}}"
+      }
+    },
+    {
+      "name": "Evaluate Chapter 1",
+      "observation_type": "GENERATION",
+      "description": "{{judge_model}} evaluating opening chapter for narrative hook and pacing",
+      "parent": "Story Development: {{story_title}}",
+      "conditional": "{{enable_story_evaluation}}",
+      "variables": {
+        "input": {
+          "content": "chapter_1_content",
+          "evaluation_prompt": "Evaluate this opening chapter for narrative hook, pacing, character introduction, and {{genre}} genre execution. Rate 1-10 and provide feedback.",
+          "model": "{{judge_model}}"
+        },
+        "output": {
+          "chapter_score": 8.4,
+          "judge_reasoning": "Strong opening with effective hook and clear character establishment",
+          "narrative_strengths": ["compelling_opening", "clear_voice", "good_pacing"],
+          "improvement_areas": ["enhance_setting", "deepen_conflict"]
+        }
+      },
+      "metadata": {
+        "step": "judge_chapter_1",
+        "model": "{{judge_model}}",
+        "evaluation_type": "chapter_quality",
+        "chapter_number": 1,
+        "genre": "{{genre}}"
+      }
+    },
+    {
+      "name": "Story Development Progress Summary",
+      "observation_type": "EVENT",
+      "description": "Summarizing story development progress and next steps",
+      "parent": "Story Development: {{story_title}}",
+      "variables": {
+        "input": {"action": "summarize_progress", "story_title": "{{story_title}}"},
+        "output": {
+          "premise_complete": true,
+          "characters_developed": "{{enable_character_development}}",
+          "outline_complete": true,
+          "chapters_written": 1,
+          "total_chapters": "{{chapter_count}}",
+          "next_steps": ["continue_chapter_development", "refine_based_on_feedback"],
+          "session_resumable": true
+        }
+      },
+      "metadata": {
+        "step": "progress_summary",
+        "story_development_phase": "initial_complete",
+        "session_id": "{{session_id}}",
+        "resumption_point": "chapter_2_development",
+        "timestamp": "{{now()}}"
+      }
+    },
+    {
+      "name": "Overall Story Quality Assessment",
+      "observation_type": "EVENT",
+      "description": "Comprehensive quality assessment combining all evaluation scores",
+      "parent": "Story Development: {{story_title}}",
+      "conditional": "{{enable_story_evaluation}}",
+      "variables": {
+        "input": {"action": "assess_overall_quality", "story_title": "{{story_title}}"},
+        "output": {
+          "overall_quality_score": 8.4,
+          "premise_score": 8.2,
+          "character_score": 8.7,
+          "chapter_1_score": 8.4,
+          "story_readiness": "strong_foundation",
+          "development_phase": "initial_development_complete",
+          "quality_trend": "consistent_high_quality"
+        }
+      },
+      "metadata": {
+        "step": "overall_assessment",
+        "judge_model": "{{judge_model}}",
+        "genre": "{{genre}}",
+        "story_structure": "{{story_structure}}",
+        "evaluation_complete": true,
+        "session_id": "{{session_id}}"
+      }
+    }
+  ]
+}

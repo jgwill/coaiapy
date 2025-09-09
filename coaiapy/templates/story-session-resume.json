@@ -1,0 +1,242 @@
+{
+  "name": "story-session-resume",
+  "version": "1.0", 
+  "description": "Resume story development from specific session and continuation point",
+  "author": "CoaiaPy Built-in",
+  "variables": [
+    {
+      "name": "story_title",
+      "type": "string",
+      "required": true,
+      "description": "Title of the story being continued"
+    },
+    {
+      "name": "session_id",
+      "type": "string",
+      "required": true,
+      "description": "Original session ID to resume from"
+    },
+    {
+      "name": "resume_point",
+      "type": "string",
+      "required": true,
+      "choices": ["outline_expansion", "chapter_development", "character_refinement", "revision_phase", "final_polish"],
+      "description": "Specific point in story development to resume from"
+    },
+    {
+      "name": "chapter_number",
+      "type": "number",
+      "required": false,
+      "description": "Chapter number to continue from (if resume_point is chapter_development)"
+    },
+    {
+      "name": "narrative_model",
+      "type": "string",
+      "required": false,
+      "default": "claude-3",
+      "choices": ["gpt-4", "gpt-3.5-turbo", "claude-3", "llama-2"],
+      "description": "LLM model for continued story generation"
+    },
+    {
+      "name": "previous_context",
+      "type": "string",
+      "required": false,
+      "description": "Context from previous session (story progress, character notes, etc.)"
+    },
+    {
+      "name": "user_feedback",
+      "type": "string",
+      "required": false,
+      "description": "User feedback or direction for continued development"
+    },
+    {
+      "name": "enable_quality_check",
+      "type": "boolean",
+      "required": false,
+      "default": true,
+      "description": "Enable quality assessment of resumed work"
+    },
+    {
+      "name": "judge_model",
+      "type": "string",
+      "required": false,
+      "default": "gpt-4",
+      "choices": ["gpt-4", "gpt-3.5-turbo", "claude-3", "gpt-4-turbo"],
+      "description": "LLM model for quality evaluation"
+    },
+    {
+      "name": "user_id",
+      "type": "string",
+      "required": false,
+      "description": "User resuming the story development"
+    }
+  ],
+  "steps": [
+    {
+      "name": "Story Session Resume: {{story_title}}",
+      "observation_type": "SPAN",
+      "description": "Resuming story development from {{resume_point}} continuation point",
+      "variables": {
+        "input": {
+          "story_title": "{{story_title}}",
+          "original_session_id": "{{session_id}}",
+          "resume_point": "{{resume_point}}",
+          "continuation_context": "{{previous_context}}"
+        },
+        "output": {"status": "session_resumed", "new_session_id": "{{session_id}}_continue_{{now()}}"}
+      },
+      "metadata": {
+        "template": "story-session-resume",
+        "story_title": "{{story_title}}",
+        "original_session_id": "{{session_id}}",
+        "resume_point": "{{resume_point}}",
+        "narrative_model": "{{narrative_model}}",
+        "user_id": "{{user_id}}"
+      }
+    },
+    {
+      "name": "Context Reconstruction",
+      "observation_type": "EVENT",
+      "description": "Reconstructing story context and progress from previous session",
+      "parent": "Story Session Resume: {{story_title}}",
+      "variables": {
+        "input": {
+          "action": "reconstruct_context",
+          "session_id": "{{session_id}}",
+          "previous_context": "{{previous_context}}"
+        },
+        "output": {
+          "context_loaded": true,
+          "story_progress": "reconstructed",
+          "continuation_ready": true
+        }
+      },
+      "metadata": {
+        "step": "context_reconstruction",
+        "original_session_id": "{{session_id}}",
+        "resume_point": "{{resume_point}}"
+      }
+    },
+    {
+      "name": "Continue Chapter Development",
+      "observation_type": "GENERATION",
+      "description": "Continuing chapter {{chapter_number}} development from previous session",
+      "parent": "Story Session Resume: {{story_title}}",
+      "conditional": "{{resume_point == 'chapter_development'}}",
+      "variables": {
+        "input": {
+          "prompt": "Continue developing Chapter {{chapter_number}} of {{story_title}}. Previous context: {{previous_context}}. User feedback: {{user_feedback}}",
+          "model": "{{narrative_model}}",
+          "chapter_number": "{{chapter_number}}"
+        },
+        "output": {
+          "continued_content": "chapter_{{chapter_number}}_continued",
+          "progress": "chapter_development_continued",
+          "word_count_delta": 1200
+        }
+      },
+      "metadata": {
+        "step": "continue_chapter_development",
+        "chapter_number": "{{chapter_number}}",
+        "model": "{{narrative_model}}",
+        "resume_type": "chapter_continuation"
+      }
+    },
+    {
+      "name": "Expand Story Outline",
+      "observation_type": "GENERATION",
+      "description": "Expanding and refining story outline based on development progress",
+      "parent": "Story Session Resume: {{story_title}}",
+      "conditional": "{{resume_point == 'outline_expansion'}}",
+      "variables": {
+        "input": {
+          "prompt": "Expand and refine the outline for {{story_title}}. Previous progress: {{previous_context}}. User direction: {{user_feedback}}",
+          "model": "{{narrative_model}}"
+        },
+        "output": {
+          "expanded_outline": "refined_story_outline",
+          "new_plot_points": ["point1", "point2"],
+          "outline_enhanced": true
+        }
+      },
+      "metadata": {
+        "step": "expand_outline",
+        "model": "{{narrative_model}}",
+        "resume_type": "outline_expansion"
+      }
+    },
+    {
+      "name": "Refine Character Development",
+      "observation_type": "GENERATION",
+      "description": "Refining character profiles and development arcs",
+      "parent": "Story Session Resume: {{story_title}}",
+      "conditional": "{{resume_point == 'character_refinement'}}",
+      "variables": {
+        "input": {
+          "prompt": "Refine character development for {{story_title}}. Current progress: {{previous_context}}. Focus areas: {{user_feedback}}",
+          "model": "{{narrative_model}}"
+        },
+        "output": {
+          "refined_characters": "enhanced_character_profiles",
+          "character_arcs_updated": true,
+          "relationship_dynamics": "improved"
+        }
+      },
+      "metadata": {
+        "step": "refine_characters",
+        "model": "{{narrative_model}}",
+        "resume_type": "character_refinement"
+      }
+    },
+    {
+      "name": "Quality Assessment of Resumed Work",
+      "observation_type": "GENERATION",
+      "description": "{{judge_model}} evaluating quality of continued story development",
+      "parent": "Story Session Resume: {{story_title}}",
+      "conditional": "{{enable_quality_check}}",
+      "variables": {
+        "input": {
+          "content": "resumed_story_content",
+          "evaluation_prompt": "Evaluate the quality and continuity of this resumed story development. Assess how well it maintains narrative consistency and improves from previous session.",
+          "model": "{{judge_model}}"
+        },
+        "output": {
+          "continuity_score": 8.6,
+          "improvement_score": 8.3,
+          "judge_reasoning": "Strong continuity with meaningful improvements from previous session",
+          "narrative_consistency": "excellent",
+          "development_quality": "enhanced"
+        }
+      },
+      "metadata": {
+        "step": "judge_resumed_work",
+        "model": "{{judge_model}}",
+        "evaluation_type": "session_continuity",
+        "resume_point": "{{resume_point}}"
+      }
+    },
+    {
+      "name": "Session Progress Update",
+      "observation_type": "EVENT",
+      "description": "Updating story development progress and preparing for next continuation",
+      "parent": "Story Session Resume: {{story_title}}",
+      "variables": {
+        "input": {"action": "update_progress", "resume_point": "{{resume_point}}"},
+        "output": {
+          "session_continued": true,
+          "progress_made": true,
+          "next_resume_point": "determine_based_on_progress",
+          "session_state_saved": true,
+          "continuation_ready": true
+        }
+      },
+      "metadata": {
+        "step": "progress_update",
+        "session_type": "continuation",
+        "resume_point_completed": "{{resume_point}}",
+        "new_session_id": "{{session_id}}_continue_{{now()}}",
+        "timestamp": "{{now()}}"
+      }
+    }
+  ]
+}

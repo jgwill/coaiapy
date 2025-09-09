@@ -1,0 +1,313 @@
+{
+  "name": "story-quality-ensemble",
+  "version": "1.0",
+  "description": "Multi-judge ensemble evaluation for comprehensive story quality assessment",
+  "author": "CoaiaPy Built-in",
+  "variables": [
+    {
+      "name": "story_title",
+      "type": "string",
+      "required": true,
+      "description": "Title of story being evaluated"
+    },
+    {
+      "name": "story_content",
+      "type": "string",
+      "required": true,
+      "description": "Story content to evaluate (chapter, outline, or full story)"
+    },
+    {
+      "name": "content_type",
+      "type": "string",
+      "required": true,
+      "choices": ["outline", "chapter", "character_profiles", "full_story", "story_premise"],
+      "description": "Type of story content being evaluated"
+    },
+    {
+      "name": "judge_models",
+      "type": "list",
+      "required": false,
+      "default": ["gpt-4", "claude-3", "gpt-4-turbo"],
+      "description": "List of LLM models to use as judges"
+    },
+    {
+      "name": "genre",
+      "type": "string",
+      "required": false,
+      "default": "general",
+      "choices": ["sci-fi", "fantasy", "mystery", "romance", "thriller", "literary", "horror", "general"],
+      "description": "Story genre for targeted evaluation"
+    },
+    {
+      "name": "evaluation_aspects",
+      "type": "list",
+      "required": false,
+      "default": ["narrative_quality", "character_development", "plot_coherence", "dialogue_authenticity", "pacing"],
+      "description": "Specific aspects to evaluate"
+    },
+    {
+      "name": "target_audience",
+      "type": "string",
+      "required": false,
+      "default": "general_adult",
+      "choices": ["young_adult", "adult", "children", "general_adult", "literary_audience"],
+      "description": "Target audience for evaluation context"
+    },
+    {
+      "name": "enable_consensus_analysis",
+      "type": "boolean",
+      "required": false,
+      "default": true,
+      "description": "Enable cross-judge consensus analysis"
+    },
+    {
+      "name": "user_id",
+      "type": "string",
+      "required": false,
+      "description": "User requesting the evaluation"
+    }
+  ],
+  "steps": [
+    {
+      "name": "Story Quality Ensemble: {{story_title}}",
+      "observation_type": "SPAN",
+      "description": "Multi-judge ensemble evaluation of {{content_type}} for {{story_title}}",
+      "variables": {
+        "input": {
+          "story_title": "{{story_title}}",
+          "content_type": "{{content_type}}",
+          "genre": "{{genre}}",
+          "judge_models": "{{judge_models}}",
+          "evaluation_aspects": "{{evaluation_aspects}}"
+        },
+        "output": {"status": "ensemble_evaluation_started", "judge_count": "{{judge_models | length}}"}
+      },
+      "metadata": {
+        "template": "story-quality-ensemble",
+        "story_title": "{{story_title}}",
+        "content_type": "{{content_type}}",
+        "genre": "{{genre}}",
+        "target_audience": "{{target_audience}}",
+        "judge_models": "{{judge_models}}",
+        "user_id": "{{user_id}}"
+      }
+    },
+    {
+      "name": "Judge 1 Evaluation ({{judge_models[0]}})",
+      "observation_type": "GENERATION",
+      "description": "{{judge_models[0]}} evaluating {{content_type}} for narrative quality and genre conventions",
+      "parent": "Story Quality Ensemble: {{story_title}}",
+      "variables": {
+        "input": {
+          "content": "{{story_content}}",
+          "evaluation_prompt": "As a {{genre}} expert, evaluate this {{content_type}} for {{story_title}}. Focus on {{evaluation_aspects | join(', ')}}. Provide detailed scores (1-10) and reasoning for {{target_audience}} audience.",
+          "model": "{{judge_models[0]}}"
+        },
+        "output": {
+          "narrative_quality": 8.4,
+          "character_development": 8.2,
+          "plot_coherence": 8.6,
+          "dialogue_authenticity": 8.0,
+          "pacing": 8.3,
+          "genre_adherence": 8.5,
+          "overall_score": 8.3,
+          "judge_reasoning": "Strong {{genre}} {{content_type}} with well-developed narrative elements",
+          "strengths": ["compelling_plot", "authentic_dialogue", "good_pacing"],
+          "improvement_areas": ["character_depth", "genre_specific_elements"]
+        }
+      },
+      "metadata": {
+        "step": "judge_1_evaluation",
+        "model": "{{judge_models[0]}}",
+        "evaluation_type": "primary_narrative_assessment",
+        "genre": "{{genre}}",
+        "content_type": "{{content_type}}"
+      }
+    },
+    {
+      "name": "Judge 2 Evaluation ({{judge_models[1]}})",
+      "observation_type": "GENERATION",
+      "description": "{{judge_models[1]}} evaluating {{content_type}} for character development and emotional impact",
+      "parent": "Story Quality Ensemble: {{story_title}}",
+      "variables": {
+        "input": {
+          "content": "{{story_content}}",
+          "evaluation_prompt": "Evaluate this {{content_type}} for {{story_title}} focusing on character development, emotional resonance, and reader engagement. Rate each aspect 1-10 for {{target_audience}} audience.",
+          "model": "{{judge_models[1]}}"
+        },
+        "output": {
+          "narrative_quality": 8.6,
+          "character_development": 8.8,
+          "plot_coherence": 8.4,
+          "dialogue_authenticity": 8.3,
+          "pacing": 8.1,
+          "emotional_impact": 8.7,
+          "overall_score": 8.5,
+          "judge_reasoning": "Excellent character development with strong emotional resonance",
+          "strengths": ["character_arcs", "emotional_depth", "reader_connection"],
+          "improvement_areas": ["plot_complexity", "pacing_variation"]
+        }
+      },
+      "metadata": {
+        "step": "judge_2_evaluation",
+        "model": "{{judge_models[1]}}",
+        "evaluation_type": "character_and_emotion_assessment",
+        "genre": "{{genre}}",
+        "content_type": "{{content_type}}"
+      }
+    },
+    {
+      "name": "Judge 3 Evaluation ({{judge_models[2]}})",
+      "observation_type": "GENERATION",
+      "description": "{{judge_models[2]}} evaluating {{content_type}} for technical craft and market appeal",
+      "parent": "Story Quality Ensemble: {{story_title}}",
+      "variables": {
+        "input": {
+          "content": "{{story_content}}",
+          "evaluation_prompt": "Evaluate this {{content_type}} for {{story_title}} focusing on technical writing craft, market appeal, and publishability in {{genre}} genre for {{target_audience}} audience.",
+          "model": "{{judge_models[2]}}"
+        },
+        "output": {
+          "narrative_quality": 8.2,
+          "character_development": 8.4,
+          "plot_coherence": 8.7,
+          "dialogue_authenticity": 8.1,
+          "pacing": 8.5,
+          "technical_craft": 8.6,
+          "market_appeal": 8.3,
+          "overall_score": 8.4,
+          "judge_reasoning": "Solid technical craft with good market potential in {{genre}} genre",
+          "strengths": ["plot_structure", "genre_execution", "professional_quality"],
+          "improvement_areas": ["dialogue_polish", "unique_voice_development"]
+        }
+      },
+      "metadata": {
+        "step": "judge_3_evaluation",
+        "model": "{{judge_models[2]}}",
+        "evaluation_type": "craft_and_market_assessment",
+        "genre": "{{genre}}",
+        "content_type": "{{content_type}}"
+      }
+    },
+    {
+      "name": "Consensus Analysis",
+      "observation_type": "EVENT",
+      "description": "Analyzing consensus and disagreements across judge evaluations",
+      "parent": "Story Quality Ensemble: {{story_title}}",
+      "conditional": "{{enable_consensus_analysis}}",
+      "variables": {
+        "input": {
+          "action": "analyze_consensus",
+          "judge_1_scores": "from_judge_1_evaluation",
+          "judge_2_scores": "from_judge_2_evaluation", 
+          "judge_3_scores": "from_judge_3_evaluation"
+        },
+        "output": {
+          "consensus_areas": ["plot_coherence", "character_development"],
+          "disagreement_areas": ["pacing", "dialogue_authenticity"],
+          "score_variance": {
+            "narrative_quality": 0.2,
+            "character_development": 0.3,
+            "plot_coherence": 0.15
+          },
+          "high_confidence_scores": ["plot_coherence", "character_development"],
+          "require_additional_review": ["dialogue_authenticity"]
+        }
+      },
+      "metadata": {
+        "step": "consensus_analysis",
+        "analysis_type": "cross_judge_consensus",
+        "judge_count": "{{judge_models | length}}",
+        "consensus_threshold": 0.5
+      }
+    },
+    {
+      "name": "Ensemble Score Synthesis",
+      "observation_type": "EVENT",
+      "description": "Synthesizing final ensemble scores with confidence intervals",
+      "parent": "Story Quality Ensemble: {{story_title}}",
+      "variables": {
+        "input": {"action": "synthesize_ensemble_scores", "story_title": "{{story_title}}"},
+        "output": {
+          "ensemble_scores": {
+            "narrative_quality": {"score": 8.4, "confidence": 0.85, "range": "8.2-8.6"},
+            "character_development": {"score": 8.5, "confidence": 0.80, "range": "8.2-8.8"},
+            "plot_coherence": {"score": 8.6, "confidence": 0.92, "range": "8.4-8.7"},
+            "dialogue_authenticity": {"score": 8.1, "confidence": 0.70, "range": "8.0-8.3"},
+            "pacing": {"score": 8.3, "confidence": 0.75, "range": "8.1-8.5"}
+          },
+          "overall_ensemble_score": 8.4,
+          "confidence_level": "high",
+          "evaluation_reliability": 0.82,
+          "judge_agreement_level": "strong"
+        }
+      },
+      "metadata": {
+        "step": "ensemble_synthesis",
+        "synthesis_method": "weighted_consensus",
+        "judge_models": "{{judge_models}}",
+        "content_type": "{{content_type}}",
+        "genre": "{{genre}}"
+      }
+    },
+    {
+      "name": "Actionable Recommendations",
+      "observation_type": "EVENT",
+      "description": "Generating specific, actionable improvement recommendations based on ensemble evaluation",
+      "parent": "Story Quality Ensemble: {{story_title}}",
+      "variables": {
+        "input": {"action": "generate_recommendations", "ensemble_results": "from_synthesis"},
+        "output": {
+          "high_priority_improvements": [
+            "Enhance dialogue authenticity through character voice differentiation",
+            "Refine pacing in middle sections to maintain reader engagement"
+          ],
+          "medium_priority_improvements": [
+            "Develop secondary character arcs for added depth",
+            "Strengthen genre-specific elements for market positioning"
+          ],
+          "strengths_to_maintain": [
+            "Strong plot coherence and structure",
+            "Compelling character development arcs",
+            "Effective narrative quality"
+          ],
+          "next_development_focus": "dialogue_and_pacing_refinement"
+        }
+      },
+      "metadata": {
+        "step": "actionable_recommendations",
+        "recommendation_type": "ensemble_based",
+        "priority_ranking": "impact_based",
+        "story_title": "{{story_title}}"
+      }
+    },
+    {
+      "name": "Ensemble Evaluation Summary",
+      "observation_type": "EVENT",
+      "description": "Final summary of multi-judge ensemble evaluation results",
+      "parent": "Story Quality Ensemble: {{story_title}}",
+      "variables": {
+        "input": {"action": "summarize_ensemble_evaluation"},
+        "output": {
+          "evaluation_complete": true,
+          "judge_models_used": "{{judge_models}}",
+          "content_type_evaluated": "{{content_type}}",
+          "overall_ensemble_score": 8.4,
+          "confidence_level": "high",
+          "consensus_strength": "strong",
+          "evaluation_reliability": 0.82,
+          "recommendations_generated": true,
+          "ready_for_next_development_phase": true
+        }
+      },
+      "metadata": {
+        "step": "ensemble_summary",
+        "evaluation_type": "multi_judge_ensemble",
+        "story_title": "{{story_title}}",
+        "genre": "{{genre}}",
+        "ensemble_complete": true,
+        "timestamp": "{{now()}}"
+      }
+    }
+  ]
+}
