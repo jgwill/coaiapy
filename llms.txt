@@ -258,6 +258,81 @@ add_observation(trace_id, "revision_complete", metadata={"revisions": 3})
 - **`gesture-pipeline`**: Touch/gesture interaction tracking
 - **`quick-analysis`**: Rapid content analysis and insights
 
+### 🖋️ Storytelling-Specific Pipeline Templates {#storytelling-templates}
+
+#### Storytelling Development Pipeline {#storytelling-development-template}
+- **Purpose**: Comprehensive story creation and quality assessment workflow
+- **Key Features**:
+  1. Supports multiple narrative structures
+  2. Integrated character development tracking
+  3. Automated quality evaluation
+  4. Genre-specific assessment
+  5. Flexible story length configuration
+
+**Recommended Use Cases**:
+- Novel writing
+- Screenplay development
+- Short story creation
+- Creative writing workshops
+
+**AI Interaction Guidelines**:
+- Use template to manifest, not just generate, creative narratives
+- Treat each pipeline step as a generative moment
+- View quality assessment as creative refinement, not criticism
+
+**Potential Misinterpretation Risks**:
+- Do NOT treat template as a rigid, linear process
+- Avoid viewing evaluation scores as definitive judgments
+- Understand template as a creative companion, not a constraint
+
+**Template Variables for Creative Exploration**:
+- `story_title`: Capture narrative essence
+- `story_prompt`: Seed of creative potential
+- `narrative_model`: Choose generative voice
+- `story_structure`: Narrative framework selection
+- `genre`: Creative domain exploration
+
+#### Story Session Resume Pipeline {#story-session-resume-template}
+- **Purpose**: Seamless continuation of interrupted storytelling journeys
+- **Key Features**:
+  1. Context reconstruction
+  2. Flexible resume points
+  3. Quality continuity assessment
+  4. Contextual memory preservation
+
+**AI Interaction Principles**:
+- Treat interrupted stories as living, evolving narratives
+- View resumption as narrative rediscovery
+- Preserve creative momentum across sessions
+
+**Recommended Interaction Approach**:
+- Use to reconnect with abandoned creative moments
+- Leverage contextual memory for narrative coherence
+- Embrace non-linear storytelling possibilities
+
+#### Story Quality Ensemble Pipeline {#story-quality-ensemble-template}
+- **Purpose**: Multi-perspective narrative quality assessment
+- **Key Features**:
+  1. Multi-model judge evaluation
+  2. Consensus analysis
+  3. Confidence interval tracking
+  4. Actionable improvement recommendations
+
+**Philosophical Interaction Principles**:
+- Quality assessment as creative dialogue
+- Evaluation as generative, not restrictive
+- Embrace multiple perspectives of narrative potential
+
+**Anti-Pattern Identification**:
+- Avoid treating scores as absolute truth
+- Do NOT use evaluations to limit creative expression
+- Understand feedback as creative expansion, not limitation
+
+**Structural Thinking Approach**:
+- View each evaluation as a narrative exploration
+- Use recommendations to unlock new creative pathways
+- Treat scores as dynamic, not static measurements
+
 #### Template Hierarchy Discovery {#template-discovery}
 Templates discovered in priority order:
 1. **Project templates** (highest): `./.coaia/templates/`
