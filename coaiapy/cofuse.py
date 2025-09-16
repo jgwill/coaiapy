@@ -3313,7 +3313,19 @@ def format_trace_tree(trace_json):
                     next_prefix = prefix + VERTICAL
 
                 obs_id_full = obs.get('id', 'N/A')
-                lines.append(f"{prefix}{symbol}[{obs_type}] {obs_name} ({obs_id_full})")
+
+                # Add beautiful glyphs for different observation types
+                type_glyphs = {
+                    'SPAN': '🔗',        # Link/chain for spans
+                    'GENERATION': '🤖',   # Robot for AI generation
+                    'EVENT': '⚡',        # Lightning for events
+                    'SCORE': '📊',        # Chart for scoring
+                    'TRACE': '🛤️',        # Railway track for traces
+                    'DEFAULT': '📦',      # Package for default/unknown
+                }
+
+                glyph = type_glyphs.get(obs_type, type_glyphs['DEFAULT'])
+                lines.append(f"{prefix}{symbol}{glyph} [{obs_type}] {obs_name} ({obs_id_full})")
                 lines.append(f"{next_prefix}├── ⏰ {obs_time}")
                 if obs_status != 'N/A':
                     lines.append(f"{next_prefix}├── 📊 {obs_status}")
