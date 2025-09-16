@@ -525,25 +525,30 @@ def format_traces_table(traces_json):
             return "No traces found."
         
         # Table headers
-        headers = ["Name", "User ID", "Started", "Status", "Session"]
+        headers = ["Name", "User ID", "Started", "Status", "Session ID", "Trace ID"]
         
         # Calculate column widths
-        max_name = max([len((t.get('name', '') or '')[:25]) for t in traces] + [len(headers[0])])
-        max_user = max([len((t.get('userId', '') or '')[:15]) for t in traces] + [len(headers[1])])
+        # Ensure UUIDs are fully displayed (36 chars for UUID + 2 for padding)
+        UUID_LEN = 36
+        
+        max_name = max([len((t.get('name', '') or '')) for t in traces] + [len(headers[0])])
+        max_user = max([len((t.get('userId', '') or '')) for t in traces] + [len(headers[1])])
         max_started = max([len((t.get('timestamp', '') or '')[:16]) for t in traces] + [len(headers[2])])
         max_status = max([len(str(t.get('level', '') or '')) for t in traces] + [len(headers[3])])
-        max_session = max([len((t.get('sessionId', '') or '')[:20]) for t in traces] + [len(headers[4])])
+        max_session = max([len((t.get('sessionId', '') or '')) for t in traces] + [len(headers[4])])
+        max_trace = max([len((t.get('id', '') or '')) for t in traces] + [len(headers[5])])
         
         # Minimum widths
         max_name = max(max_name, 15)
         max_user = max(max_user, 8)
         max_started = max(max_started, 16)
         max_status = max(max_status, 8)
-        max_session = max(max_session, 12)
+        max_session = max(max_session, UUID_LEN) # Ensure full UUID
+        max_trace = max(max_trace, UUID_LEN)   # Ensure full UUID
         
         # Format table
-        separator = f"+{'-' * (max_name + 2)}+{'-' * (max_user + 2)}+{'-' * (max_started + 2)}+{'-' * (max_status + 2)}+{'-' * (max_session + 2)}+"
-        header_row = f"| {headers[0]:<{max_name}} | {headers[1]:<{max_user}} | {headers[2]:<{max_started}} | {headers[3]:<{max_status}} | {headers[4]:<{max_session}} |"
+        separator = f"+{'-' * (max_name + 2)}+{'-' * (max_user + 2)}+{'-' * (max_started + 2)}+{'-' * (max_status + 2)}+{'-' * (max_session + 2)}+{'-' * (max_trace + 2)}+"
+        header_row = f"| {headers[0]:<{max_name}} | {headers[1]:<{max_user}} | {headers[2]:<{max_started}} | {headers[3]:<{max_status}} | {headers[4]:<{max_session}} | {headers[5]:<{max_trace}} |"
         
         table_lines = [separator, header_row, separator]
         
@@ -552,9 +557,10 @@ def format_traces_table(traces_json):
             user = (trace.get('userId', '') or 'N/A')[:max_user]
             started = (trace.get('timestamp', '') or 'N/A')[:16]  # YYYY-MM-DD HH:MM
             status = str(trace.get('level', '') or 'N/A')[:max_status]
-            session = (trace.get('sessionId', '') or 'N/A')[:max_session]
+            session = (trace.get('sessionId', '') or 'N/A') # No truncation for session ID
+            trace_id = (trace.get('id', '') or 'N/A') # No truncation for trace ID
             
-            row = f"| {name:<{max_name}} | {user:<{max_user}} | {started:<{max_started}} | {status:<{max_status}} | {session:<{max_session}} |"
+            row = f"| {name:<{max_name}} | {user:<{max_user}} | {started:<{max_started}} | {status:<{max_status}} | {session:<{max_session}} | {trace_id:<{max_trace}} |"
             table_lines.append(row)
         
         table_lines.append(separator)
