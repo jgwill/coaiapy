@@ -120,6 +120,14 @@ Replace traditional BDD scenarios with Creative Advancement Scenarios:
 - How do these features support advancing rather than oscillating patterns?
 - What structural relationships ensure inevitable movement toward desired outcomes?
 
+### Specification Autonomy and Implementation Agnosticism
+
+RISE specifications are **completely autonomous from any specific codebase**. They serve as a conceptual blueprint, describing the system's desired behavior, structural dynamics, and creative intent in a manner that is independent of its implementation language, framework, or existing code.
+
+*   **Codebase-Agnostic**: A RISE specification should be comprehensive enough for another LLM (or human developer) to **re-implement the entire system from scratch**, without needing access to the original source code.
+*   **Conceptual References**: Any references within a RISE specification (e.g., to "Prompts Specification," "Data Schemas," or "API Definitions") are **conceptual pointers to other RISE specifications**, not direct file paths within an existing codebase. These referenced specifications are themselves codebase-agnostic.
+*   **"Black Box" Principle**: The specification describes the system as a "black box" from an implementation perspective. It focuses on *what* the system does and *how* it achieves desired outcomes through structural dynamics, rather than *how* it is currently coded.
+
 #### Quality Criteria
 - ✅ Creating Focus: Emphasizes what users create, not problems solved
 - ✅ Structural Dynamics: Natural forces driving progression
