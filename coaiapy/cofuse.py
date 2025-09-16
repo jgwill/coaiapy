@@ -525,7 +525,7 @@ def format_traces_table(traces_json):
             return "No traces found."
         
         # Table headers
-        headers = ["Name", "User ID", "Started", "Status", "Session ID", "Trace ID", "Release", "Version"]
+        headers = ["Name", "User ID", "Started", "Status", "Session ID", "Trace ID", "Release", "Version", "Observations"]
         
         # Calculate column widths
         # Ensure UUIDs are fully displayed (36 chars for UUID + 2 for padding)
@@ -539,6 +539,7 @@ def format_traces_table(traces_json):
         max_trace = max([len((t.get('id', '') or '')) for t in traces] + [len(headers[5])])
         max_release = max([len((t.get('release', '') or '')) for t in traces] + [len(headers[6])])
         max_version = max([len((t.get('version', '') or '')) for t in traces] + [len(headers[7])])
+        max_observations = max([len(f"{len(t.get('observations', []))} observations") if t.get('observations') else len('N/A') for t in traces] + [len(headers[8])])
         
         # Minimum widths
         max_name = max(max_name, 15)
@@ -549,10 +550,11 @@ def format_traces_table(traces_json):
         max_trace = max(max_trace, UUID_LEN)   # Ensure full UUID
         max_release = max(max_release, 8)
         max_version = max(max_version, 8)
+        max_observations = max(max_observations, 12)
         
         # Format table
-        separator = f"+{'-' * (max_name + 2)}+{'-' * (max_user + 2)}+{'-' * (max_started + 2)}+{'-' * (max_status + 2)}+{'-' * (max_session + 2)}+{'-' * (max_trace + 2)}+{'-' * (max_release + 2)}+{'-' * (max_version + 2)}+"
-        header_row = f"| {headers[0]:<{max_name}} | {headers[1]:<{max_user}} | {headers[2]:<{max_started}} | {headers[3]:<{max_status}} | {headers[4]:<{max_session}} | {headers[5]:<{max_trace}} | {headers[6]:<{max_release}} | {headers[7]:<{max_version}} |"
+        separator = f"+{'-' * (max_name + 2)}+{'-' * (max_user + 2)}+{'-' * (max_started + 2)}+{'-' * (max_status + 2)}+{'-' * (max_session + 2)}+{'-' * (max_trace + 2)}+{'-' * (max_release + 2)}+{'-' * (max_version + 2)}+{'-' * (max_observations + 2)}+"
+        header_row = f"| {headers[0]:<{max_name}} | {headers[1]:<{max_user}} | {headers[2]:<{max_started}} | {headers[3]:<{max_status}} | {headers[4]:<{max_session}} | {headers[5]:<{max_trace}} | {headers[6]:<{max_release}} | {headers[7]:<{max_version}} | {headers[8]:<{max_observations}} |"
         
         table_lines = [separator, header_row, separator]
         
@@ -565,8 +567,9 @@ def format_traces_table(traces_json):
             trace_id = (trace.get('id', '') or 'N/A') # No truncation for trace ID
             release = (trace.get('release', '') or 'N/A')
             version = (trace.get('version', '') or 'N/A')
+            observations_count = f"{len(trace.get('observations', []))} observations" if trace.get('observations') else 'N/A'
             
-            row = f"| {name:<{max_name}} | {user:<{max_user}} | {started:<{max_started}} | {status:<{max_status}} | {session:<{max_session}} | {trace_id:<{max_trace}} | {release:<{max_release}} | {version:<{max_version}} |"
+            row = f"| {name:<{max_name}} | {user:<{max_user}} | {started:<{max_started}} | {status:<{max_status}} | {session:<{max_session}} | {trace_id:<{max_trace}} | {release:<{max_release}} | {version:<{max_version}} | {observations_count:<{max_observations}} |"
             table_lines.append(row)
         
         table_lines.append(separator)
@@ -2563,12 +2566,44 @@ def add_trace_node_and_save(session_file, session_id, trace_id, user_id, node_na
     save_session_file(session_file, data)
     return result
 
-def list_traces():
+def list_traces(include_observations=False):
     c = read_config()
     auth = HTTPBasicAuth(c['langfuse_public_key'], c['langfuse_secret_key'])
-    url = f"{c['langfuse_base_url']}/api/public/traces"
-    r = requests.get(url, auth=auth)
-    return r.text
+    base_url = c['langfuse_base_url']
+    
+    traces_url = f"{base_url}/api/public/traces"
+    r = requests.get(traces_url, auth=auth)
+    
+    if r.status_code != 200:
+        return r.text # Return error if traces cannot be fetched
+    
+    traces_data = json.loads(r.text)
+    
+    # Handle nested structure from Langfuse API
+    if isinstance(traces_data, dict) and 'data' in traces_data:
+        traces = traces_data['data']
+    else:
+        traces = traces_data
+        
+    if include_observations:
+        observations_url = f"{base_url}/api/public/observations"
+        for trace in traces:
+            trace_id = trace.get('id')
+            if trace_id:
+                # Fetch observations for each trace
+                obs_r = requests.get(f"{observations_url}?traceId={trace_id}", auth=auth)
+                if obs_r.status_code == 200:
+                    obs_data = json.loads(obs_r.text)
+                    if isinstance(obs_data, dict) and 'data' in obs_data:
+                        trace['observations'] = obs_data['data']
+                    else:
+                        trace['observations'] = obs_data
+                else:
+                    trace['observations'] = [] # No observations or error fetching
+            else:
+                trace['observations'] = [] # No trace ID
+                
+    return json.dumps(traces, indent=2)
 
 def list_projects():
     c = read_config()

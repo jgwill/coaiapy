@@ -275,6 +275,7 @@ def main():
 
     parser_fuse_traces = sub_fuse.add_parser('traces', help="List or manage traces and observations in Langfuse")
     parser_fuse_traces.add_argument('--json', action='store_true', help="Output in JSON format (default: table format)")
+    parser_fuse_traces.add_argument('--include-observations', action='store_true', help="Include detailed observation data for each trace")
     sub_fuse_traces = parser_fuse_traces.add_subparsers(dest='trace_action')
 
     parser_fuse_traces_add = sub_fuse_traces.add_parser('create', help='Create a new trace')
@@ -967,7 +968,7 @@ def main():
                 )
                 print(result)
             else:
-                traces_data = list_traces()
+                traces_data = list_traces(include_observations=getattr(args, 'include_observations', False))
                 if args.json:
                     print(traces_data)
                 else:
