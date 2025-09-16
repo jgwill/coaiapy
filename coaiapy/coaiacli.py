@@ -22,7 +22,8 @@ from cofuse import (
     list_datasets, get_dataset, create_dataset, format_datasets_table,
     list_dataset_items, format_dataset_display, format_dataset_for_finetuning,
     list_traces, list_projects, create_dataset_item, format_traces_table,
-    add_trace, add_observation, add_observations_batch
+    add_trace, add_observation, add_observations_batch,
+    get_trace_with_observations, format_trace_tree
 )
 from .pipeline import TemplateLoader, TemplateRenderer, PipelineTemplate, PipelineVariable, PipelineStep
 from .environment import EnvironmentManager, format_environment_table
@@ -315,6 +316,10 @@ def main():
     parser_fuse_traces_session_view = sub_fuse_traces.add_parser('session-view', aliases=['sv'], help='View a specific session by ID from Langfuse')
     parser_fuse_traces_session_view.add_argument('session_id', help="ID of the session to view")
     parser_fuse_traces_session_view.add_argument('--json', action='store_true', help="Output in JSON format")
+
+    parser_fuse_traces_trace_view = sub_fuse_traces.add_parser('trace-view', aliases=['tv'], help='View a specific trace with its observations in tree format')
+    parser_fuse_traces_trace_view.add_argument('trace_id', help="ID of the trace to view")
+    parser_fuse_traces_trace_view.add_argument('--json', action='store_true', help="Output in JSON format")
 
     # Add batch observations command with aliases
     parser_fuse_obs_batch = sub_fuse_traces.add_parser('add-observations', aliases=['add-obs-batch'], help='Add multiple observations to a trace from file or stdin')
@@ -980,6 +985,13 @@ def main():
                     print(traces_data)
                 else:
                     print(format_traces_table(traces_data))
+            elif args.trace_action in ['trace-view', 'tv']:
+                trace_id = args.trace_id
+                trace_data = get_trace_with_observations(trace_id)
+                if args.json:
+                    print(trace_data)
+                else:
+                    print(format_trace_tree(trace_data))
             else:
                 traces_data = list_traces(include_observations=getattr(args, 'include_observations', False))
                 if args.json:

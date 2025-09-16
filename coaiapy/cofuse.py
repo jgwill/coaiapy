@@ -3214,3 +3214,135 @@ def list_available_configs(category=None, cached_only=False):
         configs = filtered_configs
     
     return configs
+
+def get_trace_with_observations(trace_id):
+    """Get a specific trace with all its observations"""
+    c = read_config()
+    auth = HTTPBasicAuth(c['langfuse_public_key'], c['langfuse_secret_key'])
+    base_url = c['langfuse_base_url']
+
+    # Get the trace
+    trace_url = f"{base_url}/api/public/traces/{trace_id}"
+    r = requests.get(trace_url, auth=auth)
+
+    if r.status_code != 200:
+        return json.dumps({"error": f"Trace not found: {r.text}"}, indent=2)
+
+    trace = json.loads(r.text)
+
+    # Get observations for this trace
+    observations_url = f"{base_url}/api/public/observations"
+    obs_r = requests.get(f"{observations_url}?traceId={trace_id}", auth=auth)
+
+    if obs_r.status_code == 200:
+        obs_data = json.loads(obs_r.text)
+        if isinstance(obs_data, dict) and 'data' in obs_data:
+            trace['observations'] = obs_data['data']
+        else:
+            trace['observations'] = obs_data
+    else:
+        trace['observations'] = []
+
+    return json.dumps(trace, indent=2)
+
+def format_trace_tree(trace_json):
+    """Format a trace with its observations as an ASCII tree"""
+    try:
+        trace = json.loads(trace_json) if isinstance(trace_json, str) else trace_json
+
+        if 'error' in trace:
+            return f"Error: {trace['error']}"
+
+        # Tree symbols
+        BRANCH = "├── "
+        LAST_BRANCH = "└── "
+        VERTICAL = "│   "
+        SPACE = "    "
+
+        lines = []
+
+        # Trace header with key info
+        trace_name = trace.get('name', 'Unnamed')
+        trace_id = trace.get('id', 'N/A')
+        user_id = trace.get('userId', 'N/A')
+        session_id = trace.get('sessionId', 'N/A')
+        timestamp = trace.get('timestamp', 'N/A')[:19] if trace.get('timestamp') else 'N/A'
+
+        lines.append(f"🔗 Trace: {trace_name}")
+        lines.append(f"├── 🆔 ID: {trace_id}")
+        lines.append(f"├── 👤 User: {user_id}")
+        lines.append(f"├── 🔗 Session: {session_id}")
+        lines.append(f"├── ⏰ Time: {timestamp}")
+
+        # Add metadata if present
+        metadata = trace.get('metadata', {})
+        if metadata:
+            lines.append(f"├── 📋 Metadata:")
+            metadata_items = list(metadata.items())
+            for i, (key, value) in enumerate(metadata_items):
+                is_last_meta = i == len(metadata_items) - 1
+                prefix = LAST_BRANCH if is_last_meta else BRANCH
+                lines.append(f"│   {prefix}{key}: {value}")
+
+        # Process observations
+        observations = trace.get('observations', [])
+        if not observations:
+            lines.append(f"└── 📝 No observations")
+            return '\n'.join(lines)
+
+        lines.append(f"└── 📝 Observations ({len(observations)}):")
+
+        # Build observation hierarchy
+        obs_by_id = {obs.get('id'): obs for obs in observations}
+        root_observations = [obs for obs in observations if not obs.get('parentObservationId')]
+
+        def add_observation_tree(obs_list, prefix="    ", is_last_group=True):
+            for i, obs in enumerate(obs_list):
+                is_last = i == len(obs_list) - 1
+                obs_name = obs.get('name', f"Observation {obs.get('id', 'Unknown')[:8]}")
+                obs_type = obs.get('type', 'unknown').upper()
+                obs_status = obs.get('level', 'N/A')
+                obs_time = obs.get('startTime', 'N/A')[:19] if obs.get('startTime') else 'N/A'
+
+                # Choose symbol
+                if is_last:
+                    symbol = LAST_BRANCH
+                    next_prefix = prefix + SPACE
+                else:
+                    symbol = BRANCH
+                    next_prefix = prefix + VERTICAL
+
+                lines.append(f"{prefix}{symbol}[{obs_type}] {obs_name}")
+                lines.append(f"{next_prefix}├── 🆔 {obs.get('id', 'N/A')[:8]}...")
+                lines.append(f"{next_prefix}├── ⏰ {obs_time}")
+                if obs_status != 'N/A':
+                    lines.append(f"{next_prefix}├── 📊 {obs_status}")
+
+                # Add input/output if present
+                if obs.get('input'):
+                    input_text = str(obs['input'])[:50] + "..." if len(str(obs['input'])) > 50 else str(obs['input'])
+                    lines.append(f"{next_prefix}├── 📥 Input: {input_text}")
+
+                if obs.get('output'):
+                    output_text = str(obs['output'])[:50] + "..." if len(str(obs['output'])) > 50 else str(obs['output'])
+                    lines.append(f"{next_prefix}├── 📤 Output: {output_text}")
+
+                # Find child observations
+                children = [child for child in observations if child.get('parentObservationId') == obs.get('id')]
+                if children:
+                    lines.append(f"{next_prefix}└── 🌿 Children ({len(children)}):")
+                    add_observation_tree(children, next_prefix + "    ", True)
+                else:
+                    # Remove the last ├── and make it └── for better formatting
+                    if lines[-1].startswith(next_prefix + "├──"):
+                        lines[-1] = lines[-1].replace("├──", "└──", 1)
+
+        if root_observations:
+            add_observation_tree(root_observations)
+        else:
+            lines.append("    └── (No root observations found)")
+
+        return '\n'.join(lines)
+
+    except Exception as e:
+        return f"Error formatting trace tree: {str(e)}\n\nRaw JSON:\n{trace_json}"
