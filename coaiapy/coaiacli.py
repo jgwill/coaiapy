@@ -973,6 +973,13 @@ def main():
                     dry_run=args.dry_run
                 )
                 print(result)
+            elif args.trace_action in ['session-view', 'sv']:
+                session_id = args.session_id
+                traces_data = list_traces(session_id=session_id, include_observations=getattr(args, 'include_observations', False))
+                if args.json:
+                    print(traces_data)
+                else:
+                    print(format_traces_table(traces_data))
             else:
                 traces_data = list_traces(include_observations=getattr(args, 'include_observations', False))
                 if args.json:

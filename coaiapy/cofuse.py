@@ -2566,19 +2566,25 @@ def add_trace_node_and_save(session_file, session_id, trace_id, user_id, node_na
     save_session_file(session_file, data)
     return result
 
-def list_traces(include_observations=False):
+def list_traces(include_observations=False, session_id=None):
     c = read_config()
     auth = HTTPBasicAuth(c['langfuse_public_key'], c['langfuse_secret_key'])
     base_url = c['langfuse_base_url']
-    
+
     traces_url = f"{base_url}/api/public/traces"
-    r = requests.get(traces_url, auth=auth)
-    
+
+    # Add session_id filter if provided
+    params = {}
+    if session_id:
+        params['sessionId'] = session_id
+
+    r = requests.get(traces_url, auth=auth, params=params)
+
     if r.status_code != 200:
         return r.text # Return error if traces cannot be fetched
-    
+
     traces_data = json.loads(r.text)
-    
+
     # Handle nested structure from Langfuse API
     if isinstance(traces_data, dict) and 'data' in traces_data:
         traces = traces_data['data']
