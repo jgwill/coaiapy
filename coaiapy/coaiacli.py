@@ -310,6 +310,12 @@ def main():
     parser_fuse_obs_add.add_argument('--export-env', action='store_true', 
                                    help="Export COAIA_TRACE_ID, COAIA_LAST_OBSERVATION_ID environment variables")
 
+    
+
+    parser_fuse_traces_session_view = sub_fuse_traces.add_parser('session-view', aliases=['sv'], help='View a specific session by ID from Langfuse')
+    parser_fuse_traces_session_view.add_argument('session_id', help="ID of the session to view")
+    parser_fuse_traces_session_view.add_argument('--json', action='store_true', help="Output in JSON format")
+
     # Add batch observations command with aliases
     parser_fuse_obs_batch = sub_fuse_traces.add_parser('add-observations', aliases=['add-obs-batch'], help='Add multiple observations to a trace from file or stdin')
     parser_fuse_obs_batch.add_argument('trace_id', help="Trace ID to add observations to")
