@@ -3312,19 +3312,19 @@ def format_trace_tree(trace_json):
                     symbol = BRANCH
                     next_prefix = prefix + VERTICAL
 
-                lines.append(f"{prefix}{symbol}[{obs_type}] {obs_name}")
-                lines.append(f"{next_prefix}├── 🆔 {obs.get('id', 'N/A')[:8]}...")
+                obs_id_short = obs.get('id', 'N/A')[:8]
+                lines.append(f"{prefix}{symbol}[{obs_type}] {obs_name} ({obs_id_short})")
                 lines.append(f"{next_prefix}├── ⏰ {obs_time}")
                 if obs_status != 'N/A':
                     lines.append(f"{next_prefix}├── 📊 {obs_status}")
 
                 # Add input/output if present
                 if obs.get('input'):
-                    input_text = str(obs['input'])[:50] + "..." if len(str(obs['input'])) > 50 else str(obs['input'])
+                    input_text = str(obs['input'])[:90] + "..." if len(str(obs['input'])) > 90 else str(obs['input'])
                     lines.append(f"{next_prefix}├── 📥 Input: {input_text}")
 
                 if obs.get('output'):
-                    output_text = str(obs['output'])[:50] + "..." if len(str(obs['output'])) > 50 else str(obs['output'])
+                    output_text = str(obs['output'])[:90] + "..." if len(str(obs['output'])) > 90 else str(obs['output'])
                     lines.append(f"{next_prefix}├── 📤 Output: {output_text}")
 
                 # Find child observations
