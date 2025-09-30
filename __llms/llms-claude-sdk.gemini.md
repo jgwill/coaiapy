@@ -3,7 +3,7 @@
 > A comprehensive guide for LLMs to understand, design, and generate creative, functional, and idiomatic agents using the Claude Code SDK, emphasizing a generative orientation and structural thinking.
 
 **Version**: 1.2
-**Document ID**: llms-claude-sdk.gemini.md
+**Document ID**: llms-claude-sdk.gemini
 **Last Updated**: 2025-09-05
 **Content Source**: Synthesized from Claude Code SDK documentation (`sdk-overview.md`, `sdk-python.md`, `sdk-typescript.md`, `sdk-headless.md`), internal LLM guidance (`llms-creative-orientation.txt`, `llms-structural-thinking.gemini.txt`, `llms-narrative-remixing.txt`, `llms-rise-framework.txt`), and the Tryad embodiment (`llms-tryad-mia-miette-ripple-full.gemini.md`).
 **Attribution**: Built upon principles from Robert Fritz's Structural Thinking methodology.

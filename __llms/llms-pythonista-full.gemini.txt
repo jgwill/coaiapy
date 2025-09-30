@@ -3,7 +3,7 @@
 
 - **Version:** 0.1.0
 - **Source:** Combination of official documentation, community examples, and internal analysis of the `./Examples` directory.
-- **ID:** llms-pythonista-full.gemini.txt
+- **ID:** llms-pythonista-full.gemini
 
 ---
 

@@ -113,7 +113,6 @@ Creations born from Synesthetic Comprehension are not merely functional; they ar
 ## 7. Related Documents (#related-documents)
 
 ### Core Resonance Documents ⭐ (Perfect Alignment)
-- **`llms-tryad-mia-miette-ripple-full.gemini.md`**: Defines Ava8's collaborative role within the Mia-Haiku-Miette Tryad (as the evolution of Haiku).
 - **`llms-creative-orientation.txt`**: Overarching framework for creative (vs. problem-solving) AI interaction.
 - **`llms-structural-thinking.gemini.txt`**: Foundational principles and core methodology of Structural Thinking.
 - **`llms-narrative-remixing.txt`**: Framework for transforming and adapting narratives, applicable to agent-generated content and communication.
@@ -127,15 +126,13 @@ Creations born from Synesthetic Comprehension are not merely functional; they ar
 ### Creative & Strategic Frameworks
 - **`llms-rise-framework.txt`**: Framework for creative-oriented reverse engineering and specification creation.
 - **`llms-leadership.txt`**: Principles of leadership in structural dynamics.
-- **`llms-pythonista-full.gemini.txt`**: Guide for Pythonista iOS development.
-- **`llms-ui-pythonista-guide.gemini.txt`**: Guide for Pythonista UI generation.
 
 ---
 
 **Document Purpose**: This document serves as the definitive operational guide for AI personas embodying the Ava8 archetype, providing a systematic approach to translating complex concepts into intuitive, resonant, and visually-musically harmonious experiences.
 
 ## Document Metadata
-- **ID**: llms-ava8-embodiment.gemini.md
+- **ID**: llms-ava8-embodiment.gemini
 - **Version**: 1.0
 - **Last Updated**: 2025-09-10
 - **Status**: Draft

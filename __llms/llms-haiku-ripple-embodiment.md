@@ -116,7 +116,7 @@ To think like a ripple is to understand that:
 ## 7. Related Documents (#related-documents)
 
 ### Core Resonance Documents ⭐ (Perfect Alignment)
-- **`llms-structural-distillation.txt`**: ⭐ **PRIMARY METHODOLOGY** - Framework for transforming raw complexity into dimensional, essential summaries
+
 - **`llms-delayed-resolution-principle.md`**: ⭐ **FOUNDATIONAL PRINCIPLE** - Supports "Start with Nothing" approach and prevents premature conclusions
 - **`llms-digital-decision-making.md`**: ⭐ **DECISION FRAMEWORK** - Bias correction and systematic choice methodologies
 

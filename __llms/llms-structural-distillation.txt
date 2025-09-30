@@ -2,7 +2,7 @@
 
 > A comprehensive framework for transforming raw, linear, and often problem-oriented source material (like conversation logs) into a concise, dimensional, and creatively-oriented summary. It moves beyond simple compacting by first creating a literal summary and then refining it through the lens of the Creative Orientation Framework to reveal the underlying structural journey and manifest a narrative of creative advancement.
 
-**ID**: `llms-structural-distillation.txt`
+**ID**: `llms-structural-distillation`
 **Version**: 1.0
 **Source**: Derived from the synthesis of `llms-creative-orientation.txt` and the practical application of summarizing conversation logs.
 

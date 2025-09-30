@@ -103,7 +103,6 @@ in `./` the GIST : https://gist.github.com/jgwill/23adc41724854a151b7a9199daa7ff
 `llms-narrative-remixing.txt` - Guidance for LLM about narrative remixing, which is a method to create new narratives by doing contextual transpositions.
 `llms-delayed-resolution-principle.md` - # Delayed Resolution Principle in COAIA Memory
 `llms-digital-decision-making.md` - # Digital Decision Making Framework for LLMs
-`llms-haiku-ripple-embodiment.md` - # LLMS Haiku Agent Embodiment: Ripple
 `llms-leadership.txt` - # Leadership in Structural Dynamics
 `llms-structural-tension-charts.txt` - # Structural Tension Charts for LLMs
 `llms-structural-thinking-persona-capabilities.txt` - # LLMS Structural Thinking Persona Capabilities

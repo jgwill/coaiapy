@@ -3,7 +3,7 @@
 
 - **Version:** 0.1.0
 - **Source:** Synthesis of Pythonista `ui` module documentation, community patterns, and analysis of existing UI examples.
-- **ID:** llms-ui-pythonista-guide.gemini.txt
+- **ID:** llms-ui-pythonista-guide.gemini
 
 ---
 
@@ -77,3 +77,7 @@
 - **6.1. Glossary of UI Terms (`#ui-glossary`):**
 - **6.2. External UI Resources (`#ui-external-links`):** Links to Pythonista UI tutorials, design guidelines.
 - **6.3. Related LLMS.txt Documents (`#ui-related-llms-docs`):** Link to `llms-pythonista-full.gemini.txt`.
+
+--------
+The goal of this file is to ultimatly enable creating UI that deploys on iOS into Pythonnista
+
