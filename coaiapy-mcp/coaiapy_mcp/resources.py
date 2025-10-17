@@ -10,11 +10,11 @@ from typing import Dict, Any, List, Optional
 import json
 
 try:
-    from coaiapy.pipeline import PipelineEngine
+    from coaiapy.pipeline import TemplateLoader
     PIPELINE_AVAILABLE = True
 except ImportError:
     PIPELINE_AVAILABLE = False
-    PipelineEngine = None
+    TemplateLoader = None
 
 
 # ============================================================================
@@ -38,8 +38,8 @@ async def list_templates(include_path: bool = False) -> Dict[str, Any]:
         }
     
     try:
-        engine = PipelineEngine()
-        templates = engine.list_templates(include_path=include_path)
+        loader = TemplateLoader()
+        templates = loader.list_templates(include_path=include_path)
         
         return {
             "success": True,
@@ -69,8 +69,8 @@ async def get_template(name: str) -> Dict[str, Any]:
         }
     
     try:
-        engine = PipelineEngine()
-        template = engine.load_template(name)
+        loader = TemplateLoader()
+        template = loader.load_template(name)
         
         if template is None:
             return {
@@ -125,8 +125,8 @@ async def get_template_variables(name: str) -> Dict[str, Any]:
         }
     
     try:
-        engine = PipelineEngine()
-        template = engine.load_template(name)
+        loader = TemplateLoader()
+        template = loader.load_template(name)
         
         if template is None:
             return {

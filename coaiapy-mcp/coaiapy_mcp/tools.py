@@ -27,7 +27,7 @@ try:
         add_trace,
         add_observation,
     )
-    from coaiapy.pipeline import PipelineEngine
+    from coaiapy.pipeline import TemplateLoader
 except ImportError as e:
     print(f"Warning: Could not import from coaiapy: {e}")
     print("Some tools may not be available.")
@@ -70,13 +70,13 @@ except Exception as e:
     langfuse_client = None
     LANGFUSE_AVAILABLE = False
 
-# Initialize Pipeline Engine
+# Initialize Pipeline Template Loader
 try:
-    pipeline_engine = PipelineEngine()
+    pipeline_loader = TemplateLoader()
     PIPELINE_AVAILABLE = True
 except Exception as e:
-    print(f"Warning: Pipeline engine not available: {e}")
-    pipeline_engine = None
+    print(f"Warning: Pipeline loader not available: {e}")
+    pipeline_loader = None
     PIPELINE_AVAILABLE = False
 
 
