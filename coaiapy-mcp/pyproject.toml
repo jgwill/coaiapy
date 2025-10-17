@@ -1,0 +1,44 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "coaiapy-mcp"
+version = "0.1.0"
+description = "MCP (Model Context Protocol) wrapper for coaiapy observability toolkit"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { file = "../LICENSE" }
+authors = [
+    { name = "Jean Guillaume Isabelle", email = "jgi@jgwill.com" }
+]
+dependencies = [
+    "coaiapy>=0.2.54",
+    "mcp>=0.1.0",
+    "pydantic>=2.0",
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "pytest-asyncio>=0.21.0",
+    "pytest-cov>=4.0",
+]
+
+[project.scripts]
+coaiapy-mcp = "coaiapy_mcp.server:main"
+
+[project.urls]
+Homepage = "https://github.com/jgwill/coaiapy"
+Documentation = "https://github.com/jgwill/coaiapy/tree/main/coaiapy-mcp"
+Repository = "https://github.com/jgwill/coaiapy"
+Issues = "https://github.com/jgwill/coaiapy/issues"
