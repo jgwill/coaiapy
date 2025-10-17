@@ -48,3 +48,8 @@ Thumbs.db
 # MCP specific
 *.mcp.json
 mcp-server.log
+
+# Environment files
+.env
+.env.local
+.env.*.local
