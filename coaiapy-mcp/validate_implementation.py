@@ -78,8 +78,10 @@ async def validate_resources_module():
     
     print_subsection("Template Loading")
     # Try to load a template if any are available
-    if result["success"] and result["templates"]:
-        template_name = result["templates"][0] if isinstance(result["templates"][0], str) else result["templates"][0].get("name")
+    if result["success"] and result["templates"] and len(result["templates"]) > 0:
+        first_template = result["templates"][0]
+        template_name = first_template if isinstance(first_template, str) else first_template.get("name")
+        
         if template_name:
             tmpl_result = await resources.get_template(template_name)
             if tmpl_result["success"]:
