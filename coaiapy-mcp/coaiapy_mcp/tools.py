@@ -84,8 +84,8 @@ async def coaia_fuse_trace_create(
     Returns:
         Dict with success status, trace_id, and details
     """
-    cmd = ["coaia", "fuse", "traces", "create", trace_id, "--json"]
-    
+    cmd = ["coaia", "fuse", "traces", "create", trace_id]
+
     if user_id:
         cmd.extend(["-u", user_id])
     if session_id:
