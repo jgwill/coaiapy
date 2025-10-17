@@ -238,16 +238,24 @@ async def coaia_fuse_trace_view(trace_id: str) -> Dict[str, Any]:
 async def coaia_fuse_prompts_list() -> Dict[str, Any]:
     """
     List all Langfuse prompts via coaia CLI with JSON output.
-    
+
     Returns:
         Dict with prompts list
     """
     cmd = ["coaia", "fuse", "prompts", "list", "--json"]
     result = subprocess.run(cmd, capture_output=True, text=True, check=False)
-    
+
     if result.returncode == 0:
         try:
-            return json.loads(result.stdout)
+            data = json.loads(result.stdout)
+            # coaia fuse prompts list --json returns array directly
+            if isinstance(data, list):
+                return {
+                    "success": True,
+                    "prompts": data
+                }
+            # Handle dict format (fallback)
+            return data if isinstance(data, dict) else {"success": True, "data": data}
         except json.JSONDecodeError:
             return {
                 "success": True,

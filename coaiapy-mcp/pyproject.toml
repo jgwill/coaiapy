@@ -8,7 +8,7 @@ version = "0.1.0"
 description = "MCP (Model Context Protocol) wrapper for coaiapy observability toolkit"
 readme = "README.md"
 requires-python = ">=3.10"
-license = { file = "../LICENSE" }
+license = { text = "MIT" }
 authors = [
     { name = "Jean Guillaume Isabelle", email = "jgi@jgwill.com" }
 ]

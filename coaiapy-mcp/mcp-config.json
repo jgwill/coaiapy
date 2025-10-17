@@ -1,0 +1,17 @@
+{
+  "mcpServers": {
+    "coaiapy": {
+      "command": "python",
+      "args": ["-m", "coaiapy_mcp.server"],
+      "cwd": "/src/coaiapy/coaiapy-mcp",
+      "env": {
+        "LANGFUSE_SECRET_KEY": "${LANGFUSE_SECRET_KEY}",
+        "LANGFUSE_PUBLIC_KEY": "${LANGFUSE_PUBLIC_KEY}",
+        "LANGFUSE_HOST": "${LANGFUSE_HOST:-https://cloud.langfuse.com}",
+        "REDIS_HOST": "${REDIS_HOST:-localhost}",
+        "REDIS_PORT": "${REDIS_PORT:-6379}",
+        "REDIS_DB": "${REDIS_DB:-0}"
+      }
+    }
+  }
+}

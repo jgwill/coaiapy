@@ -27,6 +27,13 @@ async def list_templates() -> Dict[str, Any]:
     if result.returncode == 0:
         try:
             data = json.loads(result.stdout)
+            # coaia pipeline list --json returns array directly
+            if isinstance(data, list):
+                return {
+                    "success": True,
+                    "templates": data
+                }
+            # Handle dict with templates key (fallback)
             return {
                 "success": True,
                 "templates": data.get("templates", [])
