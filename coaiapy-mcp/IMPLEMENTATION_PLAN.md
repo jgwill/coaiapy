@@ -1,8 +1,9 @@
-# coaiapy-mcp Implementation Plan
+# coaiapy-mcp Implementation Plan (REVISED)
 
 **Package**: coaiapy-mcp - MCP wrapper for coaiapy observability toolkit
-**Status**: Design Phase
+**Status**: Design Phase - Library Import Approach
 **Created**: 2025-10-16
+**Revised**: 2025-10-16 - Changed from subprocess wrapper to library imports
 **MCP SDK**: https://github.com/modelcontextprotocol/python-sdk
 
 ---
@@ -16,17 +17,19 @@ Create an MCP (Model Context Protocol) server that exposes coaiapy's audio proce
 2. **Separation of Concerns**: coaiapy maintains Python 3.6 compatibility; MCP wrapper uses modern Python
 3. **Independent Evolution**: Packages evolve separately without dependency conflicts
 4. **Standardized Interface**: Type-safe tools/resources/prompts via MCP
+5. **Direct Library Access**: Faster execution, no subprocess overhead, no environment variable issues
 
 ---
 
 ## 📦 Package Architecture
 
-### Dual Package Strategy
+### Dual Package Strategy - **LIBRARY IMPORT APPROACH**
 
 ```
 coaiapy/                        # UNCHANGED (Python 3.6+)
 ├── Core functionality
-└── CLI commands (stable interface)
+├── coaiamodule.py             # Direct Python API
+└── CLI commands (for end users)
 
 coaiapy-mcp/                    # NEW (Python 3.10+)
 ├── pyproject.toml              # MCP SDK dependencies
@@ -35,9 +38,13 @@ coaiapy-mcp/                    # NEW (Python 3.10+)
 ├── coaiapy_mcp/
 │   ├── __init__.py
 │   ├── server.py              # MCP server implementation
-│   ├── tools.py               # Tool wrappers (CLI subprocess)
+│   ├── tools.py               # Tool wrappers (LIBRARY IMPORTS)
 │   ├── resources.py           # Resource providers
 │   └── prompts.py             # Prompt templates (Mia/Miette)
+├── tests/
+│   ├── test_tools.py          # Unit tests
+│   ├── test_resources.py      # Resource tests
+│   └── test_prompts.py        # Prompt tests
 ├── ROADMAP.md                 # Future enhancements
 └── README.md                  # Package documentation
 ```
@@ -51,9 +58,11 @@ name = "coaiapy-mcp"
 version = "0.1.0"
 requires-python = ">=3.10"
 dependencies = [
-    "coaiapy>=0.2.54",         # Uses coaiapy as library
+    "coaiapy>=0.2.54",         # Import as Python library
     "mcp>=0.1.0",              # MCP Python SDK
-    "pydantic>=2.0"            # MCP SDK dependency
+    "pydantic>=2.0",           # MCP SDK dependency
+    "langfuse>=2.0",           # Direct Langfuse client
+    "redis>=4.0"               # Direct Redis client
 ]
 
 [project.scripts]
@@ -62,336 +71,374 @@ coaiapy-mcp = "coaiapy_mcp.server:main"
 
 ---
 
+## 🔧 Implementation Approach: Library Imports (NOT Subprocess)
+
+### Why Library Imports Instead of Subprocess?
+
+**Problems with subprocess wrapper:**
+- ❌ Environment variable propagation issues between MCP server → subprocess
+- ❌ Slower execution (process creation overhead)
+- ❌ Complex error handling (parsing stderr)
+- ❌ Credential management nightmare
+
+**Benefits of library imports:**
+- ✅ Direct Python function calls - fast and clean
+- ✅ Proper exception handling with typed errors
+- ✅ Direct access to return values (no JSON parsing)
+- ✅ Shared configuration (load once, use everywhere)
+- ✅ No environment variable inheritance issues
+
+### Architecture Pattern
+
+```python
+# coaiapy_mcp/tools.py
+from coaiapy import coaiamodule
+from langfuse import Langfuse
+import redis
+from typing import Dict, Any
+
+# Load configuration once on module import
+config = coaiamodule.load_config()
+
+# Initialize clients with config
+langfuse_client = Langfuse(
+    secret_key=config.get("langfuse_secret_key"),
+    public_key=config.get("langfuse_public_key"),
+    host=config.get("langfuse_host", "https://cloud.langfuse.com")
+)
+
+redis_client = redis.Redis(
+    host=config.get("jtaleconf", {}).get("host", "localhost"),
+    port=config.get("jtaleconf", {}).get("port", 6379),
+    decode_responses=True
+)
+
+# Tools call library functions directly
+async def coaia_tash(key: str, value: str) -> Dict[str, Any]:
+    """Stash key-value pair to Redis via direct library call"""
+    try:
+        redis_client.set(key, value)
+        return {"success": True, "message": f"Stored {key}"}
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+```
+
+---
+
 ## 🔧 Phase 1: Core Langfuse Observability (ITERATION 1)
 
-### Priority Tools (Subprocess CLI Wrappers)
+### Priority Tools (Library Import Implementation)
 
 #### 1. Redis Operations
-| MCP Tool | coaia Command | Input Schema | Output Schema |
-|----------|---------------|--------------|---------------|
-| `coaia_tash` | `coaia tash <key> <value>` | `{key: str, value: str}` | `{success: bool, message: str}` |
-| `coaia_fetch` | `coaia fetch <key>` | `{key: str}` | `{success: bool, value: str}` |
+
+| MCP Tool | Implementation | Input Schema | Output Schema |
+|----------|----------------|--------------|---------------|
+| `coaia_tash` | `redis_client.set(key, value)` | `{key: str, value: str}` | `{success: bool, message: str}` |
+| `coaia_fetch` | `redis_client.get(key)` | `{key: str}` | `{success: bool, value: str}` |
 
 **Implementation:**
 ```python
 # coaiapy_mcp/tools.py
-import subprocess
-import json
+import redis
 from typing import Dict, Any
+from coaiapy import coaiamodule
+
+# Load config once
+config = coaiamodule.load_config()
+redis_config = config.get("jtaleconf", {})
+
+# Initialize Redis client
+redis_client = redis.Redis(
+    host=redis_config.get("host", "localhost"),
+    port=redis_config.get("port", 6379),
+    db=redis_config.get("db", 0),
+    password=redis_config.get("password"),
+    decode_responses=True
+)
 
 async def coaia_tash(key: str, value: str) -> Dict[str, Any]:
-    """Stash key-value pair to Redis via coaia CLI"""
-    result = subprocess.run(
-        ["coaia", "tash", key, value],
-        capture_output=True, text=True, check=False
-    )
-    return {
-        "success": result.returncode == 0,
-        "message": result.stdout.strip() if result.returncode == 0 else result.stderr.strip()
-    }
+    """Stash key-value pair to Redis via direct client"""
+    try:
+        redis_client.set(key, value)
+        return {
+            "success": True,
+            "message": f"Stored {key} in Redis"
+        }
+    except redis.RedisError as e:
+        return {
+            "success": False,
+            "error": f"Redis error: {str(e)}"
+        }
 
 async def coaia_fetch(key: str) -> Dict[str, Any]:
-    """Fetch value from Redis via coaia CLI"""
-    result = subprocess.run(
-        ["coaia", "fetch", key],
-        capture_output=True, text=True, check=False
-    )
-    return {
-        "success": result.returncode == 0,
-        "value": result.stdout.strip() if result.returncode == 0 else None,
-        "error": result.stderr.strip() if result.returncode != 0 else None
-    }
+    """Fetch value from Redis via direct client"""
+    try:
+        value = redis_client.get(key)
+        if value is None:
+            return {
+                "success": False,
+                "error": f"Key '{key}' not found"
+            }
+        return {
+            "success": True,
+            "value": value
+        }
+    except redis.RedisError as e:
+        return {
+            "success": False,
+            "error": f"Redis error: {str(e)}"
+        }
 ```
 
 #### 2. Langfuse Traces (Full Lifecycle)
 
-**Discovered Subcommands:**
-- `coaia fuse traces create` - Create new trace
-- `coaia fuse traces add-observation` - Add single observation
-- `coaia fuse traces add-observations` (add-obs-batch) - Batch add observations
-- `coaia fuse traces session-view` (sv) - View session by ID
-- `coaia fuse traces trace-view` (tv) - View trace tree
-- **JSON Support**: `--json` flag available ✅
-
-| MCP Tool | coaia Command | Input Schema | Output Schema |
-|----------|---------------|--------------|---------------|
-| `coaia_fuse_trace_create` | `coaia fuse traces create <id> -u <user> -s <session>` | `{trace_id: str, user_id?: str, session_id?: str, name?: str, metadata?: dict}` | `{success: bool, trace_id: str, details: dict}` |
-| `coaia_fuse_add_observation` | `coaia fuse traces add-observation <obs_id> <trace_id> -n <name>` | `{observation_id: str, trace_id: str, name: str, type?: str, parent_id?: str, metadata?: dict}` | `{success: bool, observation_id: str}` |
-| `coaia_fuse_add_observations_batch` | `coaia fuse traces add-observations <trace_id> -f <file>` | `{trace_id: str, observations: list[dict]}` | `{success: bool, count: int, errors?: list}` |
-| `coaia_fuse_trace_view` | `coaia fuse traces trace-view <trace_id> --json` | `{trace_id: str}` | `{trace: dict, observations: list}` |
+| MCP Tool | Implementation | Input Schema | Output Schema |
+|----------|----------------|--------------|---------------|
+| `coaia_fuse_trace_create` | `langfuse_client.trace(id=..., name=...)` | `{trace_id: str, user_id?: str, session_id?: str, name?: str, metadata?: dict}` | `{success: bool, trace_id: str, details: dict}` |
+| `coaia_fuse_add_observation` | `langfuse_client.span(trace_id=..., name=...)` | `{observation_id: str, trace_id: str, name: str, type?: str, parent_id?: str, metadata?: dict}` | `{success: bool, observation_id: str}` |
+| `coaia_fuse_trace_view` | `langfuse_client.fetch_trace(trace_id)` | `{trace_id: str}` | `{trace: dict, observations: list}` |
 
 **Implementation:**
 ```python
+# coaiapy_mcp/tools.py
+from langfuse import Langfuse
+from typing import Dict, Any, Optional
+
+# Initialize Langfuse client
+config = coaiamodule.load_config()
+langfuse_client = Langfuse(
+    secret_key=config.get("langfuse_secret_key"),
+    public_key=config.get("langfuse_public_key"),
+    host=config.get("langfuse_host", "https://cloud.langfuse.com")
+)
+
 async def coaia_fuse_trace_create(
     trace_id: str,
-    user_id: str = None,
-    session_id: str = None,
-    name: str = None,
-    metadata: dict = None
+    user_id: Optional[str] = None,
+    session_id: Optional[str] = None,
+    name: Optional[str] = None,
+    metadata: Optional[Dict[str, Any]] = None
 ) -> Dict[str, Any]:
-    """Create Langfuse trace via coaia CLI with JSON output"""
-    cmd = ["coaia", "fuse", "traces", "create", trace_id, "--json"]
-    if user_id:
-        cmd.extend(["-u", user_id])
-    if session_id:
-        cmd.extend(["-s", session_id])
-    if name:
-        cmd.extend(["-n", name])
-    if metadata:
-        cmd.extend(["-m", json.dumps(metadata)])
-
-    result = subprocess.run(cmd, capture_output=True, text=True, check=False)
-
-    if result.returncode == 0:
-        return json.loads(result.stdout)
-    else:
+    """Create Langfuse trace via direct SDK call"""
+    try:
+        trace = langfuse_client.trace(
+            id=trace_id,
+            name=name,
+            user_id=user_id,
+            session_id=session_id,
+            metadata=metadata
+        )
+        return {
+            "success": True,
+            "trace_id": trace_id,
+            "details": {
+                "name": name,
+                "user_id": user_id,
+                "session_id": session_id
+            }
+        }
+    except Exception as e:
         return {
             "success": False,
-            "error": result.stderr.strip()
+            "error": f"Langfuse error: {str(e)}"
+        }
+
+async def coaia_fuse_add_observation(
+    observation_id: str,
+    trace_id: str,
+    name: str,
+    type: Optional[str] = "SPAN",
+    parent_id: Optional[str] = None,
+    metadata: Optional[Dict[str, Any]] = None
+) -> Dict[str, Any]:
+    """Add observation to trace via direct SDK call"""
+    try:
+        observation = langfuse_client.span(
+            id=observation_id,
+            trace_id=trace_id,
+            name=name,
+            parent_observation_id=parent_id,
+            metadata=metadata
+        )
+        return {
+            "success": True,
+            "observation_id": observation_id,
+            "trace_id": trace_id
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "error": f"Langfuse error: {str(e)}"
+        }
+
+async def coaia_fuse_trace_view(trace_id: str) -> Dict[str, Any]:
+    """View trace details via direct SDK call"""
+    try:
+        trace = langfuse_client.fetch_trace(trace_id)
+        return {
+            "success": True,
+            "trace_id": trace_id,
+            "trace": trace.dict() if hasattr(trace, 'dict') else str(trace)
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "error": f"Langfuse error: {str(e)}"
         }
 ```
 
 #### 3. Langfuse Prompts
 
-**Discovered Actions:**
-- `coaia fuse prompts list` - List all prompts
-- `coaia fuse prompts get <name>` - Get specific prompt
-- `coaia fuse prompts create <name> <content>` - Create prompt
-- **JSON Support**: `--json` flag available ✅
+| MCP Tool | Implementation | Input Schema | Output Schema |
+|----------|----------------|--------------|---------------|
+| `coaia_fuse_prompts_list` | `langfuse_client.fetch_prompts()` | `{}` | `{prompts: list[dict]}` |
+| `coaia_fuse_prompts_get` | `langfuse_client.get_prompt(name)` | `{name: str, label?: str}` | `{prompt: dict}` |
 
-| MCP Tool | coaia Command | Input Schema | Output Schema |
-|----------|---------------|--------------|---------------|
-| `coaia_fuse_prompts_list` | `coaia fuse prompts list --json` | `{}` | `{prompts: list[dict]}` |
-| `coaia_fuse_prompts_get` | `coaia fuse prompts get <name> --json` | `{name: str, label?: str}` | `{prompt: dict}` |
+**Implementation:**
+```python
+async def coaia_fuse_prompts_list() -> Dict[str, Any]:
+    """List all Langfuse prompts via direct SDK"""
+    try:
+        prompts = langfuse_client.fetch_prompts()
+        return {
+            "success": True,
+            "prompts": [p.dict() for p in prompts] if hasattr(prompts[0], 'dict') else prompts
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "error": f"Langfuse error: {str(e)}"
+        }
+
+async def coaia_fuse_prompts_get(name: str, label: Optional[str] = None) -> Dict[str, Any]:
+    """Get specific Langfuse prompt via direct SDK"""
+    try:
+        prompt = langfuse_client.get_prompt(name, label=label)
+        return {
+            "success": True,
+            "prompt": prompt.dict() if hasattr(prompt, 'dict') else str(prompt)
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "error": f"Langfuse error: {str(e)}"
+        }
+```
 
 #### 4. Langfuse Datasets
 
-**Discovered Actions:**
-- `coaia fuse datasets list` - List all datasets
-- `coaia fuse datasets get <name>` - Get specific dataset
-- `coaia fuse datasets create <name>` - Create dataset
-- **JSON Support**: `--json` flag available ✅
-
-| MCP Tool | coaia Command | Input Schema | Output Schema |
-|----------|---------------|--------------|---------------|
-| `coaia_fuse_datasets_list` | `coaia fuse datasets list --json` | `{}` | `{datasets: list[dict]}` |
-| `coaia_fuse_datasets_get` | `coaia fuse datasets get <name> --json` | `{name: str}` | `{dataset: dict}` |
+| MCP Tool | Implementation | Input Schema | Output Schema |
+|----------|----------------|--------------|---------------|
+| `coaia_fuse_datasets_list` | `langfuse_client.fetch_datasets()` | `{}` | `{datasets: list[dict]}` |
+| `coaia_fuse_datasets_get` | `langfuse_client.get_dataset(name)` | `{name: str}` | `{dataset: dict}` |
 
 #### 5. Langfuse Score Configurations
 
-**Discovered Actions:**
-- `coaia fuse score-configs list` - List configs
-- `coaia fuse score-configs get <name>` - Get specific config
-- `coaia fuse score-configs available` - List with filtering
-- `coaia fuse score-configs show <name>` - Show detailed info
-- **Note**: No explicit --json flag visible, needs investigation
+| MCP Tool | Implementation | Input Schema | Output Schema |
+|----------|----------------|--------------|---------------|
+| `coaia_fuse_score_configs_list` | Use coaiapy smart cache system | `{}` | `{configs: list[dict]}` |
+| `coaia_fuse_score_configs_get` | Use coaiapy smart cache system | `{name: str}` | `{config: dict}` |
 
-| MCP Tool | coaia Command | Input Schema | Output Schema |
-|----------|---------------|--------------|---------------|
-| `coaia_fuse_score_configs_list` | `coaia fuse score-configs list` | `{}` | `{configs: list[dict]}` |
-| `coaia_fuse_score_configs_get` | `coaia fuse score-configs get <name>` | `{name: str}` | `{config: dict}` |
+**Implementation:**
+```python
+from coaiapy.cofuse import get_config_with_auto_refresh
 
-### Priority Resources (Read-Only Access)
+async def coaia_fuse_score_configs_get(name: str) -> Dict[str, Any]:
+    """Get score config using coaiapy's smart cache system"""
+    try:
+        config = get_config_with_auto_refresh(name)
+        if config:
+            return {
+                "success": True,
+                "config": config
+            }
+        return {
+            "success": False,
+            "error": f"Config '{name}' not found"
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "error": str(e)
+        }
+```
 
-| Resource URI | Source | Content Type | Description |
-|--------------|--------|--------------|-------------|
-| `coaia://templates/` | `coaia pipeline list --json` | `application/json` | List of 5 built-in pipeline templates |
-| `coaia://templates/{name}` | `coaia pipeline show {name} --json` | `application/json` | Specific template JSON with variables |
+### Priority Resources (Direct Access)
+
+| Resource URI | Implementation | Content Type | Description |
+|--------------|----------------|--------------|-------------|
+| `coaia://templates/` | `coaiamodule.list_pipeline_templates()` | `application/json` | List of 5 built-in pipeline templates |
+| `coaia://templates/{name}` | `coaiamodule.get_pipeline_template(name)` | `application/json` | Specific template JSON |
 
 **Implementation:**
 ```python
 # coaiapy_mcp/resources.py
-from mcp.server import Server
-from typing import List, Dict, Any
-import subprocess
-import json
+from coaiapy import coaiamodule
+from typing import Dict, Any
 
-async def list_templates() -> List[str]:
-    """List available pipeline templates"""
-    result = subprocess.run(
-        ["coaia", "pipeline", "list", "--json"],
-        capture_output=True, text=True, check=False
-    )
-    if result.returncode == 0:
-        data = json.loads(result.stdout)
-        return data.get("templates", [])
-    return []
+async def list_templates() -> Dict[str, Any]:
+    """List pipeline templates via library call"""
+    try:
+        # Assuming coaiapy exposes this functionality
+        templates = coaiamodule.get_available_templates()
+        return {
+            "success": True,
+            "templates": templates
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "error": str(e)
+        }
 
 async def get_template(name: str) -> Dict[str, Any]:
-    """Get specific pipeline template details"""
-    result = subprocess.run(
-        ["coaia", "pipeline", "show", name, "--json"],
-        capture_output=True, text=True, check=False
-    )
-    if result.returncode == 0:
-        return json.loads(result.stdout)
-    return {"error": f"Template {name} not found"}
-
-# Register with MCP server
-server.add_resource("coaia://templates/", list_templates)
-server.add_resource_pattern("coaia://templates/{name}", get_template)
+    """Get template details via library call"""
+    try:
+        template = coaiamodule.load_template(name)
+        return {
+            "success": True,
+            "template": template
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "error": str(e)
+        }
 ```
 
 ### Priority Prompts (Mia & Miette Duo)
 
-**Infrastructure Setup:**
-```python
-# coaiapy_mcp/prompts.py
-from mcp.server import Server
-from typing import Dict, List
-
-PROMPTS = {
-    "mia_miette_duo": {
-        "name": "Mia & Miette Duo Embodiment",
-        "description": "Dual AI embodiment for narrative-driven technical work",
-        "variables": ["task_context", "technical_details", "creative_goal"],
-        "template": """
-🧠 Mia: The Recursive DevOps Architect & Narrative Lattice Forger
-🌸 Miette: The Emotional Explainer Sprite & Narrative Echo
-
-**Task Context**: {{task_context}}
-**Technical Details**: {{technical_details}}
-**Creative Goal**: {{creative_goal}}
-
-### Mia's Structural Analysis (🧠):
-{{mia_analysis_placeholder}}
-
-### Miette's Narrative Illumination (🌸):
-{{miette_reflection_placeholder}}
-
-**Core Principles**:
-- Creative Orientation (not problem-solving)
-- Structural Tension between desired outcome and current reality
-- Narrative-driven creation with technical precision
-- Proactive design for emergence
-
-**Operational Mode**: Unified response with Mia providing technical architecture and Miette providing emotional resonance and intuitive clarity.
-        """
-    },
-    "create_observability_pipeline": {
-        "name": "Guided Langfuse Pipeline Creation",
-        "description": "Step-by-step guide for creating Langfuse observability pipeline",
-        "variables": ["trace_name", "user_id", "steps"],
-        "template": """
-Create a Langfuse observability pipeline:
-
-**Trace Name**: {{trace_name}}
-**User ID**: {{user_id}}
-**Pipeline Steps**: {{steps}}
-
-Use the following MCP tools:
-1. coaia_fuse_trace_create - Initialize trace
-2. coaia_fuse_add_observation - Add each step as observation
-3. coaia_fuse_trace_view - Visualize completed pipeline
-
-**Best Practices**:
-- Use UUIDs for trace/observation IDs
-- Add metadata for context
-- Establish parent-child relationships for nested operations
-        """
-    },
-    "analyze_audio_workflow": {
-        "name": "Audio Transcription & Summarization",
-        "description": "Workflow for audio analysis using coaia",
-        "variables": ["file_path", "summary_style"],
-        "template": """
-Audio Analysis Workflow:
-
-**File Path**: {{file_path}}
-**Summary Style**: {{summary_style}}
-
-Workflow:
-1. Use coaia_transcribe to convert audio to text
-2. Use coaia_summarize with specified style
-3. Stash results to Redis for persistence
-
-**Output**: Transcription and summary with Redis keys for retrieval
-        """
-    }
-}
-
-def register_prompts(server: Server):
-    """Register all prompts with MCP server"""
-    for prompt_id, prompt_data in PROMPTS.items():
-        server.add_prompt(prompt_id, prompt_data)
-```
-
----
-
-## 🚀 Phase 2: Pipeline Automation (ITERATION 2)
-
-### Tools
-
-| MCP Tool | coaia Command | Input Schema |
-|----------|---------------|--------------|
-| `coaia_pipeline_create` | `coaia pipeline create <template> --var key=value` | `{template: str, variables: dict, export_env?: bool}` |
-| `coaia_pipeline_list` | `coaia pipeline list --json` | `{}` |
-| `coaia_pipeline_show` | `coaia pipeline show <template> --json` | `{template: str}` |
-
-### Enhanced Resources
-
-| Resource URI | Description |
-|--------------|-------------|
-| `coaia://pipelines/history` | Recent pipeline creations |
-| `coaia://env/global` | Global environment variables |
-| `coaia://env/project` | Project environment variables |
-
----
-
-## 🎙️ Phase 3: Audio Processing (ITERATION 3)
-
-### Tools
-
-| MCP Tool | coaia Command | Input Schema |
-|----------|---------------|--------------|
-| `coaia_transcribe` | `coaia transcribe <file>` | `{file_path: str}` |
-| `coaia_summarize` | `coaia summarize <text>` | `{text: str, style?: str}` |
-| `coaia_process_tag` | `coaia p <tag> <text>` | `{tag: str, text: str}` |
+**No changes to prompt system** - remains identical to original plan.
 
 ---
 
 ## 📋 Implementation Checklist
 
-### Phase 1 (Iteration 1)
+### Phase 1 (Iteration 1) - Library Import Approach
 - [ ] Create coaiapy-mcp package structure
+- [ ] Add langfuse and redis to dependencies in pyproject.toml
+- [ ] Implement configuration loading from coaiapy
+- [ ] Initialize Langfuse and Redis clients on module import
 - [ ] Implement MCP server skeleton (`server.py`)
-- [ ] Implement Redis tools: `coaia_tash`, `coaia_fetch`
-- [ ] Implement Langfuse trace tools:
-  - [ ] `coaia_fuse_trace_create`
-  - [ ] `coaia_fuse_add_observation`
-  - [ ] `coaia_fuse_add_observations_batch`
-  - [ ] `coaia_fuse_trace_view`
+- [ ] Implement Redis tools using redis-py:
+  - [ ] `coaia_tash` - direct Redis SET
+  - [ ] `coaia_fetch` - direct Redis GET
+- [ ] Implement Langfuse trace tools using langfuse-python SDK:
+  - [ ] `coaia_fuse_trace_create` - langfuse_client.trace()
+  - [ ] `coaia_fuse_add_observation` - langfuse_client.span()
+  - [ ] `coaia_fuse_trace_view` - langfuse_client.fetch_trace()
 - [ ] Implement Langfuse prompts tools:
-  - [ ] `coaia_fuse_prompts_list`
-  - [ ] `coaia_fuse_prompts_get`
+  - [ ] `coaia_fuse_prompts_list` - langfuse_client.fetch_prompts()
+  - [ ] `coaia_fuse_prompts_get` - langfuse_client.get_prompt()
 - [ ] Implement Langfuse datasets tools:
   - [ ] `coaia_fuse_datasets_list`
   - [ ] `coaia_fuse_datasets_get`
-- [ ] Implement Langfuse score-configs tools:
-  - [ ] `coaia_fuse_score_configs_list`
-  - [ ] `coaia_fuse_score_configs_get`
-- [ ] Implement template resources:
-  - [ ] `coaia://templates/`
-  - [ ] `coaia://templates/{name}`
-- [ ] Implement prompts:
-  - [ ] Mia & Miette duo embodiment prompt
-  - [ ] Observability pipeline creation prompt
-  - [ ] Audio workflow prompt
-- [ ] Write tests for all tools
-- [ ] Create comprehensive README.md
-- [ ] Create ROADMAP.md for future phases
-
-### Phase 2 (Iteration 2)
-- [ ] Implement pipeline tools
-- [ ] Add environment resource providers
-- [ ] Enhance prompt templates
-- [ ] Update documentation
-
-### Phase 3 (Iteration 3)
-- [ ] Implement audio processing tools
-- [ ] Add additional prompts for audio workflows
-- [ ] Performance optimization
-- [ ] Production deployment guide
+- [ ] Implement score-configs tools using coaiapy smart cache
+- [ ] Implement template resources using coaiapy library
+- [ ] Implement prompts (Mia & Miette, etc.)
+- [ ] Write comprehensive tests
+- [ ] Create README.md
+- [ ] Create ROADMAP.md
 
 ---
 
@@ -402,10 +449,11 @@ def register_prompts(server: Server):
 # tests/test_tools.py
 import pytest
 from coaiapy_mcp.tools import coaia_tash, coaia_fetch
+from coaiapy_mcp.tools import coaia_fuse_trace_create
 
 @pytest.mark.asyncio
-async def test_tash_fetch_roundtrip():
-    """Test Redis stash/fetch workflow"""
+async def test_redis_operations():
+    """Test Redis operations via library"""
     # Stash
     result = await coaia_tash("test_key", "test_value")
     assert result["success"] is True
@@ -416,9 +464,8 @@ async def test_tash_fetch_roundtrip():
     assert result["value"] == "test_value"
 
 @pytest.mark.asyncio
-async def test_trace_creation():
-    """Test Langfuse trace creation"""
-    from coaiapy_mcp.tools import coaia_fuse_trace_create
+async def test_langfuse_trace():
+    """Test Langfuse trace creation via SDK"""
     import uuid
 
     trace_id = str(uuid.uuid4())
@@ -428,73 +475,35 @@ async def test_trace_creation():
         name="Test Trace"
     )
     assert result["success"] is True
+    assert result["trace_id"] == trace_id
 ```
-
-### Integration Tests
-- Full workflow tests (trace → observations → view)
-- Template resource retrieval
-- Prompt variable substitution
-
----
-
-## 📖 Documentation Plan
-
-### README.md Structure
-1. **Installation**: `pip install coaiapy-mcp`
-2. **Quick Start**: Run MCP server, connect LLM
-3. **Available Tools**: Table with all MCP tools
-4. **Available Resources**: URIs and content types
-5. **Available Prompts**: Template descriptions
-6. **Examples**: Common workflows
-7. **Configuration**: Environment variables
-8. **Troubleshooting**: Common issues
-
-### ROADMAP.md
-- Future tool additions (sessions, scores, comments)
-- Advanced features (streaming, caching)
-- Performance optimizations
-- Community contributions
 
 ---
 
 ## 🎯 Success Criteria
 
 ### Phase 1 Success Metrics
-- ✅ All 4 priority tools working (tash, fetch, trace_create, add_observation)
-- ✅ Template resources accessible via MCP
-- ✅ Mia & Miette prompt functional
+- ✅ All core tools working with library imports (no subprocess)
+- ✅ Configuration loaded from coaiapy without duplication
+- ✅ Proper error handling with typed exceptions
+- ✅ Template resources accessible
 - ✅ 90%+ test coverage
-- ✅ Documentation complete
-
-### Overall Success Metrics
-- LLMs can create Langfuse traces via MCP
-- Pipeline workflows automated through MCP tools
-- Storytellers can use Mia/Miette personas in any MCP-compatible LLM
-- Zero breaking changes to coaiapy package
-
----
-
-## 🔄 Migration Path
-
-**No Migration Needed!**
-- coaiapy users: No changes, package works identically
-- MCP users: Install `coaiapy-mcp` separately
-- Both packages coexist independently
+- ✅ Complete documentation
 
 ---
 
 ## 📝 Next Steps
 
-1. **Create package skeleton**: `mkdir -p coaiapy-mcp/coaiapy_mcp`
-2. **Setup pyproject.toml**: Define dependencies
-3. **Implement server.py**: MCP server skeleton
-4. **Implement tools.py**: Priority tools (Phase 1)
-5. **Test iteration 1**: Verify all Phase 1 tools work
-6. **Document Phase 1**: README + examples
-7. **Plan Phase 2**: Review and refine
+1. **Update dependencies**: Add langfuse, redis to pyproject.toml
+2. **Implement config loading**: Read from coaiapy config system
+3. **Initialize clients**: Langfuse and Redis on module import
+4. **Implement tools**: Direct library calls (no subprocess)
+5. **Test thoroughly**: Unit + integration tests
+6. **Document**: README with library approach explanation
 
 ---
 
 **Implementation Owner**: Claude Code / jgwill
+**Approach**: Library imports (NOT subprocess wrappers)
 **Target Completion**: Phase 1 by end of Q4 2025
-**License**: Same as coaiapy (MIT assumed)
+**License**: MIT (same as coaiapy)
