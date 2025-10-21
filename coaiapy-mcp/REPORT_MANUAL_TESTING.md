@@ -250,6 +250,87 @@ This allowed complete reconstruction of the workflow from trace inspection.
 
 ---
 
+## Critical: Trace Output Patching Pattern
+
+### The Challenge
+
+When creating a trace with initial `output_data`, subsequent observations add detailed information about each step. However, the trace-level `output` field remains unchanged with the initial creation data.
+
+### The Solution: Patch Trace Output on Completion
+
+**Recommended Pattern**:
+
+1. **Create trace** with initial/summary output_data
+2. **Add observations** documenting each step with detailed input/output
+3. **Patch trace output** with final aggregated results from all observations
+
+### Implementation Strategy
+
+```python
+# Step 1: Create trace with initial output placeholder
+trace_output = {
+    "status": "started",
+    "observations_count": 0,
+    "details": "To be updated upon completion"
+}
+
+trace_id = add_trace(
+    trace_id="my-workflow",
+    output_data=trace_output,
+    ...
+)
+
+# Step 2: Add observations with detailed tracking
+for step in workflow_steps:
+    add_observation(
+        trace_id=trace_id,
+        observation_id=f"obs-{step.id}",
+        input_data=step.input,
+        output_data=step.output,
+        metadata={...}
+    )
+
+# Step 3: CRITICAL - Update trace output with final results
+final_output = {
+    "status": "completed",
+    "observations_count": len(workflow_steps),
+    "summary": aggregate_results(workflow_steps),
+    "results": {
+        "successful": sum(1 for s in workflow_steps if s.succeeded),
+        "failed": sum(1 for s in workflow_steps if not s.succeeded),
+        "total": len(workflow_steps)
+    },
+    "final_state": compute_final_state(workflow_steps)
+}
+
+# Update trace with final output
+patch_trace(
+    trace_id=trace_id,
+    output_data=final_output
+)
+```
+
+### Why This Matters
+
+- **Completeness**: Trace output reflects the full workflow result, not just initial state
+- **Discoverability**: Summary data at trace level enables quick assessment without drilling into observations
+- **Analytics**: Aggregated metrics at trace level support reporting and analysis
+- **Auditing**: Complete history from initial to final state visible in single trace record
+
+### Required MCP Enhancement
+
+The coaiapy-mcp package should provide:
+
+1. **Trace update function**: Similar to `add_observation`, support updating trace-level fields
+2. **Observation aggregation**: Helper to summarize observation results
+3. **Pattern documentation**: Guide for the "create → observe → patch" workflow
+
+### Langfuse API Capability
+
+Check Langfuse Python SDK if it supports PATCH operations on existing traces to implement this pattern.
+
+---
+
 ## Recommendations for Development Team
 
 **Priority**: HIGH
@@ -260,12 +341,40 @@ This allowed complete reconstruction of the workflow from trace inspection.
 4. **Add region detection** logic if multi-region support is needed
 5. **Update MCP schema** if project_id becomes required parameter
 
+**Priority**: MEDIUM (Enhancement)
+
+6. **Add trace update/patch capability** to MCP tools (coaia_fuse_trace_update)
+7. **Document observation input/output patterns** in MCP guidelines
+8. **Implement trace output patching helpers** for workflow aggregation
+9. **Create example templates** showing complete workflow patterns
+
 ---
 
 ## Next Steps
 
+### URL Generation Fix (HIGH PRIORITY)
 - [ ] Implement Option 1 (auto-detect project_id) in tools.py
 - [ ] Test with multiple projects to ensure correctness
 - [ ] Update MCP server documentation
 - [ ] Add unit tests for URL construction
 - [ ] Consider caching project_id if performance is concern
+
+### Input/Output Documentation Enhancement (MEDIUM PRIORITY)
+- [ ] Create standardized observation metadata schema
+- [ ] Document best practices for input/output field population
+- [ ] Add field validation and examples
+- [ ] Update MCP tool documentation with examples
+
+### Trace Output Patching (MEDIUM PRIORITY)
+- [ ] Investigate Langfuse SDK for PATCH/update capabilities
+- [ ] Implement `coaia_fuse_trace_update` MCP tool
+- [ ] Create aggregation helpers for observation results
+- [ ] Document the "create → observe → patch" workflow pattern
+- [ ] Create template examples showing end-to-end patterns
+- [ ] Add tests for trace update operations
+
+### Documentation & Examples (LOW PRIORITY)
+- [ ] Create reference guide for observation structure
+- [ ] Build example workflows demonstrating best practices
+- [ ] Document trace-level metrics and aggregation patterns
+- [ ] Create comparison: initial vs. patched trace outputs
