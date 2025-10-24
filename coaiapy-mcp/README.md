@@ -115,10 +115,12 @@ Use mia_miette_duo prompt with variables:
 ### Langfuse Traces
 | Tool | Description | Parameters |
 |------|-------------|------------|
-| `coaia_fuse_trace_create` | Create new trace | `trace_id, user_id?, session_id?, name?, metadata?` |
-| `coaia_fuse_add_observation` | Add observation to trace | `observation_id, trace_id, name, type?, parent_id?, metadata?` |
+| `coaia_fuse_trace_create` | Create new trace | `trace_id, user_id?, session_id?, name?, input_data?, output_data?, metadata?` |
+| `coaia_fuse_add_observation` | Add observation to trace | `observation_id, trace_id, name, type?, parent_id?, input_data?, output_data?, metadata?, start_time?, end_time?` |
 | `coaia_fuse_add_observations_batch` | Batch add observations | `trace_id, observations: list` |
 | `coaia_fuse_trace_view` | View trace tree (JSON) | `trace_id` |
+
+**IMPORTANT**: When creating traces and observations, use `input_data` for context/inputs and `output_data` for results/outputs. Use `metadata` only for additional tags and labels.
 
 ### Langfuse Prompts
 | Tool | Description | Parameters |
@@ -203,12 +205,47 @@ Workflow for audio transcription and summarization.
 ### Complete Observability Workflow
 
 ```python
-# 1. Create trace
+# 1. Create trace with input/output data (PREFERRED)
 trace_id = "550e8400-e29b-41d4-a716-446655440000"
 result = coaia_fuse_trace_create(
     trace_id=trace_id,
     user_id="data_engineer",
-    name="ETL Pipeline Execution"
+    name="ETL Pipeline Execution",
+    input_data={
+        "source": "sales_database",
+        "query": "SELECT * FROM transactions WHERE date > '2024-01-01'",
+        "parameters": {"limit": 1000}
+    },
+    output_data={
+        "rows_processed": 1000,
+        "status": "success",
+        "duration_ms": 1234
+    },
+    metadata={
+        "environment": "production",
+        "version": "1.0.0"
+    }
+)
+
+# 2. Add observations with input/output (PREFERRED)
+obs_id_1 = "660e8400-e29b-41d4-a716-446655440001"
+coaia_fuse_add_observation(
+    observation_id=obs_id_1,
+    trace_id=trace_id,
+    name="Data Validation",
+    observation_type="SPAN",
+    input_data={
+        "schema_version": "v2",
+        "validation_rules": ["not_null", "unique_id"]
+    },
+    output_data={
+        "valid_rows": 995,
+        "invalid_rows": 5,
+        "errors": ["duplicate_id: row_123"]
+    },
+    metadata={
+        "validator": "json_schema_v4"
+    }
 )
 
 # 2. Add observations
@@ -225,8 +262,16 @@ coaia_fuse_add_observation(
     observation_id=obs_id_2,
     trace_id=trace_id,
     name="Data Transformation",
-    type="SPAN",
-    parent_id=obs_id_1
+    observation_type="SPAN",
+    parent_id=obs_id_1,
+    input_data={
+        "valid_rows": 995,
+        "transformation": "normalize_dates"
+    },
+    output_data={
+        "transformed_rows": 995,
+        "format": "iso8601"
+    }
 )
 
 # 3. View trace tree
@@ -235,6 +280,8 @@ trace_data = coaia_fuse_trace_view(trace_id=trace_id)
 # 4. Stash results to Redis
 coaia_tash("etl_trace_id", trace_id)
 ```
+
+**Best Practice**: Always use `input_data` and `output_data` fields to capture what went into an operation and what came out. Reserve `metadata` for tags, labels, and configuration details.
 
 ### Using Template Resources
 

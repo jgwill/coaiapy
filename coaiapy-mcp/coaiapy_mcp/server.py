@@ -104,7 +104,7 @@ def create_server() -> Server:
         # Langfuse trace tools
         tool_definitions.append(types.Tool(
             name="coaia_fuse_trace_create",
-            description="Create Langfuse trace for observability",
+            description="Create Langfuse trace for observability. IMPORTANT: Use 'input_data' for context/inputs and 'output_data' for results/outputs. Use 'metadata' only for additional tags/labels.",
             inputSchema={
                 "type": "object",
                 "properties": {
@@ -112,7 +112,9 @@ def create_server() -> Server:
                     "user_id": {"type": "string", "description": "User identifier"},
                     "session_id": {"type": "string", "description": "Session identifier"},
                     "name": {"type": "string", "description": "Trace name"},
-                    "metadata": {"type": "object", "description": "Metadata dictionary"},
+                    "input_data": {"type": ["object", "string", "array"], "description": "PREFERRED: The input/context data for this trace (e.g., user query, request parameters). Use this instead of metadata for actual data."},
+                    "output_data": {"type": ["object", "string", "array"], "description": "PREFERRED: The output/result data for this trace (e.g., response, generated content). Use this instead of metadata for actual data."},
+                    "metadata": {"type": "object", "description": "Additional metadata for tags/labels only (e.g., environment, version). Prefer using input_data and output_data for actual content."},
                 },
                 "required": ["trace_id"],
             }
@@ -120,7 +122,7 @@ def create_server() -> Server:
         
         tool_definitions.append(types.Tool(
             name="coaia_fuse_add_observation",
-            description="Add observation to Langfuse trace",
+            description="Add observation to Langfuse trace. IMPORTANT: Use 'input_data' for inputs/context and 'output_data' for results. Use 'metadata' only for tags/labels.",
             inputSchema={
                 "type": "object",
                 "properties": {
@@ -129,7 +131,11 @@ def create_server() -> Server:
                     "name": {"type": "string", "description": "Observation name"},
                     "observation_type": {"type": "string", "description": "Type: SPAN, EVENT, or GENERATION", "default": "SPAN"},
                     "parent_id": {"type": "string", "description": "Parent observation ID for nesting"},
-                    "metadata": {"type": "object", "description": "Metadata dictionary"},
+                    "input_data": {"type": ["object", "string", "array"], "description": "PREFERRED: The input/context for this observation (e.g., function parameters, prompt). Use this instead of metadata for actual data."},
+                    "output_data": {"type": ["object", "string", "array"], "description": "PREFERRED: The output/result of this observation (e.g., function return, LLM response). Use this instead of metadata for actual data."},
+                    "metadata": {"type": "object", "description": "Additional metadata for tags/labels only (e.g., model name, temperature). Prefer using input_data and output_data for actual content."},
+                    "start_time": {"type": "string", "description": "Optional start timestamp (ISO 8601)"},
+                    "end_time": {"type": "string", "description": "Optional end timestamp (ISO 8601)"},
                 },
                 "required": ["observation_id", "trace_id", "name"],
             }
