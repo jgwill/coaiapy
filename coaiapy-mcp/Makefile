@@ -1,0 +1,36 @@
+.PHONY: install test build dist sdist bdist_wheel upload upload-test test-release bump clean
+
+install:
+	pip install -r requirements.txt
+
+test:
+	pytest
+
+build:
+	python -m build --sdist --wheel .
+
+dist: build
+	@echo "Distribution created in dist/"
+
+sdist:
+	python setup.py sdist
+
+bdist_wheel:
+	python setup.py bdist_wheel
+
+upload: build
+	twine upload dist/*
+
+upload-test: build
+	twine upload --repository testpypi dist/*
+
+test-release: bump clean build
+	@set -a; [ -f $(HOME)/.env ] && . $(HOME)/.env; set +a; \
+	twine upload --repository testpypi dist/*
+
+bump:
+	python ../bump.py --package coaiapy-mcp
+
+clean:
+	rm -rf build/ dist/ *.egg-info **/*.egg-info
+	find . -type d -name "__pycache__" -exec rm -rf {} +

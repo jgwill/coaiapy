@@ -1,0 +1,65 @@
+[build-system]
+requires = ["setuptools>=45", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "coaiapy-mcp"
+version = "0.1.1"
+description = "MCP (Model Context Protocol) wrapper for coaiapy observability toolkit"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+authors = [
+    {name = "Guillaume Isabelle", email = "jgi@jgwill.com"}
+]
+keywords = ["mcp", "langfuse", "observability", "redis", "audio-processing"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+
+dependencies = [
+    "coaiapy>=0.2.54",
+    "mcp>=1.0.0",
+    "pydantic>=2.0",
+    "langfuse>=2.0",
+    "redis>=4.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "pytest-asyncio>=0.21.0",
+    "pytest-cov>=4.0",
+    "black>=23.0",
+    "ruff>=0.1.0",
+]
+
+[project.scripts]
+coaiapy-mcp = "coaiapy_mcp.server:main"
+
+[project.urls]
+Homepage = "https://github.com/jgwill/coaiapy"
+Documentation = "https://github.com/jgwill/coaiapy/tree/main/coaiapy-mcp"
+Repository = "https://github.com/jgwill/coaiapy"
+Issues = "https://github.com/jgwill/coaiapy/issues"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+
+[tool.black]
+line-length = 100
+target-version = ['py310']
+
+[tool.ruff]
+line-length = 100
+target-version = "0.1.1"
