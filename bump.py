@@ -50,13 +50,16 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # Determine the base directory and package name
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+
     if args.package:
         # For coaiapy-mcp: coaiapy-mcp/pyproject.toml and coaiapy-mcp/coaiapy_mcp/__init__.py
-        base_dir = args.package
+        # Construct the absolute path to the package directory
+        base_dir = os.path.join(script_dir, args.package)
         package_name = args.package.replace('-', '_')
     else:
         # For coaiapy: pyproject.toml and coaiapy/__init__.py
-        base_dir = '.'
+        base_dir = script_dir # For coaiapy, base_dir is the script's directory
         package_name = 'coaiapy'
 
     # Get or increment version
