@@ -219,7 +219,49 @@ def create_server() -> Server:
                 "required": ["name_or_id"],
             }
         ))
-        
+
+        # Langfuse comments tools
+        tool_definitions.append(types.Tool(
+            name="coaia_fuse_comments_list",
+            description="List comments with optional filtering by object type/ID or author",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "object_type": {"type": "string", "description": "Filter by object type (trace, observation, session, prompt)"},
+                    "object_id": {"type": "string", "description": "Filter by specific object ID (requires object_type)"},
+                    "author_user_id": {"type": "string", "description": "Filter by author user ID"},
+                    "page": {"type": "integer", "description": "Page number (starts at 1)", "default": 1},
+                    "limit": {"type": "integer", "description": "Items per page", "default": 50},
+                },
+            }
+        ))
+
+        tool_definitions.append(types.Tool(
+            name="coaia_fuse_comments_get",
+            description="Get a specific comment by ID",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "comment_id": {"type": "string", "description": "The unique Langfuse identifier of a comment"},
+                },
+                "required": ["comment_id"],
+            }
+        ))
+
+        tool_definitions.append(types.Tool(
+            name="coaia_fuse_comments_create",
+            description="Create a comment attached to an object (trace, observation, session, or prompt)",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "text": {"type": "string", "description": "The comment text"},
+                    "object_type": {"type": "string", "description": "Type of object to attach comment to (trace, observation, session, prompt)"},
+                    "object_id": {"type": "string", "description": "ID of the object to attach comment to"},
+                },
+                "required": ["text"],
+            }
+        ))
+
         return tool_definitions
     
     @server.call_tool()

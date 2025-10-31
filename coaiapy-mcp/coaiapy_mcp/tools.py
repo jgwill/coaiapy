@@ -26,6 +26,9 @@ try:
         get_dataset as cofuse_get_dataset,
         add_trace,
         add_observation,
+        get_comments,
+        get_comment_by_id,
+        post_comment,
     )
     from coaiapy.pipeline import TemplateLoader
 except ImportError as e:
@@ -516,6 +519,177 @@ async def coaia_fuse_score_configs_get(name_or_id: str) -> Dict[str, Any]:
 
 
 # ============================================================================
+# Langfuse Comments Tools
+# ============================================================================
+
+async def coaia_fuse_comments_list(
+    object_type: Optional[str] = None,
+    object_id: Optional[str] = None,
+    author_user_id: Optional[str] = None,
+    page: int = 1,
+    limit: int = 50
+) -> Dict[str, Any]:
+    """
+    List comments with optional filtering.
+
+    Args:
+        object_type: Filter by object type (trace, observation, session, prompt)
+        object_id: Filter by specific object ID (requires object_type)
+        author_user_id: Filter by author user ID
+        page: Page number (starts at 1)
+        limit: Items per page
+
+    Returns:
+        Dict with success status and list of comments/error
+    """
+    if not LANGFUSE_AVAILABLE:
+        return {
+            "success": False,
+            "error": "Langfuse is not available. Check credentials in configuration."
+        }
+
+    try:
+        # Use coaiapy's get_comments function
+        comments_data = get_comments(
+            object_type=object_type,
+            object_id=object_id,
+            author_user_id=author_user_id,
+            page=page,
+            limit=limit
+        )
+
+        # Parse response if it's a string
+        import json
+        if isinstance(comments_data, str):
+            try:
+                parsed_data = json.loads(comments_data)
+                return {
+                    "success": True,
+                    "comments": parsed_data
+                }
+            except json.JSONDecodeError:
+                return {
+                    "success": True,
+                    "comments": comments_data,
+                    "note": "Comments returned as raw string"
+                }
+        else:
+            return {
+                "success": True,
+                "comments": comments_data
+            }
+    except Exception as e:
+        return {
+            "success": False,
+            "error": f"Langfuse comments list error: {str(e)}"
+        }
+
+
+async def coaia_fuse_comments_get(comment_id: str) -> Dict[str, Any]:
+    """
+    Get a specific comment by ID.
+
+    Args:
+        comment_id: The unique Langfuse identifier of a comment
+
+    Returns:
+        Dict with success status and comment data/error
+    """
+    if not LANGFUSE_AVAILABLE:
+        return {
+            "success": False,
+            "error": "Langfuse is not available. Check credentials in configuration."
+        }
+
+    try:
+        # Use coaiapy's get_comment_by_id function
+        comment_data = get_comment_by_id(comment_id)
+
+        # Parse response if it's a string
+        import json
+        if isinstance(comment_data, str):
+            try:
+                parsed_data = json.loads(comment_data)
+                return {
+                    "success": True,
+                    "comment": parsed_data
+                }
+            except json.JSONDecodeError:
+                return {
+                    "success": True,
+                    "comment": comment_data,
+                    "note": "Comment returned as raw string"
+                }
+        else:
+            return {
+                "success": True,
+                "comment": comment_data
+            }
+    except Exception as e:
+        return {
+            "success": False,
+            "error": f"Langfuse comment get error: {str(e)}"
+        }
+
+
+async def coaia_fuse_comments_create(
+    text: str,
+    object_type: Optional[str] = None,
+    object_id: Optional[str] = None
+) -> Dict[str, Any]:
+    """
+    Create a comment attached to an object (trace, observation, session, or prompt).
+
+    Args:
+        text: The comment text
+        object_type: Type of object to attach comment to (trace, observation, session, prompt)
+        object_id: ID of the object to attach comment to
+
+    Returns:
+        Dict with success status and created comment data/error
+    """
+    if not LANGFUSE_AVAILABLE:
+        return {
+            "success": False,
+            "error": "Langfuse is not available. Check credentials in configuration."
+        }
+
+    try:
+        # Use coaiapy's post_comment function
+        comment_data = post_comment(
+            text=text,
+            object_type=object_type,
+            object_id=object_id
+        )
+
+        # Parse response if it's a string
+        import json
+        if isinstance(comment_data, str):
+            try:
+                parsed_data = json.loads(comment_data)
+                return {
+                    "success": True,
+                    "comment": parsed_data
+                }
+            except json.JSONDecodeError:
+                return {
+                    "success": True,
+                    "comment": comment_data,
+                    "note": "Comment returned as raw string"
+                }
+        else:
+            return {
+                "success": True,
+                "comment": comment_data
+            }
+    except Exception as e:
+        return {
+            "success": False,
+            "error": f"Langfuse comment creation error: {str(e)}"
+        }
+
+
+# ============================================================================
 # Tool Registry
 # ============================================================================
 
@@ -524,23 +698,28 @@ TOOLS = {
     # Redis tools
     "coaia_tash": coaia_tash,
     "coaia_fetch": coaia_fetch,
-    
+
     # Langfuse trace tools
     "coaia_fuse_trace_create": coaia_fuse_trace_create,
     "coaia_fuse_add_observation": coaia_fuse_add_observation,
     "coaia_fuse_trace_view": coaia_fuse_trace_view,
-    
+
     # Langfuse prompts tools
     "coaia_fuse_prompts_list": coaia_fuse_prompts_list,
     "coaia_fuse_prompts_get": coaia_fuse_prompts_get,
-    
+
     # Langfuse datasets tools
     "coaia_fuse_datasets_list": coaia_fuse_datasets_list,
     "coaia_fuse_datasets_get": coaia_fuse_datasets_get,
-    
+
     # Langfuse score configs tools
     "coaia_fuse_score_configs_list": coaia_fuse_score_configs_list,
     "coaia_fuse_score_configs_get": coaia_fuse_score_configs_get,
+
+    # Langfuse comments tools
+    "coaia_fuse_comments_list": coaia_fuse_comments_list,
+    "coaia_fuse_comments_get": coaia_fuse_comments_get,
+    "coaia_fuse_comments_create": coaia_fuse_comments_create,
 }
 
 __all__ = [
@@ -556,4 +735,7 @@ __all__ = [
     "coaia_fuse_datasets_get",
     "coaia_fuse_score_configs_list",
     "coaia_fuse_score_configs_get",
+    "coaia_fuse_comments_list",
+    "coaia_fuse_comments_get",
+    "coaia_fuse_comments_create",
 ]
