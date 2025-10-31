@@ -1,23 +1,41 @@
 import re
 import sys
+import os
+import argparse
 
 def bump_version(file_path, new_version):
+    """Update version string in a file."""
+    if not os.path.exists(file_path):
+        print(f"Skipping {file_path} (not found)")
+        return False
+
     with open(file_path, 'r') as file:
         content = file.read()
 
-    content = re.sub(r'version\s*=\s*[\'\"]([^\'\"]*)[\'\"]', f'version = "{new_version}"', content)
+    # Handle both version = "x.y.z" and __version__ = "x.y.z"
+    updated = re.sub(r'(__|)version(__|)\s*=\s*[\'\"]([^\'\"]*)[\'\"]',
+                     lambda m: f'{m.group(1)}version{m.group(2)} = "{new_version}"',
+                     content)
 
-    with open(file_path, 'w') as file:
-        file.write(content)
+    if updated != content:
+        with open(file_path, 'w') as file:
+            file.write(updated)
+        return True
+    return False
 
 
 def get_current_version(file_path):
+    """Extract current version from a file."""
+    if not os.path.exists(file_path):
+        return "0.0.0"
+
     with open(file_path, 'r') as file:
-        match = re.search(r'version\s*=\s*[\'\"]([^\'\"]*)[\'\"]', file.read())
-        return match.group(1) if match else "0.0.0"
+        match = re.search(r'(__|)version(__|)\s*=\s*[\'\"]([^\'\"]*)[\'\"]', file.read())
+        return match.group(3) if match else "0.0.0"
 
 
 def increment_patch(version):
+    """Increment the patch version number."""
     parts = version.split('.')
     if len(parts) == 3 and parts[-1].isdigit():
         parts[-1] = str(int(parts[-1]) + 1)
@@ -26,18 +44,45 @@ def increment_patch(version):
     return '.'.join(parts)
 
 if __name__ == "__main__":
-    if len(sys.argv) == 2:
-        new_version = sys.argv[1]
+    parser = argparse.ArgumentParser(description='Bump version in Python package files')
+    parser.add_argument('version', nargs='?', help='New version number (e.g., 1.2.3)')
+    parser.add_argument('--package', help='Package name (e.g., coaiapy-mcp)')
+    args = parser.parse_args()
+
+    # Determine the base directory and package name
+    if args.package:
+        # For coaiapy-mcp: coaiapy-mcp/pyproject.toml and coaiapy-mcp/coaiapy_mcp/__init__.py
+        base_dir = args.package
+        package_name = args.package.replace('-', '_')
     else:
-        current = get_current_version('pyproject.toml')
+        # For coaiapy: pyproject.toml and coaiapy/__init__.py
+        base_dir = '.'
+        package_name = 'coaiapy'
+
+    # Get or increment version
+    pyproject_path = os.path.join(base_dir, 'pyproject.toml')
+    if args.version:
+        new_version = args.version
+    else:
+        current = get_current_version(pyproject_path)
         new_version = increment_patch(current)
 
+    # Define files to update
     files_to_update = [
-        'setup.py',
-        'pyproject.toml'
+        os.path.join(base_dir, 'setup.py'),
+        pyproject_path,
+        os.path.join(base_dir, package_name, '__init__.py')
     ]
 
+    # Update files
+    updated_files = []
     for file_path in files_to_update:
-        bump_version(file_path, new_version)
+        if bump_version(file_path, new_version):
+            updated_files.append(file_path)
 
-    print(f"Version bumped to {new_version} in {', '.join(files_to_update)}")
+    if updated_files:
+        print(f"✅ Version bumped to {new_version} in:")
+        for f in updated_files:
+            print(f"   - {f}")
+    else:
+        print(f"⚠️  No files were updated")

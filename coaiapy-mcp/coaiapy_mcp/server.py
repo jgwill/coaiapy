@@ -33,6 +33,7 @@ except ImportError:
     types = None
 
 from coaiapy_mcp import tools, resources, prompts
+from coaiapy_mcp import __version__
 
 # ============================================================================
 # Server Configuration
@@ -40,7 +41,7 @@ from coaiapy_mcp import tools, resources, prompts
 
 SERVER_INFO = {
     "name": "coaiapy-mcp",
-    "version": "0.1.0",
+    "version": __version__,
     "description": "MCP wrapper for coaiapy observability toolkit",
     "capabilities": {
         "tools": True,

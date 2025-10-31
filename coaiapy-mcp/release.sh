@@ -29,7 +29,7 @@ make upload
 # Get current version and create git tag
 echo "🏷️ Creating git tag..."
 VERSION=$(grep -E "^version\s*=\s*\"" pyproject.toml | sed -E "s/.*=\s*\"([^\"]+)\".*/\1/")
-git add pyproject.toml
+git add pyproject.toml setup.py coaiapy_mcp/__init__.py
 git commit -m "coaiapy-mcp v${VERSION}" || echo "No changes to commit"
 git tag "coaiapy-mcp-v${VERSION}"
 
