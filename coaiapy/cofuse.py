@@ -1,6 +1,6 @@
 import requests
 from requests.auth import HTTPBasicAuth
-from coaiamodule import read_config
+from coaiapy.coaiamodule import read_config
 import datetime
 import yaml
 import json
@@ -286,18 +286,89 @@ def detect_and_parse_datetime(time_str):
     # Return original string for other formats
     return time_str
 
-def get_comments():
+def get_comments(object_type=None, object_id=None, author_user_id=None, page=1, limit=50):
+    """
+    Get comments with optional filtering.
+
+    Args:
+        object_type: Filter by object type (trace, observation, session, prompt)
+        object_id: Filter by specific object ID (requires object_type)
+        author_user_id: Filter by author user ID
+        page: Page number (starts at 1)
+        limit: Items per page
+
+    Returns:
+        JSON response with comments data
+    """
     config = read_config()
     auth = HTTPBasicAuth(config['langfuse_public_key'], config['langfuse_secret_key'])
     url = f"{config['langfuse_base_url']}/api/public/comments"
+
+    # Build query parameters
+    params = {}
+    if page:
+        params['page'] = page
+    if limit:
+        params['limit'] = limit
+    if object_type:
+        params['objectType'] = object_type.upper()  # API expects uppercase (TRACE, OBSERVATION, SESSION, PROMPT)
+    if object_id:
+        params['objectId'] = object_id
+    if author_user_id:
+        params['authorUserId'] = author_user_id
+
+    response = requests.get(url, auth=auth, params=params)
+    return response.text
+
+def get_comment_by_id(comment_id):
+    """
+    Get a specific comment by ID.
+
+    Args:
+        comment_id: The unique Langfuse identifier of a comment
+
+    Returns:
+        JSON response with comment data
+    """
+    config = read_config()
+    auth = HTTPBasicAuth(config['langfuse_public_key'], config['langfuse_secret_key'])
+    url = f"{config['langfuse_base_url']}/api/public/comments/{comment_id}"
     response = requests.get(url, auth=auth)
     return response.text
 
-def post_comment(text):
+def post_comment(text, object_type, object_id, author_user_id=None):
+    """
+    Create a comment attached to an object (trace, observation, session, or prompt).
+
+    Args:
+        text: The comment text/content
+        object_type: Type of object to attach comment to (trace, observation, session, prompt) - REQUIRED
+        object_id: ID of the object to attach comment to - REQUIRED
+        author_user_id: Optional user ID of the comment author
+
+    Returns:
+        JSON response with created comment data
+    """
     config = read_config()
     auth = HTTPBasicAuth(config['langfuse_public_key'], config['langfuse_secret_key'])
     url = f"{config['langfuse_base_url']}/api/public/comments"
-    data = {"text": text}
+
+    # Get current project ID (required by API)
+    project_info = get_current_project_info()
+    if not project_info or not project_info.get('id'):
+        raise ValueError("Could not determine project ID. Ensure Langfuse credentials are configured.")
+
+    # Build request data with API-expected field names
+    data = {
+        "projectId": project_info['id'],
+        "content": text,  # API expects "content", not "text"
+        "objectType": object_type.upper(),  # API expects uppercase (TRACE, OBSERVATION, SESSION, PROMPT)
+        "objectId": object_id
+    }
+
+    if author_user_id:
+        data['authorUserId'] = author_user_id
+
     response = requests.post(url, json=data, auth=auth)
     return response.text
 
@@ -2678,8 +2749,11 @@ def get_current_project_info():
     """Get current project ID and name from Langfuse API"""
     try:
         projects_json = list_projects()
-        projects = json.loads(projects_json)
-        
+        response = json.loads(projects_json)
+
+        # Handle both {"data": [...]} and direct array formats
+        projects = response.get('data', response) if isinstance(response, dict) else response
+
         # Return the first project (assumes single project per API key)
         if projects and isinstance(projects, list) and len(projects) > 0:
             project = projects[0]

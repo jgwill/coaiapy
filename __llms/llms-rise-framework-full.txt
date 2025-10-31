@@ -65,7 +65,7 @@ These personas engage in collaborative specification generation, independent ana
 The framework provides robust patterns and guidelines for practical application and ensuring high-quality outputs:
 
 *   **Specification-Driven Development (SDD)**: Using SpecLang as the central artifact for development.
-*   **Modular Specification Architecture**: Breaking down specs into manageable, composable modules.
+*   **Modular Specification Architecture**: Breaking down specs into manageable, composable modules in a folder named 'rispecs'.
 *   **Prompt Engineering Patterns**: Advanced techniques for guiding LLM behavior, including structured output constraints, context-aware adaptation, and memory integration.
 *   **Development Environment Integration**: Guidelines for Git-based workflows, CI/CD integration, and IDE setup.
 *   **Testing & Validation**: Comprehensive strategies for automated quality checks, persona consistency testing, performance, and reliability.
