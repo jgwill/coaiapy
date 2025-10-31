@@ -2749,8 +2749,11 @@ def get_current_project_info():
     """Get current project ID and name from Langfuse API"""
     try:
         projects_json = list_projects()
-        projects = json.loads(projects_json)
-        
+        response = json.loads(projects_json)
+
+        # Handle both {"data": [...]} and direct array formats
+        projects = response.get('data', response) if isinstance(response, dict) else response
+
         # Return the first project (assumes single project per API key)
         if projects and isinstance(projects, list) and len(projects) > 0:
             project = projects[0]
