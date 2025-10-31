@@ -1,6 +1,6 @@
 import requests
 from requests.auth import HTTPBasicAuth
-from coaiamodule import read_config
+from coaiapy.coaiamodule import read_config
 import datetime
 import yaml
 import json
@@ -336,14 +336,15 @@ def get_comment_by_id(comment_id):
     response = requests.get(url, auth=auth)
     return response.text
 
-def post_comment(text, object_type=None, object_id=None):
+def post_comment(text, object_type, object_id, author_user_id=None):
     """
     Create a comment attached to an object (trace, observation, session, or prompt).
 
     Args:
-        text: The comment text
-        object_type: Type of object to attach comment to (trace, observation, session, prompt)
-        object_id: ID of the object to attach comment to
+        text: The comment text/content
+        object_type: Type of object to attach comment to (trace, observation, session, prompt) - REQUIRED
+        object_id: ID of the object to attach comment to - REQUIRED
+        author_user_id: Optional user ID of the comment author
 
     Returns:
         JSON response with created comment data
@@ -352,11 +353,21 @@ def post_comment(text, object_type=None, object_id=None):
     auth = HTTPBasicAuth(config['langfuse_public_key'], config['langfuse_secret_key'])
     url = f"{config['langfuse_base_url']}/api/public/comments"
 
-    data = {"text": text}
-    if object_type:
-        data['objectType'] = object_type
-    if object_id:
-        data['objectId'] = object_id
+    # Get current project ID (required by API)
+    project_info = get_current_project_info()
+    if not project_info or not project_info.get('id'):
+        raise ValueError("Could not determine project ID. Ensure Langfuse credentials are configured.")
+
+    # Build request data with API-expected field names
+    data = {
+        "projectId": project_info['id'],
+        "content": text,  # API expects "content", not "text"
+        "objectType": object_type.upper(),  # API expects uppercase (TRACE, OBSERVATION, SESSION, PROMPT)
+        "objectId": object_id
+    }
+
+    if author_user_id:
+        data['authorUserId'] = author_user_id
 
     response = requests.post(url, json=data, auth=auth)
     return response.text

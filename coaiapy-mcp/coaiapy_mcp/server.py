@@ -255,11 +255,12 @@ def create_server() -> Server:
             inputSchema={
                 "type": "object",
                 "properties": {
-                    "text": {"type": "string", "description": "The comment text"},
-                    "object_type": {"type": "string", "description": "Type of object to attach comment to (trace, observation, session, prompt)"},
-                    "object_id": {"type": "string", "description": "ID of the object to attach comment to"},
+                    "text": {"type": "string", "description": "The comment text/content"},
+                    "object_type": {"type": "string", "description": "Type of object to attach comment to (trace, observation, session, prompt) - REQUIRED"},
+                    "object_id": {"type": "string", "description": "ID of the object to attach comment to - REQUIRED"},
+                    "author_user_id": {"type": "string", "description": "Optional user ID of the comment author"},
                 },
-                "required": ["text"],
+                "required": ["text", "object_type", "object_id"],
             }
         ))
 

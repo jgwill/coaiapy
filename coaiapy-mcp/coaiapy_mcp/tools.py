@@ -634,16 +634,18 @@ async def coaia_fuse_comments_get(comment_id: str) -> Dict[str, Any]:
 
 async def coaia_fuse_comments_create(
     text: str,
-    object_type: Optional[str] = None,
-    object_id: Optional[str] = None
+    object_type: str,
+    object_id: str,
+    author_user_id: Optional[str] = None
 ) -> Dict[str, Any]:
     """
     Create a comment attached to an object (trace, observation, session, or prompt).
 
     Args:
-        text: The comment text
-        object_type: Type of object to attach comment to (trace, observation, session, prompt)
-        object_id: ID of the object to attach comment to
+        text: The comment text/content
+        object_type: Type of object to attach comment to (trace, observation, session, prompt) - REQUIRED
+        object_id: ID of the object to attach comment to - REQUIRED
+        author_user_id: Optional user ID of the comment author
 
     Returns:
         Dict with success status and created comment data/error
@@ -659,7 +661,8 @@ async def coaia_fuse_comments_create(
         comment_data = post_comment(
             text=text,
             object_type=object_type,
-            object_id=object_id
+            object_id=object_id,
+            author_user_id=author_user_id
         )
 
         # Parse response if it's a string
