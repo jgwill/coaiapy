@@ -311,7 +311,7 @@ def get_comments(object_type=None, object_id=None, author_user_id=None, page=1, 
     if limit:
         params['limit'] = limit
     if object_type:
-        params['objectType'] = object_type
+        params['objectType'] = object_type.upper()  # API expects uppercase (TRACE, OBSERVATION, SESSION, PROMPT)
     if object_id:
         params['objectId'] = object_id
     if author_user_id:
