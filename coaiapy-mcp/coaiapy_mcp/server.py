@@ -153,7 +153,20 @@ def create_server() -> Server:
                 "required": ["trace_id"],
             }
         ))
-        
+
+        tool_definitions.append(types.Tool(
+            name="coaia_fuse_traces_session_view",
+            description="View all traces for a specific Langfuse session. Returns formatted table by default or raw JSON if json_output=true",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "session_id": {"type": "string", "description": "Session identifier to filter traces"},
+                    "json_output": {"type": "boolean", "description": "Return raw JSON data instead of formatted table", "default": False},
+                },
+                "required": ["session_id"],
+            }
+        ))
+
         # Langfuse prompts tools
         tool_definitions.append(types.Tool(
             name="coaia_fuse_prompts_list",
