@@ -12,7 +12,7 @@ The package uses direct library imports from coaiapy, langfuse, and redis
 instead of subprocess wrappers for better performance and error handling.
 """
 
-__version__ = "0.1.9"
+__version__ = "0.1.10"
 __author__ = "Guillaume Isabelle"
 __email__ = "jgi@jgwill.com"
 
