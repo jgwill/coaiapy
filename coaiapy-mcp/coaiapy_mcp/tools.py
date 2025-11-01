@@ -29,6 +29,8 @@ try:
         get_comments,
         get_comment_by_id,
         post_comment,
+        list_traces,
+        format_traces_table,
     )
     from coaiapy.pipeline import TemplateLoader
 except ImportError as e:
@@ -282,12 +284,12 @@ async def coaia_fuse_add_observation(
 async def coaia_fuse_trace_view(trace_id: str) -> Dict[str, Any]:
     """
     View trace details via Langfuse API.
-    
+
     Note: This requires fetching from Langfuse API. We'll use the langfuse client.
-    
+
     Args:
         trace_id: Trace identifier to fetch
-        
+
     Returns:
         Dict with success status and trace data/error
     """
@@ -296,7 +298,7 @@ async def coaia_fuse_trace_view(trace_id: str) -> Dict[str, Any]:
             "success": False,
             "error": "Langfuse is not available. Check credentials in configuration."
         }
-    
+
     try:
         # Note: The Langfuse Python SDK doesn't have a direct fetch_trace method
         # in the same way as described. We'll return a placeholder or use API directly.
@@ -311,6 +313,51 @@ async def coaia_fuse_trace_view(trace_id: str) -> Dict[str, Any]:
         return {
             "success": False,
             "error": f"Langfuse trace view error: {str(e)}"
+        }
+
+
+async def coaia_fuse_traces_session_view(session_id: str, json_output: bool = False) -> Dict[str, Any]:
+    """
+    View all traces for a specific session from Langfuse.
+
+    Args:
+        session_id: Session identifier to filter traces
+        json_output: If True, return raw JSON data; if False, return formatted table
+
+    Returns:
+        Dict with success status and traces data or formatted table/error
+    """
+    if not LANGFUSE_AVAILABLE:
+        return {
+            "success": False,
+            "error": "Langfuse is not available. Check credentials in configuration."
+        }
+
+    try:
+        # Call list_traces with session_id filter
+        traces_json = list_traces(session_id=session_id, include_observations=False)
+
+        if json_output:
+            # Return raw JSON
+            import json
+            traces_data = json.loads(traces_json) if isinstance(traces_json, str) else traces_json
+            return {
+                "success": True,
+                "session_id": session_id,
+                "traces": traces_data
+            }
+        else:
+            # Return formatted table
+            table_output = format_traces_table(traces_json)
+            return {
+                "success": True,
+                "session_id": session_id,
+                "table": table_output
+            }
+    except Exception as e:
+        return {
+            "success": False,
+            "error": f"Error viewing session traces: {str(e)}"
         }
 
 
@@ -706,6 +753,7 @@ TOOLS = {
     "coaia_fuse_trace_create": coaia_fuse_trace_create,
     "coaia_fuse_add_observation": coaia_fuse_add_observation,
     "coaia_fuse_trace_view": coaia_fuse_trace_view,
+    "coaia_fuse_traces_session_view": coaia_fuse_traces_session_view,
 
     # Langfuse prompts tools
     "coaia_fuse_prompts_list": coaia_fuse_prompts_list,
@@ -732,6 +780,7 @@ __all__ = [
     "coaia_fuse_trace_create",
     "coaia_fuse_add_observation",
     "coaia_fuse_trace_view",
+    "coaia_fuse_traces_session_view",
     "coaia_fuse_prompts_list",
     "coaia_fuse_prompts_get",
     "coaia_fuse_datasets_list",
