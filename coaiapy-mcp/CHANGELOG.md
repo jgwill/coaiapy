@@ -5,6 +5,30 @@ All notable changes to coaiapy-mcp will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.9] - 2025-10-31 - Production-Ready Comment Support
+
+### Fixed
+- **API Compliance**: Comment creation now uses correct field names (`content` instead of `text`)
+- **Project ID Detection**: Fixed `get_current_project_info()` to handle `{"data": [...]}` API response format
+- **Required Parameters**: Made `object_type` and `object_id` required for comment creation (API requirement)
+- **Uppercase Conversion**: Automatic conversion of object types to uppercase (TRACE, OBSERVATION, SESSION, PROMPT)
+- **Import Path**: Corrected module import from `coaiamodule` to `coaiapy.coaiamodule`
+
+### Added
+- **Author Support**: Added `author_user_id` parameter to comment creation
+- **Comprehensive Testing**: Validated all comment operations (create, retrieve, list, filter, pagination)
+
+### Validated
+- ✅ Comment creation on traces with author tracking
+- ✅ Comment retrieval by ID with full metadata
+- ✅ Comment filtering by object type and object ID
+- ✅ Comment filtering by author user ID
+- ✅ Pagination support (page and limit parameters)
+- ✅ Error handling for non-existent objects
+
+### Known Limitations
+- Comments on newly created observations may fail due to async propagation in Langfuse (expected behavior)
+
 ## [0.1.4] - 2025-10-30
 
 ### Added
@@ -48,6 +72,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Basic MCP server structure
 - Core tool definitions
 
+[0.1.9]: https://github.com/jgwill/coaiapy/compare/coaiapy-mcp-v0.1.4...coaiapy-mcp-v0.1.9
 [0.1.4]: https://github.com/jgwill/coaiapy/compare/coaiapy-mcp-v0.1.3...coaiapy-mcp-v0.1.4
 [0.1.3]: https://github.com/jgwill/coaiapy/compare/coaiapy-mcp-v0.1.0...coaiapy-mcp-v0.1.3
 [0.1.0]: https://github.com/jgwill/coaiapy/releases/tag/coaiapy-mcp-v0.1.0

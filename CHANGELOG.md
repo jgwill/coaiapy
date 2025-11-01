@@ -2,6 +2,32 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.83] - 2025-10-31 - Comment Support Enhancement & API Fixes
+
+### ✨ Enhanced Features
+- **Complete Comment Support**: Comprehensive Langfuse comment functionality with filtering and pagination
+  - `get_comments()`: Enhanced with object_type, object_id, author_user_id filtering and pagination (page, limit)
+  - `get_comment_by_id()`: New function for retrieving specific comments by ID
+  - `post_comment()`: Enhanced to require object_type and object_id, with auto-detection of projectId
+
+### 🔧 API Compliance Fixes
+- **Uppercase Object Types**: Automatic conversion to uppercase (TRACE, OBSERVATION, SESSION, PROMPT) for API compliance
+- **Project ID Auto-Detection**: Automatic retrieval of projectId from Langfuse API for comment creation
+- **Field Name Corrections**: Changed `text` → `content` to match Langfuse API specification
+- **Response Format Handling**: Fixed project list parsing to handle `{"data": [...]}` response format
+
+### 🐛 Bug Fixes
+- **Import Path Fix**: Corrected import from `coaiamodule` to `coaiapy.coaiamodule` for proper module resolution
+- **Project Info Retrieval**: Fixed `get_current_project_info()` to properly extract project data from API response
+
+### 📚 Documentation Updates
+- **llms.txt Updated**: Comprehensive update with comment support documentation, MCP integration details, and current version numbers (v0.2.83)
+- **Comment API Examples**: Added detailed usage examples for all comment operations with filtering and pagination
+
+### 🔗 MCP Integration
+- Full support for comment operations via coaiapy-mcp v0.1.9
+- See coaiapy-mcp CHANGELOG for MCP-specific enhancements
+
 ## [0.2.54+] - 2025-08-18 - Pipeline Templates & Environment Management Revolution
 
 ### 🚀 Major Features Added
