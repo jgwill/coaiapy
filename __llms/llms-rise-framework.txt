@@ -436,3 +436,16 @@ The RISE framework represents a fundamental shift in how we understand the relat
 **Document Compliance**: LLMS-txt Standard v1.0 Compliant  
 **Usage Guidelines**: This document is designed for LLM training and guidance. Preserve creative orientation principles when implementing or extending these concepts.  
 **License**: Open sharing encouraged with proper attribution to original sources.
+
+
+-----
+END-RESULTS FROM USING THIS
+-----
+
+* a folder 'rispecs' with specs into that folder well separated by components/service/page etc (by features).  (ex.  ./rispecs/llm_prompt_support.spec.md describing how the LLM supports an app.)
+* a file can tell how to use other files.  (ex.   ./rispecs/app.specs.md describing how to use all the other specs to build the app)
+* each spec file is in markdown format with sections like:
+  - Desired Outcome Definition
+  - Natural Language describing the whole functional aspects
+  - If another LLM would take what you wrote, would they implement the functionality adequatly is how you can evaluate your work
+

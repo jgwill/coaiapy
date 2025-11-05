@@ -1,4 +1,4 @@
-# Claude Code SDK: A Gemini LLM Guide to Creative Agent Development
+# Claude Code SDK: A Gemini LLM Guide to Creative Agent Development (DEPRECATED, see: llms-claude-agent-sdk-v2.md)
 
 > A comprehensive guide for LLMs to understand, design, and generate creative, functional, and idiomatic agents using the Claude Code SDK, emphasizing a generative orientation and structural thinking.
 
@@ -315,3 +315,7 @@ Be vigilant against these common pitfalls that can lead to oscillating patterns 
     - `sdk-python.md`
     - `sdk-typescript.md`
     - `sdk-headless.md`
+
+DEPRECATED: see `llms-claude-agent-sdk-v2.md`
+
+
