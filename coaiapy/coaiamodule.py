@@ -154,13 +154,22 @@ def read_config():
         config["pollyconf"]["secret"] = get_env_value("AWS_SECRET_KEY", config["pollyconf"]["secret"])
         config["pollyconf"]["region"] = get_env_value("AWS_REGION", config["pollyconf"]["region"])
         
-        # Redis/Upstash configuration with priority: UPSTASH_REDIS_REST_* > UPSTASH_REST_API_* > REDIS_* > UPSTASH_* > config
-        # First, check for Upstash REST API URL and parse it
-        # Support both naming conventions: UPSTASH_REDIS_REST_* and UPSTASH_REST_API_*
+        # Redis/Upstash configuration with priority order:
+        # 1. UPSTASH_REDIS_REST_URL/TOKEN (Upstash direct)
+        # 2. KV_REST_API_URL/TOKEN (Vercel)
+        # 3. KV_URL or REDIS_URL (Vercel connection strings)
+        # 4. REDIS_HOST/PASSWORD (traditional)
+        # 5. Config files
+        
+        # Check for REST API format first (HTTPS URLs)
         upstash_rest_url = (get_env_value("UPSTASH_REDIS_REST_URL", "") or
-                            get_env_value("UPSTASH_REST_API_URL", ""))
+                            get_env_value("KV_REST_API_URL", ""))
         upstash_rest_token = (get_env_value("UPSTASH_REDIS_REST_TOKEN", "") or
-                              get_env_value("UPSTASH_REST_API_TOKEN", ""))
+                              get_env_value("KV_REST_API_TOKEN", ""))
+        
+        # Check for Redis connection string format (redis:// or rediss://)
+        redis_connection_url = (get_env_value("KV_URL", "") or
+                               get_env_value("REDIS_URL", ""))
         
         if upstash_rest_url:
             # Parse Upstash REST URL to extract host, port, and SSL settings
@@ -175,7 +184,20 @@ def read_config():
                 if upstash_rest_token:
                     config["jtaleconf"]["password"] = upstash_rest_token
             except Exception as e:
-                print(f"Warning: Error parsing UPSTASH_REDIS_REST_URL: {e}")
+                print(f"Warning: Error parsing REST API URL: {e}")
+        elif redis_connection_url:
+            # Parse Redis connection string (redis://[user:password@]host[:port][/database])
+            try:
+                parsed_url = urlparse(redis_connection_url)
+                config["jtaleconf"]["host"] = parsed_url.hostname or config["jtaleconf"]["host"]
+                config["jtaleconf"]["port"] = parsed_url.port if parsed_url.port else 6379
+                # rediss:// uses SSL, redis:// does not
+                config["jtaleconf"]["ssl"] = (parsed_url.scheme == 'rediss')
+                # Extract password from URL
+                if parsed_url.password:
+                    config["jtaleconf"]["password"] = parsed_url.password
+            except Exception as e:
+                print(f"Warning: Error parsing Redis connection URL: {e}")
         else:
             # Fallback to traditional Redis environment variables
             # Try REDIS_HOST first, then fall back to UPSTASH_HOST if REDIS_HOST not set
@@ -716,11 +738,13 @@ def _newjtaler(jtalecnf, verbose=False):
     print(f"Error connecting to Redis: {e}")
     print(f"Redis configuration: host={jtalecnf.get('host', 'N/A')}, port={jtalecnf.get('port', 'N/A')}, ssl={jtalecnf.get('ssl', 'N/A')}")
     print("Troubleshooting tips:")
-    print("  1. Verify UPSTASH_REDIS_REST_URL/UPSTASH_REST_API_URL and")
-    print("     UPSTASH_REDIS_REST_TOKEN/UPSTASH_REST_API_TOKEN are set correctly")
+    print("  1. Set Redis credentials via environment variables:")
+    print("     - Upstash: UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN")
+    print("     - Vercel: KV_REST_API_URL and KV_REST_API_TOKEN (or KV_URL/REDIS_URL)")
     print("  2. Check .env file in current directory for these variables")
-    print("  3. Ensure network connectivity to Redis/Upstash instance")
-    print("  4. Use --verbose flag to see detailed connection information")
+    print("  3. Verify credentials in ./coaia.json or ~/coaia.json (jtaleconf section)")
+    print("  4. Ensure network connectivity to Redis/Upstash instance")
+    print("  5. Use --verbose flag to see detailed connection information")
     return None
 
 def _taleadd(_r:redis.Redis,k:str,c:str,quiet=False,ttl=None):

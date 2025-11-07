@@ -1,17 +1,27 @@
 # Redis Configuration Fix - Environment Variables Support
 
 ## Issue Summary
-The `coaia tash` and `coaia fetch` commands were failing with "invalid username-password pair or user is disabled" error because the code didn't properly support the user's environment variable naming convention.
+The `coaia tash` and `coaia fetch` commands were failing with "invalid username-password pair or user is disabled" error because the code didn't properly support various environment variable naming conventions from different platforms.
 
 ## What Was Fixed
 
 ### 1. **Support for Multiple Environment Variable Naming Conventions**
-The code now supports BOTH naming conventions for Redis/Upstash credentials:
+The code now supports ALL standard naming conventions for Redis/Upstash credentials:
 
-- `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` (original)
-- `UPSTASH_REST_API_URL` and `UPSTASH_REST_API_TOKEN` (user's convention)
+**Upstash Direct:**
+- `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN`
 
-**Priority order**: The code checks for `UPSTASH_REDIS_REST_*` first, then falls back to `UPSTASH_REST_API_*`.
+**Vercel KV Integration:**
+- `KV_REST_API_URL` and `KV_REST_API_TOKEN`
+- `KV_URL` (connection string format: `rediss://...`)
+- `REDIS_URL` (connection string format: `rediss://...`)
+
+**Priority order**: 
+1. `UPSTASH_REDIS_REST_*` (Upstash direct - highest priority)
+2. `KV_REST_API_*` (Vercel REST API)
+3. `KV_URL` or `REDIS_URL` (Vercel connection strings)
+4. Traditional `REDIS_HOST`/`REDIS_PASSWORD`
+5. Config files (lowest priority)
 
 ### 2. **Improved .env File Loading**
 - The `.env` file in the current working directory is now properly loaded
@@ -36,26 +46,34 @@ coaia fetch MY_KEY --verbose
 - Connection status
 
 ### 4. **Better Error Messages**
-Error messages now mention both environment variable naming conventions and suggest using the `--verbose` flag for debugging.
+Error messages now mention all supported environment variable naming conventions and suggest using the `--verbose` flag for debugging.
 
 ## How to Use
 
 ### Option 1: Using .env File (Recommended for Development)
 
-Create a `.env` file in your project directory:
+Create a `.env` file in your project directory with one of these formats:
 
-```bash
-# .env file
-UPSTASH_REST_API_URL=https://your-redis-instance.upstash.io
-UPSTASH_REST_API_TOKEN=your_secret_token_here
-```
-
-Or use the alternative naming:
-
+**For Upstash Direct:**
 ```bash
 # .env file
 UPSTASH_REDIS_REST_URL=https://your-redis-instance.upstash.io
 UPSTASH_REDIS_REST_TOKEN=your_secret_token_here
+```
+
+**For Vercel KV (REST API format):**
+```bash
+# .env file
+KV_REST_API_URL=https://your-redis-instance.upstash.io
+KV_REST_API_TOKEN=your_secret_token_here
+```
+
+**For Vercel KV (Connection String format):**
+```bash
+# .env file
+KV_URL=rediss://default:your_password@your-host.upstash.io:6379
+# OR
+REDIS_URL=rediss://default:your_password@your-host.upstash.io:6379
 ```
 
 Then run commands normally:
@@ -129,11 +147,21 @@ Connecting to Redis server:
 ## Supported Environment Variables
 
 ### Redis/Upstash Configuration
-- `UPSTASH_REDIS_REST_URL` or `UPSTASH_REST_API_URL` - Full Redis REST URL
-- `UPSTASH_REDIS_REST_TOKEN` or `UPSTASH_REST_API_TOKEN` - Authentication token
-- `REDIS_HOST` or `UPSTASH_HOST` - Redis server hostname
+
+**Upstash Direct:**
+- `UPSTASH_REDIS_REST_URL` - Full Redis REST URL (e.g., `https://xxx.upstash.io`)
+- `UPSTASH_REDIS_REST_TOKEN` - Authentication token
+
+**Vercel KV Integration:**
+- `KV_REST_API_URL` - Vercel KV REST API URL
+- `KV_REST_API_TOKEN` - Vercel KV authentication token
+- `KV_URL` - Vercel KV connection string (e.g., `rediss://default:password@host:6379`)
+- `REDIS_URL` - Alternative Redis connection string
+
+**Traditional Redis:**
+- `REDIS_HOST` - Redis server hostname
 - `REDIS_PORT` - Redis port (default: 6379)
-- `REDIS_PASSWORD` or `UPSTASH_PASSWORD` - Redis password
+- `REDIS_PASSWORD` - Redis password
 - `REDIS_SSL` - Enable SSL (true/false)
 
 ### Other Services
@@ -143,10 +171,18 @@ Connecting to Redis server:
 
 ## Testing Your Configuration
 
-1. Create a test `.env` file:
+1. Create a test `.env` file (choose the format that matches your provider):
+
+**For Upstash:**
 ```bash
-echo 'UPSTASH_REST_API_URL=https://your-redis.upstash.io' > .env
-echo 'UPSTASH_REST_API_TOKEN=your_token' >> .env
+echo 'UPSTASH_REDIS_REST_URL=https://your-redis.upstash.io' > .env
+echo 'UPSTASH_REDIS_REST_TOKEN=your_token' >> .env
+```
+
+**For Vercel:**
+```bash
+echo 'KV_REST_API_URL=https://your-redis.upstash.io' > .env
+echo 'KV_REST_API_TOKEN=your_token' >> .env
 ```
 
 2. Test with verbose mode:
