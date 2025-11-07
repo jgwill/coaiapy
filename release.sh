@@ -1,5 +1,5 @@
 #!/bin/bash
-
+conda activate coaiapy
 # CoaiaPy Release Script
 # Prepares distribution and publishes to PyPI
 

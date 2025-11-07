@@ -10,6 +10,7 @@ sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
 
 # version in pyrec prod
 config=None
+_loaded_env_path=None  # Track which env_path was used to load config
 
 
 def find_existing_config():
@@ -54,14 +55,15 @@ def find_existing_config():
 
 def load_env_file(env_path='.env'):
     """Simple .env file loader compatible with Python 3.6
-    
-    Loads environment variables from .env file and sets them in os.environ
-    ONLY if they don't already exist in os.environ (respecting OS env priority).
+
+    Loads environment variables from .env file and sets them in os.environ.
+    Local .env file takes precedence over pre-existing environment variables.
     """
     env_vars = {}
     if os.path.exists(env_path):
         try:
             with open(env_path, 'r') as f:
+                lines_read = 0
                 for line in f:
                     line = line.strip()
                     if line and not line.startswith('#') and '=' in line:
@@ -73,11 +75,15 @@ def load_env_file(env_path='.env'):
                            (value.startswith("'") and value.endswith("'")):
                             value = value[1:-1]
                         env_vars[key] = value
-                        # Set in os.environ ONLY if not already set (respects OS env priority)
-                        if key not in os.environ:
-                            os.environ[key] = value
+                        # Always set in os.environ - local .env takes precedence
+                        os.environ[key] = value
+                        lines_read += 1
         except Exception as e:
-            print(f"Warning: Error loading .env file: {e}")
+            print(f"Warning: Error loading .env file from '{env_path}': {e}")
+    else:
+        # Only warn about missing custom .env paths, not the default .env
+        if env_path != '.env':
+            print(f"Warning: Custom .env file not found: {env_path}")
     return env_vars
 
 def merge_configs(base_config, override_config):
@@ -90,12 +96,21 @@ def merge_configs(base_config, override_config):
             merged[key] = value
     return merged
 
-def read_config():
+def read_config(env_path=None):
     global config
-    
-    if config is None:
+    global _loaded_env_path
+
+    # Determine .env path: explicit param > COAIAPY_ENV_PATH env var > default .env
+    if env_path is None:
+        env_path = os.getenv('COAIAPY_ENV_PATH', '.env')
+
+    # Reload config if env_path changed or config not loaded yet
+    if config is None or _loaded_env_path != env_path:
         # Load .env file first if it exists
-        env_vars = load_env_file()
+        env_vars = load_env_file(env_path)
+        if not env_vars and env_path != '.env':
+            # Warn if custom env_path was specified but file not found
+            print(f"Warning: COAIAPY_ENV_PATH={env_path} was specified but file not found or empty")
         
         # Default configuration
         config = {
@@ -221,6 +236,9 @@ def read_config():
         config["langfuse_public_key"] = get_env_value("LANGFUSE_PUBLIC_KEY", config.get("langfuse_public_key", ""))
         config["langfuse_base_url"] = get_env_value("LANGFUSE_HOST", config.get("langfuse_base_url", "https://us.cloud.langfuse.com"))
         config["langfuse_auth3"] = get_env_value("LANGFUSE_AUTH3", config.get("langfuse_auth3", ""))
+
+        # Track which env_path was used to load this config
+        _loaded_env_path = env_path
 
     return config
 

@@ -1,5 +1,5 @@
 #!/bin/bash
-
+conda activate coaiapy
 # coaiapy-mcp Release Script
 # Prepares distribution and publishes to PyPI
 
