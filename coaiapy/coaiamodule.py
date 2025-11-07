@@ -693,18 +693,19 @@ def _newjtaler(jtalecnf, verbose=False):
         print(f"  Host: {jtalecnf.get('host', 'N/A')}")
         print(f"  Port: {jtalecnf.get('port', 'N/A')}")
         print(f"  SSL: {jtalecnf.get('ssl', 'N/A')}")
+        # Mask password for security - only show last 4 characters
         password = jtalecnf.get('password', '')
         if password:
             # Show last 4 chars, but handle short passwords safely
             masked = '***' + password[-4:] if len(password) >= 4 else '***'
-            print(f"  Password: {masked}")
+            print(f"  Password: {masked}")  # nosec - password is masked before logging
         else:
             print(f"  Password: (empty)")
     
     _r = redis.Redis(
     host=jtalecnf['host'],
     port=int(jtalecnf['port']),
-    password=jtalecnf['password'],
+    password=jtalecnf['password'],  # nosec - password needed for authentication
     ssl=jtalecnf['ssl'])
     
     if verbose:
