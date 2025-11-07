@@ -47,22 +47,41 @@ except Exception as e:
     config = {}
 
 # Initialize Redis client
-redis_config = config.get("jtaleconf", {})
-try:
-    redis_client = redis.Redis(
-        host=redis_config.get("host", "localhost"),
-        port=redis_config.get("port", 6379),
-        db=redis_config.get("db", 0),
-        password=redis_config.get("password") if redis_config.get("password") else None,
-        decode_responses=True,
-    )
-    # Test connection
-    redis_client.ping()
-    REDIS_AVAILABLE = True
-except (redis.RedisError, redis.ConnectionError) as e:
-    print(f"Warning: Redis not available: {e}")
-    redis_client = None
-    REDIS_AVAILABLE = False
+# Try direct URL first (handles SSL automatically), fall back to component config
+redis_client = None
+REDIS_AVAILABLE = False
+
+# Check for direct Redis URL from environment
+redis_url = os.getenv('REDIS_URL') or os.getenv('KV_URL')
+if redis_url:
+    try:
+        redis_client = redis.from_url(redis_url, decode_responses=True)
+        redis_client.ping()
+        REDIS_AVAILABLE = True
+    except Exception as e:
+        print(f"Warning: Redis connection failed with URL: {e}")
+        redis_client = None
+
+# Fall back to component-based config if URL didn't work
+if not REDIS_AVAILABLE:
+    redis_config = config.get("jtaleconf", {})
+    try:
+        redis_client = redis.Redis(
+            host=redis_config.get("host", "localhost"),
+            port=redis_config.get("port", 6379),
+            db=redis_config.get("db", 0),
+            password=redis_config.get("password") if redis_config.get("password") else None,
+            ssl=redis_config.get("ssl", False),
+            ssl_cert_reqs="none" if redis_config.get("ssl") else "required",
+            decode_responses=True,
+        )
+        # Test connection
+        redis_client.ping()
+        REDIS_AVAILABLE = True
+    except (redis.RedisError, redis.ConnectionError) as e:
+        print(f"Warning: Redis not available: {e}")
+        redis_client = None
+        REDIS_AVAILABLE = False
 
 # Initialize Langfuse client
 try:
