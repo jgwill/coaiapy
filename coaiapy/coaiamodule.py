@@ -4,6 +4,7 @@ import os
 import markdown
 import redis
 import sys
+from urllib.parse import urlparse
 
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
 
@@ -135,8 +136,10 @@ def read_config():
                     print(f"Warning: Error loading fallback config: {e}")
 
         # Helper function to get value from system env first, then .env, then config
-        def get_env_value(env_key, config_value, env_vars=env_vars):
-            return os.getenv(env_key) or env_vars.get(env_key) or config_value
+        def get_env_value(env_key, config_value, env_vars_dict=None):
+            if env_vars_dict is None:
+                env_vars_dict = env_vars
+            return os.getenv(env_key) or env_vars_dict.get(env_key) or config_value
         
         # Check for placeholder values and replace with environment variables if needed
         config["openai_api_key"] = get_env_value("OPENAI_API_KEY", config["openai_api_key"])
@@ -144,15 +147,42 @@ def read_config():
         config["pollyconf"]["secret"] = get_env_value("AWS_SECRET_KEY", config["pollyconf"]["secret"])
         config["pollyconf"]["region"] = get_env_value("AWS_REGION", config["pollyconf"]["region"])
         
-        config["jtaleconf"]["host"] = get_env_value("REDIS_HOST", config["jtaleconf"]["host"])
-        if config["jtaleconf"]["host"] == config["jtaleconf"]["host"] or (not env_vars.get("REDIS_HOST") and not os.getenv("REDIS_HOST")):
-          config["jtaleconf"]["host"] = get_env_value("UPSTASH_HOST", config["jtaleconf"]["host"])
-
-        config["jtaleconf"]["port"] = int(get_env_value("REDIS_PORT", config["jtaleconf"]["port"]))
+        # Redis/Upstash configuration with priority: UPSTASH_REDIS_REST_* > REDIS_* > UPSTASH_* > config
+        # First, check for Upstash REST API URL and parse it
+        upstash_rest_url = get_env_value("UPSTASH_REDIS_REST_URL", "")
+        upstash_rest_token = get_env_value("UPSTASH_REDIS_REST_TOKEN", "")
         
-        config["jtaleconf"]["password"] = get_env_value("REDIS_PASSWORD", config["jtaleconf"]["password"])
-        if config["jtaleconf"]["password"] == config["jtaleconf"]["password"] or (not env_vars.get("REDIS_PASSWORD") and not os.getenv("REDIS_PASSWORD")):
-          config["jtaleconf"]["password"] = get_env_value("UPSTASH_PASSWORD", config["jtaleconf"]["password"])
+        if upstash_rest_url:
+            # Parse Upstash REST URL to extract host, port, and SSL settings
+            try:
+                parsed_url = urlparse(upstash_rest_url)
+                config["jtaleconf"]["host"] = parsed_url.hostname or config["jtaleconf"]["host"]
+                # Upstash typically uses port 6379 for TLS connections
+                config["jtaleconf"]["port"] = parsed_url.port if parsed_url.port else 6379
+                # Enable SSL if the scheme is https
+                config["jtaleconf"]["ssl"] = (parsed_url.scheme == 'https')
+                # Use the REST token as password if available
+                if upstash_rest_token:
+                    config["jtaleconf"]["password"] = upstash_rest_token
+            except Exception as e:
+                print(f"Warning: Error parsing UPSTASH_REDIS_REST_URL: {e}")
+        else:
+            # Fallback to traditional Redis environment variables
+            # Try REDIS_HOST first, then fall back to UPSTASH_HOST if REDIS_HOST not set
+            redis_host = get_env_value("REDIS_HOST", "")
+            if redis_host:
+                config["jtaleconf"]["host"] = redis_host
+            else:
+                config["jtaleconf"]["host"] = get_env_value("UPSTASH_HOST", config["jtaleconf"]["host"])
+
+            config["jtaleconf"]["port"] = int(get_env_value("REDIS_PORT", config["jtaleconf"]["port"]))
+            
+            # Try REDIS_PASSWORD first, then fall back to UPSTASH_PASSWORD if REDIS_PASSWORD not set
+            redis_password = get_env_value("REDIS_PASSWORD", "")
+            if redis_password:
+                config["jtaleconf"]["password"] = redis_password
+            else:
+                config["jtaleconf"]["password"] = get_env_value("UPSTASH_PASSWORD", config["jtaleconf"]["password"])
         
         # Add Langfuse environment variable support
         config["langfuse_secret_key"] = get_env_value("LANGFUSE_SECRET_KEY", config.get("langfuse_secret_key", ""))
@@ -655,8 +685,12 @@ def _newjtaler(jtalecnf):
     ssl=jtalecnf['ssl'])
     return _r
   except Exception as e :
-    print(e)
-    print('error creating newjtaler')
+    print(f"Error connecting to Redis: {e}")
+    print(f"Redis configuration: host={jtalecnf.get('host', 'N/A')}, port={jtalecnf.get('port', 'N/A')}, ssl={jtalecnf.get('ssl', 'N/A')}")
+    print("Troubleshooting tips:")
+    print("  1. Verify UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN are set correctly")
+    print("  2. Check .env file in current directory for these variables")
+    print("  3. Ensure network connectivity to Redis/Upstash instance")
     return None
 
 def _taleadd(_r:redis.Redis,k:str,c:str,quiet=False,ttl=None):
@@ -699,6 +733,7 @@ def fetch_key_val(key, output_file=None):
         _r = _newjtaler(jtalecnf)
         if _r is None:
             print("Error: Redis connection failed.")
+            print("Note: Detailed connection error information printed above.")
             sys.exit(2)
         value = _r.get(key)
         if value is None:
@@ -711,8 +746,9 @@ def fetch_key_val(key, output_file=None):
             print(f"Key: {key}  fetched and saved to {output_file}")
         else:
             print(value)
-    except redis.ConnectionError:
-        print("Error: Redis connection failed.")
+    except redis.ConnectionError as e:
+        print(f"Error: Redis connection failed - {e}")
+        print("Please check your Redis/Upstash configuration.")
         sys.exit(2)
     except Exception as e:
         print(f"Error: {str(e)}")
