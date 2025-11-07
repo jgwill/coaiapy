@@ -24,7 +24,7 @@ classifiers = [
 ]
 
 dependencies = [
-    "coaiapy>=0.2.89",
+    "coaiapy>=0.2.95",
     "mcp>=1.0.0",
     "pydantic>=2.0",
     "langfuse>=2.0",
