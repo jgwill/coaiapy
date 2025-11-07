@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "coaiapy-mcp"
-version = "0.1.10"
+version = "0.1.11"
 description = "MCP (Model Context Protocol) wrapper for coaiapy observability toolkit"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -24,7 +24,7 @@ classifiers = [
 ]
 
 dependencies = [
-    "coaiapy>=0.2.85",
+    "coaiapy>=0.2.86",
     "mcp>=1.0.0",
     "pydantic>=2.0",
     "langfuse>=2.0",
@@ -62,4 +62,4 @@ target-version = ['py310']
 
 [tool.ruff]
 line-length = 100
-target-version = "0.1.10"
+target-version = "0.1.11"
