@@ -9,10 +9,13 @@ import sys
 import tempfile
 from unittest.mock import patch, MagicMock
 
-# Add coaiapy to path for testing
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-from coaiapy.coaiamodule import read_config, load_env_file
+# Import from installed package or local source
+try:
+    from coaiapy.coaiamodule import read_config, load_env_file
+except ImportError:
+    # Fallback for development mode
+    sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    from coaiapy.coaiamodule import read_config, load_env_file
 
 
 class TestUpstashEnvironmentVariables:
@@ -62,21 +65,32 @@ class TestUpstashEnvironmentVariables:
     
     def test_redis_env_vars_fallback(self):
         """Test fallback to REDIS_* environment variables when UPSTASH_* not present"""
-        with patch.dict(os.environ, {
+        # Create environment without UPSTASH variables
+        env_without_upstash = {
             'REDIS_HOST': 'redis.example.com',
             'REDIS_PORT': '6380',
             'REDIS_PASSWORD': 'redis_password'
-        }, clear=False):
-            # Make sure UPSTASH vars are not set
-            for key in ['UPSTASH_REDIS_REST_URL', 'UPSTASH_REDIS_REST_TOKEN']:
+        }
+        # Ensure UPSTASH variables are explicitly not included
+        keys_to_exclude = ['UPSTASH_REDIS_REST_URL', 'UPSTASH_REDIS_REST_TOKEN']
+        
+        with patch.dict(os.environ, env_without_upstash, clear=False):
+            # Temporarily remove UPSTASH keys if they exist
+            saved_values = {}
+            for key in keys_to_exclude:
                 if key in os.environ:
-                    del os.environ[key]
+                    saved_values[key] = os.environ.pop(key)
             
-            config = read_config()
-            
-            assert config['jtaleconf']['host'] == 'redis.example.com'
-            assert config['jtaleconf']['port'] == 6380
-            assert config['jtaleconf']['password'] == 'redis_password'
+            try:
+                config = read_config()
+                
+                assert config['jtaleconf']['host'] == 'redis.example.com'
+                assert config['jtaleconf']['port'] == 6380
+                assert config['jtaleconf']['password'] == 'redis_password'
+            finally:
+                # Restore saved values
+                for key, value in saved_values.items():
+                    os.environ[key] = value
     
     def test_upstash_takes_priority_over_redis_vars(self):
         """Test that UPSTASH_REDIS_REST_* takes priority over REDIS_*"""
@@ -163,25 +177,32 @@ class TestBackwardCompatibility:
     
     def test_default_config_still_works(self):
         """Test that default config is loaded when no env vars are set"""
-        # Clear all Redis-related env vars
+        # Clear all Redis-related env vars using patch.dict
         env_keys_to_clear = [
             'UPSTASH_REDIS_REST_URL', 'UPSTASH_REDIS_REST_TOKEN',
             'REDIS_HOST', 'REDIS_PORT', 'REDIS_PASSWORD',
             'UPSTASH_HOST', 'UPSTASH_PASSWORD'
         ]
         
+        # Save current values
+        saved_values = {}
         for key in env_keys_to_clear:
             if key in os.environ:
-                del os.environ[key]
+                saved_values[key] = os.environ.pop(key)
         
-        config = read_config()
-        
-        # Should have default values
-        assert 'jtaleconf' in config
-        assert 'host' in config['jtaleconf']
-        assert 'port' in config['jtaleconf']
-        assert 'password' in config['jtaleconf']
-        assert 'ssl' in config['jtaleconf']
+        try:
+            config = read_config()
+            
+            # Should have default values
+            assert 'jtaleconf' in config
+            assert 'host' in config['jtaleconf']
+            assert 'port' in config['jtaleconf']
+            assert 'password' in config['jtaleconf']
+            assert 'ssl' in config['jtaleconf']
+        finally:
+            # Restore saved values
+            for key, value in saved_values.items():
+                os.environ[key] = value
 
 
 if __name__ == '__main__':

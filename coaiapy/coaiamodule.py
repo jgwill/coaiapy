@@ -136,8 +136,10 @@ def read_config():
                     print(f"Warning: Error loading fallback config: {e}")
 
         # Helper function to get value from system env first, then .env, then config
-        def get_env_value(env_key, config_value, env_vars=env_vars):
-            return os.getenv(env_key) or env_vars.get(env_key) or config_value
+        def get_env_value(env_key, config_value, env_vars_dict=None):
+            if env_vars_dict is None:
+                env_vars_dict = env_vars
+            return os.getenv(env_key) or env_vars_dict.get(env_key) or config_value
         
         # Check for placeholder values and replace with environment variables if needed
         config["openai_api_key"] = get_env_value("OPENAI_API_KEY", config["openai_api_key"])
@@ -166,14 +168,20 @@ def read_config():
                 print(f"Warning: Error parsing UPSTASH_REDIS_REST_URL: {e}")
         else:
             # Fallback to traditional Redis environment variables
-            config["jtaleconf"]["host"] = get_env_value("REDIS_HOST", config["jtaleconf"]["host"])
-            if config["jtaleconf"]["host"] == config["jtaleconf"]["host"] or (not env_vars.get("REDIS_HOST") and not os.getenv("REDIS_HOST")):
+            # Try REDIS_HOST first, then fall back to UPSTASH_HOST if REDIS_HOST not set
+            redis_host = get_env_value("REDIS_HOST", "")
+            if redis_host:
+                config["jtaleconf"]["host"] = redis_host
+            else:
                 config["jtaleconf"]["host"] = get_env_value("UPSTASH_HOST", config["jtaleconf"]["host"])
 
             config["jtaleconf"]["port"] = int(get_env_value("REDIS_PORT", config["jtaleconf"]["port"]))
             
-            config["jtaleconf"]["password"] = get_env_value("REDIS_PASSWORD", config["jtaleconf"]["password"])
-            if config["jtaleconf"]["password"] == config["jtaleconf"]["password"] or (not env_vars.get("REDIS_PASSWORD") and not os.getenv("REDIS_PASSWORD")):
+            # Try REDIS_PASSWORD first, then fall back to UPSTASH_PASSWORD if REDIS_PASSWORD not set
+            redis_password = get_env_value("REDIS_PASSWORD", "")
+            if redis_password:
+                config["jtaleconf"]["password"] = redis_password
+            else:
                 config["jtaleconf"]["password"] = get_env_value("UPSTASH_PASSWORD", config["jtaleconf"]["password"])
         
         # Add Langfuse environment variable support
