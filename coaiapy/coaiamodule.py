@@ -4,6 +4,7 @@ import os
 import markdown
 import redis
 import sys
+from urllib.parse import urlparse
 
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
 
@@ -144,15 +145,36 @@ def read_config():
         config["pollyconf"]["secret"] = get_env_value("AWS_SECRET_KEY", config["pollyconf"]["secret"])
         config["pollyconf"]["region"] = get_env_value("AWS_REGION", config["pollyconf"]["region"])
         
-        config["jtaleconf"]["host"] = get_env_value("REDIS_HOST", config["jtaleconf"]["host"])
-        if config["jtaleconf"]["host"] == config["jtaleconf"]["host"] or (not env_vars.get("REDIS_HOST") and not os.getenv("REDIS_HOST")):
-          config["jtaleconf"]["host"] = get_env_value("UPSTASH_HOST", config["jtaleconf"]["host"])
-
-        config["jtaleconf"]["port"] = int(get_env_value("REDIS_PORT", config["jtaleconf"]["port"]))
+        # Redis/Upstash configuration with priority: UPSTASH_REDIS_REST_* > REDIS_* > UPSTASH_* > config
+        # First, check for Upstash REST API URL and parse it
+        upstash_rest_url = get_env_value("UPSTASH_REDIS_REST_URL", "")
+        upstash_rest_token = get_env_value("UPSTASH_REDIS_REST_TOKEN", "")
         
-        config["jtaleconf"]["password"] = get_env_value("REDIS_PASSWORD", config["jtaleconf"]["password"])
-        if config["jtaleconf"]["password"] == config["jtaleconf"]["password"] or (not env_vars.get("REDIS_PASSWORD") and not os.getenv("REDIS_PASSWORD")):
-          config["jtaleconf"]["password"] = get_env_value("UPSTASH_PASSWORD", config["jtaleconf"]["password"])
+        if upstash_rest_url:
+            # Parse Upstash REST URL to extract host, port, and SSL settings
+            try:
+                parsed_url = urlparse(upstash_rest_url)
+                config["jtaleconf"]["host"] = parsed_url.hostname or config["jtaleconf"]["host"]
+                # Upstash typically uses port 6379 for TLS connections
+                config["jtaleconf"]["port"] = parsed_url.port if parsed_url.port else 6379
+                # Enable SSL if the scheme is https
+                config["jtaleconf"]["ssl"] = (parsed_url.scheme == 'https')
+                # Use the REST token as password if available
+                if upstash_rest_token:
+                    config["jtaleconf"]["password"] = upstash_rest_token
+            except Exception as e:
+                print(f"Warning: Error parsing UPSTASH_REDIS_REST_URL: {e}")
+        else:
+            # Fallback to traditional Redis environment variables
+            config["jtaleconf"]["host"] = get_env_value("REDIS_HOST", config["jtaleconf"]["host"])
+            if config["jtaleconf"]["host"] == config["jtaleconf"]["host"] or (not env_vars.get("REDIS_HOST") and not os.getenv("REDIS_HOST")):
+                config["jtaleconf"]["host"] = get_env_value("UPSTASH_HOST", config["jtaleconf"]["host"])
+
+            config["jtaleconf"]["port"] = int(get_env_value("REDIS_PORT", config["jtaleconf"]["port"]))
+            
+            config["jtaleconf"]["password"] = get_env_value("REDIS_PASSWORD", config["jtaleconf"]["password"])
+            if config["jtaleconf"]["password"] == config["jtaleconf"]["password"] or (not env_vars.get("REDIS_PASSWORD") and not os.getenv("REDIS_PASSWORD")):
+                config["jtaleconf"]["password"] = get_env_value("UPSTASH_PASSWORD", config["jtaleconf"]["password"])
         
         # Add Langfuse environment variable support
         config["langfuse_secret_key"] = get_env_value("LANGFUSE_SECRET_KEY", config.get("langfuse_secret_key", ""))
