@@ -1,0 +1,104 @@
+╔════════════════════════════════════════════════════════════════════╗
+║          SUPPORTED REDIS ENVIRONMENT VARIABLES                     ║
+╚════════════════════════════════════════════════════════════════════╝
+
+✅ UPSTASH DIRECT
+   ┌─────────────────────────────────────────────────────────────┐
+   │ UPSTASH_REDIS_REST_URL=https://your-instance.upstash.io    │
+   │ UPSTASH_REDIS_REST_TOKEN=your_token                         │
+   └─────────────────────────────────────────────────────────────┘
+   📍 Priority: 1 (Highest)
+   🎯 When: Using Upstash directly
+
+✅ VERCEL KV (REST API)
+   ┌─────────────────────────────────────────────────────────────┐
+   │ KV_REST_API_URL=https://your-instance.upstash.io           │
+   │ KV_REST_API_TOKEN=your_token                                │
+   └─────────────────────────────────────────────────────────────┘
+   📍 Priority: 2
+   🎯 When: Deploying on Vercel with KV
+
+✅ VERCEL KV (CONNECTION STRING)
+   ┌─────────────────────────────────────────────────────────────┐
+   │ KV_URL=rediss://default:password@host.upstash.io:6379      │
+   │        OR                                                    │
+   │ REDIS_URL=rediss://default:password@host.upstash.io:6379   │
+   └─────────────────────────────────────────────────────────────┘
+   📍 Priority: 3
+   🎯 When: Using Vercel's connection string format
+
+✅ TRADITIONAL REDIS
+   ┌─────────────────────────────────────────────────────────────┐
+   │ REDIS_HOST=your-host.upstash.io                             │
+   │ REDIS_PORT=6379                                              │
+   │ REDIS_PASSWORD=your_password                                 │
+   │ REDIS_SSL=true                                               │
+   └─────────────────────────────────────────────────────────────┘
+   📍 Priority: 4
+   🎯 When: Using traditional Redis setup
+
+✅ CONFIG FILES
+   ┌─────────────────────────────────────────────────────────────┐
+   │ ./coaia.json or ~/coaia.json                                 │
+   │ {                                                             │
+   │   "jtaleconf": {                                              │
+   │     "host": "your-host.upstash.io",                          │
+   │     "port": 6379,                                             │
+   │     "password": "your_password",                              │
+   │     "ssl": true                                               │
+   │   }                                                            │
+   │ }                                                              │
+   └─────────────────────────────────────────────────────────────┘
+   📍 Priority: 5 (Lowest)
+   🎯 When: Committed config without secrets
+
+╔════════════════════════════════════════════════════════════════════╗
+║                        TESTING                                     ║
+╚════════════════════════════════════════════════════════════════════╝
+
+▶ coaia tash TEST_KEY "test value" --verbose
+
+  Connecting to Redis server:
+    Host: your-host.upstash.io
+    Port: 6379
+    SSL: True
+    Password: ***word
+    Status: Connection established successfully ✓
+  Key: TEST_KEY  was just saved to memory.
+
+▶ coaia fetch TEST_KEY --verbose
+  test value
+
+╔════════════════════════════════════════════════════════════════════╗
+║                   NOT SUPPORTED (Removed)                          ║
+╚════════════════════════════════════════════════════════════════════╝
+
+❌ UPSTASH_REST_API_URL    (non-standard, confusing)
+❌ UPSTASH_REST_API_TOKEN  (non-standard, confusing)
+
+These were temporarily added in a previous fix but are NOT provided by
+any platform (Upstash or Vercel). They have been removed to eliminate
+confusion.
+
+╔════════════════════════════════════════════════════════════════════╗
+║                      MIGRATION                                     ║
+╚════════════════════════════════════════════════════════════════════╝
+
+If you were using UPSTASH_REST_API_*, update to:
+
+For Upstash Direct:
+  UPSTASH_REDIS_REST_URL=...
+  UPSTASH_REDIS_REST_TOKEN=...
+
+For Vercel KV:
+  KV_REST_API_URL=...
+  KV_REST_API_TOKEN=...
+
+╔════════════════════════════════════════════════════════════════════╗
+║                    DOCUMENTATION                                   ║
+╚════════════════════════════════════════════════════════════════════╝
+
+📖 ENVIRONMENT_VARIABLES_REFERENCE.md  - Quick reference guide
+📖 UPDATE_NOTES.md                     - Migration guide
+📖 CHANGES_SUMMARY.md                  - Summary of changes
+📖 REDIS_FIX_DOCUMENTATION.md          - Full usage guide

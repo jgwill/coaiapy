@@ -80,17 +80,17 @@ Usage:
     cat myfile.txt | coaia p TAG
 """
 
-def tash_key_val(key, value,ttl=None):
-    tash(key, value,ttl)
+def tash_key_val(key, value, ttl=None, verbose=False):
+    tash(key, value, ttl, verbose=verbose)
     print(f"Key: {key}  was just saved to memory.")
 
-def tash_key_val_from_file(key, file_path,ttl=None):
+def tash_key_val_from_file(key, file_path, ttl=None, verbose=False):
     if not os.path.isfile(file_path):
         print(f"Error: File '{file_path}' does not exist.")
         return
     with open(file_path, 'r') as file:
         value = file.read()
-    tash_key_val(key, value,ttl)
+    tash_key_val(key, value, ttl, verbose=verbose)
 
 def process_send(process_name, input_message):
     result = abstract_process_send(process_name, input_message)
@@ -113,6 +113,7 @@ def main():
     parser_tash.add_argument('-F','--file', type=str, help="Read the value from a file.")
     #--ttl
     parser_tash.add_argument('-T','--ttl', type=int, help="Time to live in seconds.",default=5555)
+    parser_tash.add_argument('-v', '--verbose', action='store_true', help="Show detailed Redis connection information.")
 
     # Subparser for 'transcribe' command
     parser_transcribe = subparsers.add_parser('transcribe',aliases="t", help='Transcribe an audio file to text.')
@@ -346,6 +347,7 @@ def main():
     parser_fetch = subparsers.add_parser('fetch', help='Fetch a value from Redis by key.')
     parser_fetch.add_argument('key', type=str, help="The key to fetch.")
     parser_fetch.add_argument('-O', '--output', type=str, help="Filename to save the fetched value.")
+    parser_fetch.add_argument('-v', '--verbose', action='store_true', help="Show detailed Redis connection information.")
 
     # Pipeline template management commands
     parser_pipeline = subparsers.add_parser('pipeline', help='Manage pipeline templates for automated workflows')
@@ -449,10 +451,11 @@ def main():
         else:
             print(f"{result}")
     elif args.command == 'tash' or args.command == 'm':
+        verbose = getattr(args, 'verbose', False)
         if args.file:
-            tash_key_val_from_file(args.key, args.file,args.ttl)
+            tash_key_val_from_file(args.key, args.file, args.ttl, verbose=verbose)
         elif args.value:
-            tash_key_val(args.key, args.value,args.ttl)
+            tash_key_val(args.key, args.value, args.ttl, verbose=verbose)
         else:
             print("Error: You must provide a value or use the --file flag to read from a file.")
     elif args.command == 'transcribe' or args.command == 't':
@@ -481,7 +484,8 @@ def main():
         else:
             print(f"{summary}")
     elif args.command == 'fetch':
-        fetch_key_val(args.key, args.output)
+        verbose = getattr(args, 'verbose', False)
+        fetch_key_val(args.key, args.output, verbose=verbose)
     elif args.command == 'fuse':
         if args.fuse_command == 'comments':
             if args.action == 'list':
