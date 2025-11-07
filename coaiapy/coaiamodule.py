@@ -677,8 +677,12 @@ def _newjtaler(jtalecnf):
     ssl=jtalecnf['ssl'])
     return _r
   except Exception as e :
-    print(e)
-    print('error creating newjtaler')
+    print(f"Error connecting to Redis: {e}")
+    print(f"Redis configuration: host={jtalecnf.get('host', 'N/A')}, port={jtalecnf.get('port', 'N/A')}, ssl={jtalecnf.get('ssl', 'N/A')}")
+    print("Troubleshooting tips:")
+    print("  1. Verify UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN are set correctly")
+    print("  2. Check .env file in current directory for these variables")
+    print("  3. Ensure network connectivity to Redis/Upstash instance")
     return None
 
 def _taleadd(_r:redis.Redis,k:str,c:str,quiet=False,ttl=None):
@@ -721,6 +725,7 @@ def fetch_key_val(key, output_file=None):
         _r = _newjtaler(jtalecnf)
         if _r is None:
             print("Error: Redis connection failed.")
+            print("Note: Detailed connection error information printed above.")
             sys.exit(2)
         value = _r.get(key)
         if value is None:
@@ -733,8 +738,9 @@ def fetch_key_val(key, output_file=None):
             print(f"Key: {key}  fetched and saved to {output_file}")
         else:
             print(value)
-    except redis.ConnectionError:
-        print("Error: Redis connection failed.")
+    except redis.ConnectionError as e:
+        print(f"Error: Redis connection failed - {e}")
+        print("Please check your Redis/Upstash configuration.")
         sys.exit(2)
     except Exception as e:
         print(f"Error: {str(e)}")
