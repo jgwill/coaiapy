@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.84] - 2025-11-07 - Comprehensive Redis Configuration & Debugging
+
+### ✨ Enhanced Features
+- **Unified Redis Configuration**: Consolidated all Redis/Upstash/Vercel KV configuration documentation into `REDIS_CONFIGURATION.md`.
+- **Expanded Environment Variable Support**: Added full support and documentation for Vercel KV variables (`KV_REST_API_URL`, `KV_REST_API_TOKEN`, `KV_URL`, `REDIS_URL`).
+- **Refined Priority Order**: Clearly defined and documented the priority order for all Redis connection methods (Upstash Direct, Vercel KV, Traditional Redis, Config Files).
+- **Verbose Debugging Mode**: Introduced `--verbose` flag for `coaia tash` and `coaia fetch` commands, providing detailed connection information for troubleshooting.
+- **Improved Error Messages**: Enhanced error messages to guide users with specific troubleshooting steps and variable names.
+
+### 🐛 Bug Fixes
+- **Removed Non-Standard Variables**: Eliminated support for confusing and non-standard `UPSTASH_REST_API_*` variables, aligning with platform standards.
+
+### 📚 Documentation Updates
+- **REDIS_CONFIGURATION.md**: Completely overhauled to be a single source of truth for Redis configuration, including detailed examples, troubleshooting, and migration guides.
+- **Removed Redundant Files**: Deleted `CHANGES_SUMMARY.md`, `ENVIRONMENT_VARIABLES_REFERENCE.md`, `FIX_SUMMARY_REDIS.md`, `REDIS_FIX_DOCUMENTATION.md`, `SUPPORTED_VARIABLES.txt`, `UPDATE_NOTES.md`, and `VISUAL_COMPARISON.md` after content consolidation.
+
 ## [0.2.83] - 2025-10-31 - Comment Support Enhancement & API Fixes
 
 ### ✨ Enhanced Features
