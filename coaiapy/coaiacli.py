@@ -80,17 +80,17 @@ Usage:
     cat myfile.txt | coaia p TAG
 """
 
-def tash_key_val(key, value,ttl=None,verbose=False):
-    tash(key, value,ttl,verbose=verbose)
+def tash_key_val(key, value, ttl=None, verbose=False):
+    tash(key, value, ttl, verbose=verbose)
     print(f"Key: {key}  was just saved to memory.")
 
-def tash_key_val_from_file(key, file_path,ttl=None,verbose=False):
+def tash_key_val_from_file(key, file_path, ttl=None, verbose=False):
     if not os.path.isfile(file_path):
         print(f"Error: File '{file_path}' does not exist.")
         return
     with open(file_path, 'r') as file:
         value = file.read()
-    tash_key_val(key, value,ttl,verbose=verbose)
+    tash_key_val(key, value, ttl, verbose=verbose)
 
 def process_send(process_name, input_message):
     result = abstract_process_send(process_name, input_message)
@@ -453,9 +453,9 @@ def main():
     elif args.command == 'tash' or args.command == 'm':
         verbose = getattr(args, 'verbose', False)
         if args.file:
-            tash_key_val_from_file(args.key, args.file,args.ttl,verbose=verbose)
+            tash_key_val_from_file(args.key, args.file, args.ttl, verbose=verbose)
         elif args.value:
-            tash_key_val(args.key, args.value,args.ttl,verbose=verbose)
+            tash_key_val(args.key, args.value, args.ttl, verbose=verbose)
         else:
             print("Error: You must provide a value or use the --file flag to read from a file.")
     elif args.command == 'transcribe' or args.command == 't':

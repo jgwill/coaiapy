@@ -157,10 +157,10 @@ def read_config():
         # Redis/Upstash configuration with priority: UPSTASH_REDIS_REST_* > UPSTASH_REST_API_* > REDIS_* > UPSTASH_* > config
         # First, check for Upstash REST API URL and parse it
         # Support both naming conventions: UPSTASH_REDIS_REST_* and UPSTASH_REST_API_*
-        upstash_rest_url = (get_env_value("UPSTASH_REDIS_REST_URL", "") or 
-                           get_env_value("UPSTASH_REST_API_URL", ""))
-        upstash_rest_token = (get_env_value("UPSTASH_REDIS_REST_TOKEN", "") or 
-                             get_env_value("UPSTASH_REST_API_TOKEN", ""))
+        upstash_rest_url = (get_env_value("UPSTASH_REDIS_REST_URL", "") or
+                            get_env_value("UPSTASH_REST_API_URL", ""))
+        upstash_rest_token = (get_env_value("UPSTASH_REDIS_REST_TOKEN", "") or
+                              get_env_value("UPSTASH_REST_API_TOKEN", ""))
         
         if upstash_rest_url:
             # Parse Upstash REST URL to extract host, port, and SSL settings
@@ -693,7 +693,13 @@ def _newjtaler(jtalecnf, verbose=False):
         print(f"  Host: {jtalecnf.get('host', 'N/A')}")
         print(f"  Port: {jtalecnf.get('port', 'N/A')}")
         print(f"  SSL: {jtalecnf.get('ssl', 'N/A')}")
-        print(f"  Password: {'***' + jtalecnf.get('password', '')[-4:] if jtalecnf.get('password') else '(empty)'}")
+        password = jtalecnf.get('password', '')
+        if password:
+            # Show last 4 chars, but handle short passwords safely
+            masked = '***' + password[-4:] if len(password) >= 4 else '***'
+            print(f"  Password: {masked}")
+        else:
+            print(f"  Password: (empty)")
     
     _r = redis.Redis(
     host=jtalecnf['host'],
