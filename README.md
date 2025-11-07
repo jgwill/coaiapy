@@ -59,18 +59,48 @@ coaia --help
 
 #### Setup
 
-Set these environment variables to use the AWS transcription service:
+**Quick Start with Environment Variables**:
+
+CoAiAPy supports multiple configuration methods. The easiest way is using environment variables or a `.env` file:
 
 ```bash
-OPENAI_API_KEY
-AWS_KEY_ID
-AWS_SECRET_KEY
-AWS_REGION
-REDIS_HOST
-REDIS_PORT
-REDIS_PASSWORD
-REDIS_SSL
+# Upstash Redis (Recommended)
+UPSTASH_REDIS_REST_URL=https://your-instance.upstash.io
+UPSTASH_REDIS_REST_TOKEN=your_token
+
+# OpenAI API
+OPENAI_API_KEY=your_openai_api_key
+
+# AWS (for Polly text-to-speech)
+AWS_KEY_ID=your_aws_key_id
+AWS_SECRET_KEY=your_aws_secret_key
+AWS_REGION=us-east-1
 ```
+
+**Using a .env file** (recommended for projects):
+
+1. Copy `.env.example` to `.env` in your project directory
+2. Fill in your credentials
+3. CoAiAPy will automatically load these values
+
+**Alternative Redis Configuration**:
+
+If you're using a traditional Redis instance instead of Upstash:
+
+```bash
+REDIS_HOST=localhost
+REDIS_PORT=6379
+REDIS_PASSWORD=your_password
+REDIS_SSL=false
+```
+
+**Configuration Priority**: 
+1. System environment variables (highest)
+2. `.env` file in current directory
+3. `~/.coaia.json` configuration file
+4. Default values (lowest)
+
+For detailed configuration instructions, see [REDIS_CONFIGURATION.md](REDIS_CONFIGURATION.md).
 #### Transcribe Audio
 
 To transcribe an audio file to text:
