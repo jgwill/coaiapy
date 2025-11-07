@@ -38,8 +38,10 @@ except ImportError as e:
     print("Some tools may not be available.")
 
 # Load configuration once on module import
+# Support custom .env path via COAIAPY_ENV_PATH environment variable
 try:
-    config = coaiamodule.read_config()
+    env_path = os.getenv('COAIAPY_ENV_PATH')
+    config = coaiamodule.read_config(env_path=env_path)
 except Exception as e:
     print(f"Warning: Could not load config: {e}")
     config = {}

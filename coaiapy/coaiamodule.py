@@ -54,9 +54,9 @@ def find_existing_config():
 
 def load_env_file(env_path='.env'):
     """Simple .env file loader compatible with Python 3.6
-    
-    Loads environment variables from .env file and sets them in os.environ
-    ONLY if they don't already exist in os.environ (respecting OS env priority).
+
+    Loads environment variables from .env file and sets them in os.environ.
+    Local .env file takes precedence over pre-existing environment variables.
     """
     env_vars = {}
     if os.path.exists(env_path):
@@ -73,9 +73,8 @@ def load_env_file(env_path='.env'):
                            (value.startswith("'") and value.endswith("'")):
                             value = value[1:-1]
                         env_vars[key] = value
-                        # Set in os.environ ONLY if not already set (respects OS env priority)
-                        if key not in os.environ:
-                            os.environ[key] = value
+                        # Always set in os.environ - local .env takes precedence
+                        os.environ[key] = value
         except Exception as e:
             print(f"Warning: Error loading .env file: {e}")
     return env_vars
@@ -90,12 +89,16 @@ def merge_configs(base_config, override_config):
             merged[key] = value
     return merged
 
-def read_config():
+def read_config(env_path=None):
     global config
-    
+
     if config is None:
+        # Determine .env path: explicit param > COAIAPY_ENV_PATH env var > default .env
+        if env_path is None:
+            env_path = os.getenv('COAIAPY_ENV_PATH', '.env')
+
         # Load .env file first if it exists
-        env_vars = load_env_file()
+        env_vars = load_env_file(env_path)
         
         # Default configuration
         config = {

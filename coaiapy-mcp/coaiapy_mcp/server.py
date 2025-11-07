@@ -6,6 +6,11 @@ coaiapy's capabilities (tools, resources, prompts) to MCP-compatible LLMs.
 
 The server uses direct library imports from coaiapy instead of subprocess
 wrappers for better performance and error handling.
+
+Configuration:
+  COAIAPY_ENV_PATH: Custom path to .env file (default: .env in current directory)
+                   Set via MCP server environment configuration.
+                   Example: COAIAPY_ENV_PATH=/path/to/custom/.env
 """
 
 import asyncio
