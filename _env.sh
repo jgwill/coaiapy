@@ -37,5 +37,6 @@ session_id__coaiapy_mcp_2510191020=08636648-9d35-490f-896d-70a2d52d5164
 
 
 session_id__issue_60__UUID=2ab5df9e-447e-467a-ad92-d136f6b8d018
+session_id__issue_60__UUID_tester_on_GAIA=9bd6fe48-32d5-44a1-8da7-9e96048db5cc
 
 
