@@ -53,7 +53,11 @@ def find_existing_config():
   return None
 
 def load_env_file(env_path='.env'):
-    """Simple .env file loader compatible with Python 3.6"""
+    """Simple .env file loader compatible with Python 3.6
+    
+    Loads environment variables from .env file and sets them in os.environ
+    ONLY if they don't already exist in os.environ (respecting OS env priority).
+    """
     env_vars = {}
     if os.path.exists(env_path):
         try:
@@ -69,6 +73,9 @@ def load_env_file(env_path='.env'):
                            (value.startswith("'") and value.endswith("'")):
                             value = value[1:-1]
                         env_vars[key] = value
+                        # Set in os.environ ONLY if not already set (respects OS env priority)
+                        if key not in os.environ:
+                            os.environ[key] = value
         except Exception as e:
             print(f"Warning: Error loading .env file: {e}")
     return env_vars
@@ -147,10 +154,13 @@ def read_config():
         config["pollyconf"]["secret"] = get_env_value("AWS_SECRET_KEY", config["pollyconf"]["secret"])
         config["pollyconf"]["region"] = get_env_value("AWS_REGION", config["pollyconf"]["region"])
         
-        # Redis/Upstash configuration with priority: UPSTASH_REDIS_REST_* > REDIS_* > UPSTASH_* > config
+        # Redis/Upstash configuration with priority: UPSTASH_REDIS_REST_* > UPSTASH_REST_API_* > REDIS_* > UPSTASH_* > config
         # First, check for Upstash REST API URL and parse it
-        upstash_rest_url = get_env_value("UPSTASH_REDIS_REST_URL", "")
-        upstash_rest_token = get_env_value("UPSTASH_REDIS_REST_TOKEN", "")
+        # Support both naming conventions: UPSTASH_REDIS_REST_* and UPSTASH_REST_API_*
+        upstash_rest_url = (get_env_value("UPSTASH_REDIS_REST_URL", "") or 
+                           get_env_value("UPSTASH_REST_API_URL", ""))
+        upstash_rest_token = (get_env_value("UPSTASH_REDIS_REST_TOKEN", "") or 
+                             get_env_value("UPSTASH_REST_API_TOKEN", ""))
         
         if upstash_rest_url:
             # Parse Upstash REST URL to extract host, port, and SSL settings
@@ -676,21 +686,34 @@ def send_openai_request_v3(input_message, temperature=0.7, preprompt_instruction
 
 
 #@STCGoal Tasher/Taler
-def _newjtaler(jtalecnf):
+def _newjtaler(jtalecnf, verbose=False):
   try:
+    if verbose:
+        print(f"Connecting to Redis server:")
+        print(f"  Host: {jtalecnf.get('host', 'N/A')}")
+        print(f"  Port: {jtalecnf.get('port', 'N/A')}")
+        print(f"  SSL: {jtalecnf.get('ssl', 'N/A')}")
+        print(f"  Password: {'***' + jtalecnf.get('password', '')[-4:] if jtalecnf.get('password') else '(empty)'}")
+    
     _r = redis.Redis(
     host=jtalecnf['host'],
     port=int(jtalecnf['port']),
     password=jtalecnf['password'],
     ssl=jtalecnf['ssl'])
+    
+    if verbose:
+        print("  Status: Connection established successfully")
+    
     return _r
   except Exception as e :
     print(f"Error connecting to Redis: {e}")
     print(f"Redis configuration: host={jtalecnf.get('host', 'N/A')}, port={jtalecnf.get('port', 'N/A')}, ssl={jtalecnf.get('ssl', 'N/A')}")
     print("Troubleshooting tips:")
-    print("  1. Verify UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN are set correctly")
+    print("  1. Verify UPSTASH_REDIS_REST_URL/UPSTASH_REST_API_URL and")
+    print("     UPSTASH_REDIS_REST_TOKEN/UPSTASH_REST_API_TOKEN are set correctly")
     print("  2. Check .env file in current directory for these variables")
     print("  3. Ensure network connectivity to Redis/Upstash instance")
+    print("  4. Use --verbose flag to see detailed connection information")
     return None
 
 def _taleadd(_r:redis.Redis,k:str,c:str,quiet=False,ttl=None):
@@ -707,13 +730,13 @@ def _taleadd(_r:redis.Redis,k:str,c:str,quiet=False,ttl=None):
     print(e)
     return None
 
-def tash(k:str,v:str,ttl=None,quiet=True):
+def tash(k:str,v:str,ttl=None,quiet=True,verbose=False):
   
   _r=None
   try:
     #from coaiamodule import read_config
     jtalecnf=read_config()['jtaleconf']
-    _r=_newjtaler(jtalecnf)
+    _r=_newjtaler(jtalecnf, verbose=verbose)
   except Exception as e:
     print(e)
     print('init error')
@@ -727,10 +750,10 @@ def tash(k:str,v:str,ttl=None,quiet=True):
       if not quiet: print('Stashing failed')
     return result
 
-def fetch_key_val(key, output_file=None):
+def fetch_key_val(key, output_file=None, verbose=False):
     try:
         jtalecnf = read_config()['jtaleconf']
-        _r = _newjtaler(jtalecnf)
+        _r = _newjtaler(jtalecnf, verbose=verbose)
         if _r is None:
             print("Error: Redis connection failed.")
             print("Note: Detailed connection error information printed above.")
