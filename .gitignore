@@ -185,3 +185,4 @@ out.scorelist.txt
 #llms
 
 .gemini
+.mcp*json
