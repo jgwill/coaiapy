@@ -160,6 +160,19 @@ def create_server() -> Server:
         ))
 
         tool_definitions.append(types.Tool(
+            name="coaia_fuse_observation_get",
+            description="Get a specific observation by ID from Langfuse. Returns observation data with optional formatted display.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "observation_id": {"type": "string", "description": "Observation identifier to retrieve"},
+                    "json_output": {"type": "boolean", "description": "Return raw JSON data instead of formatted display", "default": False},
+                },
+                "required": ["observation_id"],
+            }
+        ))
+
+        tool_definitions.append(types.Tool(
             name="coaia_fuse_traces_session_view",
             description="View all traces for a specific Langfuse session. Returns formatted table by default or raw JSON if json_output=true",
             inputSchema={

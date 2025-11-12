@@ -26,6 +26,8 @@ try:
         get_dataset as cofuse_get_dataset,
         add_trace,
         add_observation,
+        get_observation,
+        format_observation_display,
         get_comments,
         get_comment_by_id,
         post_comment,
@@ -334,6 +336,55 @@ async def coaia_fuse_trace_view(trace_id: str) -> Dict[str, Any]:
         return {
             "success": False,
             "error": f"Langfuse trace view error: {str(e)}"
+        }
+
+
+async def coaia_fuse_observation_get(observation_id: str, json_output: bool = False) -> Dict[str, Any]:
+    """
+    Get a specific observation by ID from Langfuse.
+
+    Args:
+        observation_id: Unique observation identifier
+        json_output: If True, return raw JSON; if False, return formatted display
+
+    Returns:
+        Dict with success status and observation data/error
+    """
+    if not LANGFUSE_AVAILABLE:
+        return {
+            "success": False,
+            "error": "Langfuse is not available. Check credentials in configuration."
+        }
+
+    try:
+        # Use coaiapy's get_observation function
+        obs_data = get_observation(observation_id)
+
+        import json
+        parsed = json.loads(obs_data)
+        if 'error' in parsed:
+            return {
+                "success": False,
+                "error": parsed['error']
+            }
+
+        if json_output:
+            return {
+                "success": True,
+                "observation": parsed,
+                "json": obs_data
+            }
+        else:
+            formatted = format_observation_display(parsed)
+            return {
+                "success": True,
+                "observation": parsed,
+                "formatted": formatted
+            }
+    except Exception as e:
+        return {
+            "success": False,
+            "error": f"Observation retrieval error: {str(e)}"
         }
 
 
@@ -773,6 +824,7 @@ TOOLS = {
     # Langfuse trace tools
     "coaia_fuse_trace_create": coaia_fuse_trace_create,
     "coaia_fuse_add_observation": coaia_fuse_add_observation,
+    "coaia_fuse_observation_get": coaia_fuse_observation_get,
     "coaia_fuse_trace_view": coaia_fuse_trace_view,
     "coaia_fuse_traces_session_view": coaia_fuse_traces_session_view,
 
@@ -800,6 +852,7 @@ __all__ = [
     "coaia_fetch",
     "coaia_fuse_trace_create",
     "coaia_fuse_add_observation",
+    "coaia_fuse_observation_get",
     "coaia_fuse_trace_view",
     "coaia_fuse_traces_session_view",
     "coaia_fuse_prompts_list",

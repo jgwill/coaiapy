@@ -3436,3 +3436,129 @@ def format_trace_tree(trace_json):
 
     except Exception as e:
         return f"Error formatting trace tree: {str(e)}\n\nRaw JSON:\n{trace_json}"
+
+def get_observation(observation_id):
+    """
+    Get a specific observation by ID from Langfuse
+
+    Args:
+        observation_id: Unique identifier of the observation
+
+    Returns:
+        JSON string with observation details or error message
+    """
+    c = read_config()
+    auth = HTTPBasicAuth(c['langfuse_public_key'], c['langfuse_secret_key'])
+    base_url = c['langfuse_base_url']
+
+    url = f"{base_url}/api/public/observations/{observation_id}"
+    r = requests.get(url, auth=auth)
+
+    if r.status_code != 200:
+        error_msg = f"Failed to retrieve observation {observation_id}: {r.status_code}"
+        try:
+            error_detail = r.json()
+            error_msg += f"\nDetails: {json.dumps(error_detail, indent=2)}"
+        except:
+            error_msg += f"\n{r.text}"
+        return json.dumps({"error": error_msg}, indent=2)
+
+    return r.text
+
+def format_observation_display(obs_json):
+    """
+    Format a single observation for display with tree structure
+
+    Args:
+        obs_json: JSON string or dict containing observation data
+
+    Returns:
+        Formatted string with observation details
+    """
+    try:
+        obs = json.loads(obs_json) if isinstance(obs_json, str) else obs_json
+
+        if 'error' in obs:
+            return f"Error: {obs['error']}"
+
+        # Type glyphs for different observation types
+        type_glyphs = {
+            'SPAN': '🔗',
+            'GENERATION': '🤖',
+            'EVENT': '⚡',
+            'DEFAULT': '📦'
+        }
+
+        obs_type = obs.get('type', 'UNKNOWN').upper()
+        glyph = type_glyphs.get(obs_type, type_glyphs['DEFAULT'])
+
+        # Format timestamp
+        timestamp = obs.get('timestamp', 'N/A')
+        if timestamp and timestamp != 'N/A':
+            timestamp = timestamp[:19]
+
+        # Start building output
+        lines = []
+        lines.append(f"{glyph} Observation: {obs.get('name', 'Unnamed')}")
+        lines.append(f"├── 🆔 ID: {obs.get('id', 'N/A')}")
+        lines.append(f"├── 📝 Type: {obs_type}")
+        lines.append(f"├── 🔗 Trace ID: {obs.get('traceId', 'N/A')}")
+
+        # Parent observation if exists
+        if obs.get('parentObservationId'):
+            lines.append(f"├── 👨‍👩‍👧 Parent ID: {obs.get('parentObservationId')}")
+
+        # Status info
+        status = obs.get('statusMessage')
+        if status:
+            lines.append(f"├── 📊 Status: {status}")
+
+        # Timing
+        lines.append(f"├── ⏰ Time: {timestamp}")
+
+        # Duration if available
+        if obs.get('duration'):
+            duration_ms = obs.get('duration', 0) / 1000000  # Convert from nanoseconds to ms
+            lines.append(f"├── ⏱️  Duration: {duration_ms:.2f}ms")
+
+        # Model info if it's a GENERATION
+        if obs_type == 'GENERATION':
+            if obs.get('model'):
+                lines.append(f"├── 🤖 Model: {obs.get('model')}")
+            if obs.get('tokenCount'):
+                lines.append(f"├── 🔢 Tokens: {obs.get('tokenCount')}")
+            if obs.get('completionTokenCount'):
+                lines.append(f"├── ✅ Completion Tokens: {obs.get('completionTokenCount')}")
+
+        # Input
+        if obs.get('input'):
+            input_text = str(obs['input']).replace('\n', ' ').replace('\r', ' ')
+            if len(input_text) > 100:
+                input_text = input_text[:100] + "..."
+            lines.append(f"├── 📥 Input: {input_text}")
+
+        # Output
+        if obs.get('output'):
+            output_text = str(obs['output']).replace('\n', ' ').replace('\r', ' ')
+            if len(output_text) > 100:
+                output_text = output_text[:100] + "..."
+            lines.append(f"├── 📤 Output: {output_text}")
+
+        # Metadata
+        metadata = obs.get('metadata', {})
+        if metadata:
+            lines.append(f"├── 📋 Metadata:")
+            metadata_items = list(metadata.items())
+            for i, (key, value) in enumerate(metadata_items):
+                is_last = i == len(metadata_items) - 1
+                prefix = "│   └──" if is_last else "│   ├──"
+                lines.append(f"{prefix} {key}: {value}")
+
+        # Level
+        if obs.get('level'):
+            lines.append(f"└── 📌 Level: {obs.get('level')}")
+
+        return '\n'.join(lines)
+
+    except Exception as e:
+        return f"Error formatting observation: {str(e)}\n\nRaw JSON:\n{obs_json}"
