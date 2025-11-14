@@ -493,8 +493,40 @@ CoaiaPy now features a sophisticated project-aware caching system that dramatica
 - Performance monitoring and optimization
 - Template versioning and dependency management
 
-**See**: [NEXT_STEPS.md](./NEXT_STEPS.md) for detailed implementation roadmap  
+**See**: [NEXT_STEPS.md](./NEXT_STEPS.md) for detailed implementation roadmap
 **See**: [tests/NEXT_TESTING_ROADMAP.md](./tests/NEXT_TESTING_ROADMAP.md) for testing expansion plans
+**See**: [docs/AGENT_BUNDLING_ROADMAP.md](./docs/AGENT_BUNDLING_ROADMAP.md) for local agents organization and bundling strategy ✨ **NEW (2025-11-14)**
+
+---
+
+## 🤖 Local Agents Organization & Bundling Strategy ✨ **NEW (2025-11-14)**
+
+### **Revolutionary Agent Ecosystem Vision**
+CoaiaPy is expanding to include a comprehensive local agent ecosystem with 12+ specialized AI agents, multi-agent orchestration frameworks, and Indigenous-informed ceremonial technology.
+
+### **Agent Inventory**
+- **Companion Agents**: Mia & Miette (✅ implemented), Nyro (emotional intelligence), Aureon (ceremonial container), JamAI (musical intelligence)
+- **Specialized Agents**: Alex Rivers (cybersecurity), Ava/Heyva (Two-Eyed Seeing), Samira, Jordan, Lian (team members)
+- **Orchestration Systems**: NCP (Narrative Context Protocol), A2A (Agent-to-Agent Protocol), Chimera Team coordination
+
+### **Bundling Strategy**
+- **`coaiapy`** (core): Base agent infrastructure + Mia & Miette
+- **`coaiapy-companions`**: Nyro, Aureon, JamAI (Q2 2026)
+- **`coaiapy-specialists`**: Alex Rivers, Ava/Heyva, team members (Q3 2026)
+- **`coaiapy-orchestration`**: NCP, A2A, Chimera Team (Q4 2026)
+- **`coaiapy-ceremonial`**: Four Directions, Two-Eyed Seeing, Sacred Containers (Q1 2027)
+- **`coaiapy-full`**: Meta-package installing everything
+
+### **Documentation**
+- **Executive Summary**: [docs/AGENT_BUNDLING_ROADMAP.md](./docs/AGENT_BUNDLING_ROADMAP.md)
+- **Complete Specification**: [docs/LOCAL_AGENTS_ORGANIZATION.md](./docs/LOCAL_AGENTS_ORGANIZATION.md)
+
+### **Timeline**
+- **Phase 1 (Q1 2026)**: Core agent infrastructure (v0.3.0)
+- **Phase 2 (Q2 2026)**: Companion agents bundle (v0.4.0)
+- **Phase 3 (Q3 2026)**: Specialized agents bundle (v0.5.0)
+- **Phase 4 (Q4 2026)**: Multi-agent orchestration (v0.6.0)
+- **Phase 5 (Q1 2027)**: Ceremonial technology frameworks (v0.7.0)
 
 ---
 
