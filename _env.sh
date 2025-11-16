@@ -41,3 +41,11 @@ session_id__issue_60__UUID_tester_on_GAIA=9bd6fe48-32d5-44a1-8da7-9e96048db5cc
 
 
 session_id__coaiaFuseTracePatchOutput_2511112034=7cf8b569-9740-4e9e-bab1-5d7358457ae3
+session_id__coaiaFuseTracePatchOutput_2511112034_issue_id=64
+session_id__coaiaFuseTracePatchOutput_2511112034_issue_branch_name='64-trace-patching'
+
+sdir=/src/_sessiondata/$session_id__coaiaFuseTracePatchOutput_2511112034
+
+
+session_id__MietteSClaudePlanInsightTracingObservation_2511131137=084038d7-e201-4ffa-ba89-091e7dc2a497
+session_id__issue_65__Medias_Support_2511161357=c122108f-ae27-4d7c-96d8-48c952542ef6

@@ -6,6 +6,7 @@ import yaml
 import json
 import re
 import os
+import uuid
 from pathlib import Path
 from dataclasses import dataclass, field
 from typing import Optional, List, Dict, Any, Union
@@ -1049,6 +1050,51 @@ def add_trace(trace_id, user_id=None, session_id=None, name=None, input_data=Non
     url = f"{c['langfuse_base_url']}/api/public/ingestion"
     r = requests.post(url, json=data, auth=auth)
     return process_langfuse_response(r.text, trace_id, "trace creation")
+
+def patch_trace_output(trace_id, output_data):
+    """
+    Update the output field of an existing trace in Langfuse.
+
+    This sends a new trace-create event with the same trace ID but different event ID,
+    allowing Langfuse to merge/update the output field of the existing trace.
+
+    Args:
+        trace_id: ID of the trace to update
+        output_data: New output data (can be string, object, or any JSON-serializable data)
+
+    Returns:
+        Processed response with success/error status
+    """
+    c = read_config()
+    auth = HTTPBasicAuth(c['langfuse_public_key'], c['langfuse_secret_key'])
+    now = datetime.datetime.utcnow().isoformat() + 'Z'
+
+    # Build minimal trace body with just ID and output
+    # Langfuse will merge this with the existing trace
+    body = {
+        "id": trace_id,
+        "timestamp": now,
+        "output": output_data
+    }
+
+    # Create unique event ID for this patch operation
+    # Using timestamp-based suffix to make it deterministic but unique
+    event_id = f"{trace_id}-patch-{uuid.uuid4().hex[:8]}"
+
+    data = {
+        "batch": [
+            {
+                "id": event_id,
+                "timestamp": now,
+                "type": "trace-create",
+                "body": body
+            }
+        ]
+    }
+
+    url = f"{c['langfuse_base_url']}/api/public/ingestion"
+    r = requests.post(url, json=data, auth=auth)
+    return process_langfuse_response(r.text, trace_id, "trace output patch")
 
 def add_observation(observation_id, trace_id, observation_type="EVENT", name=None, 
                    input_data=None, output_data=None, metadata=None, parent_observation_id=None,

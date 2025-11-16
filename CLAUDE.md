@@ -1,9 +1,14 @@
 # CLAUDE.md - CoaiaPy Package Documentation
 
-**Status**: Project-Aware Smart Caching System Complete  
-**Current Version**: 0.2.54+  
-**Python Compatibility**: >=3.6 (Pythonista compatible)  
+**Status**: Project-Aware Smart Caching System Complete
+**Current Version**: 0.2.54+
+**Python Compatibility**: >=3.6 (Pythonista compatible)
 **Date**: 2025-08-24
+
+⚠️ **IMPORTANT PATH NOTE FOR NEW SESSIONS**:
+- **coaiapy-mcp** is located at: `/src/coaiapy/coaiapy-mcp/`
+- **NOT** `/src/coaiapy-mcp/` (common mistake when searching)
+- MCP server files: `/src/coaiapy/coaiapy-mcp/coaiapy_mcp/`
 
 ---
 
