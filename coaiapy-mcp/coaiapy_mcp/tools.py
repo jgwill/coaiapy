@@ -359,7 +359,7 @@ async def coaia_fuse_trace_get(trace_id: str, json_output: bool = False) -> Dict
         json_output: If True, return raw JSON; if False, return formatted tree
 
     Returns:
-        Dict with success status and trace data/error
+        Dict with success status and trace data/error with proper Langfuse URL
     """
     if not LANGFUSE_AVAILABLE:
         return {
@@ -379,10 +379,25 @@ async def coaia_fuse_trace_get(trace_id: str, json_output: bool = False) -> Dict
                 "error": parsed['error']
             }
 
+        # Get project ID for constructing proper URL
+        try:
+            projects_json = list_projects()
+            projects = json.loads(projects_json)
+            project_id = projects.get('id') if isinstance(projects, dict) else None
+
+            # Construct proper Langfuse URL with project_id
+            langfuse_host = config.get('langfuse_host', 'https://cloud.langfuse.com')
+            trace_url = f"{langfuse_host}/project/{project_id}/traces/{trace_id}" if project_id else f"{langfuse_host}/traces/{trace_id}"
+        except:
+            # Fallback if project fetch fails
+            langfuse_host = config.get('langfuse_host', 'https://cloud.langfuse.com')
+            trace_url = f"{langfuse_host}/traces/{trace_id}"
+
         if json_output:
             return {
                 "success": True,
                 "trace": parsed,
+                "trace_url": trace_url,
                 "json": trace_data
             }
         else:
@@ -390,6 +405,7 @@ async def coaia_fuse_trace_get(trace_id: str, json_output: bool = False) -> Dict
             return {
                 "success": True,
                 "trace": parsed,
+                "trace_url": trace_url,
                 "formatted": formatted
             }
     except Exception as e:
@@ -480,16 +496,32 @@ async def coaia_fuse_traces_session_view(session_id: str, json_output: bool = Fa
         }
 
     try:
+        import json
+
+        # Get project ID for constructing proper URL
+        try:
+            projects_json = list_projects()
+            projects = json.loads(projects_json)
+            project_id = projects.get('id') if isinstance(projects, dict) else None
+
+            # Construct proper Langfuse URL with project_id
+            langfuse_host = config.get('langfuse_host', 'https://cloud.langfuse.com')
+            session_url = f"{langfuse_host}/project/{project_id}/sessions/{session_id}" if project_id else f"{langfuse_host}/sessions/{session_id}"
+        except:
+            # Fallback if project fetch fails
+            langfuse_host = config.get('langfuse_host', 'https://cloud.langfuse.com')
+            session_url = f"{langfuse_host}/sessions/{session_id}"
+
         # Call list_traces with session_id filter
         traces_json = list_traces(session_id=session_id, include_observations=False)
 
         if json_output:
             # Return raw JSON
-            import json
             traces_data = json.loads(traces_json) if isinstance(traces_json, str) else traces_json
             return {
                 "success": True,
                 "session_id": session_id,
+                "session_url": session_url,
                 "traces": traces_data
             }
         else:
@@ -498,6 +530,7 @@ async def coaia_fuse_traces_session_view(session_id: str, json_output: bool = Fa
             return {
                 "success": True,
                 "session_id": session_id,
+                "session_url": session_url,
                 "table": table_output
             }
     except Exception as e:
