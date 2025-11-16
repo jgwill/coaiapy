@@ -146,14 +146,41 @@ def create_server() -> Server:
                 "required": ["observation_id", "trace_id", "name"],
             }
         ))
-        
+
+        tool_definitions.append(types.Tool(
+            name="coaia_fuse_trace_patch_output",
+            description="Update the output field of an existing trace. Use this to patch/modify trace results after creation.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "trace_id": {"type": "string", "description": "Trace identifier to update"},
+                    "output_data": {"type": ["object", "string", "array"], "description": "New output data (string, object, or array - any JSON-serializable data)"},
+                },
+                "required": ["trace_id", "output_data"],
+            }
+        ))
+
+        tool_definitions.append(types.Tool(
+            name="coaia_fuse_trace_get",
+            description="Get a specific trace by ID from Langfuse with all its observations. Returns trace data with optional formatted tree view.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "trace_id": {"type": "string", "description": "Trace identifier to retrieve"},
+                    "json_output": {"type": "boolean", "description": "Return raw JSON data instead of formatted tree", "default": False},
+                },
+                "required": ["trace_id"],
+            }
+        ))
+
         tool_definitions.append(types.Tool(
             name="coaia_fuse_trace_view",
-            description="View Langfuse trace details",
+            description="View Langfuse trace details with observations (alias for coaia_fuse_trace_get). Returns trace data with optional formatted tree view.",
             inputSchema={
                 "type": "object",
                 "properties": {
                     "trace_id": {"type": "string", "description": "Trace identifier to view"},
+                    "json_output": {"type": "boolean", "description": "Return raw JSON data instead of formatted tree", "default": False},
                 },
                 "required": ["trace_id"],
             }

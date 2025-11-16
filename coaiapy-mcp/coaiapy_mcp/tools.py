@@ -26,13 +26,17 @@ try:
         get_dataset as cofuse_get_dataset,
         add_trace,
         add_observation,
+        patch_trace_output,
         get_observation,
         format_observation_display,
         get_comments,
         get_comment_by_id,
         post_comment,
         list_traces,
+        list_projects,
+        get_trace_with_observations,
         format_traces_table,
+        format_trace_tree,
     )
     from coaiapy.pipeline import TemplateLoader
 except ImportError as e:
@@ -304,14 +308,55 @@ async def coaia_fuse_add_observation(
         }
 
 
-async def coaia_fuse_trace_view(trace_id: str) -> Dict[str, Any]:
+async def coaia_fuse_trace_patch_output(
+    trace_id: str,
+    output_data: Any,
+) -> Dict[str, Any]:
     """
-    View trace details via Langfuse API.
-
-    Note: This requires fetching from Langfuse API. We'll use the langfuse client.
+    Update the output field of an existing trace.
 
     Args:
-        trace_id: Trace identifier to fetch
+        trace_id: Trace identifier to update
+        output_data: New output data (string, object, or any JSON-serializable data)
+
+    Returns:
+        Dict with success status and trace details/error
+    """
+    if not LANGFUSE_AVAILABLE:
+        return {
+            "success": False,
+            "error": "Langfuse is not available. Check credentials in configuration."
+        }
+
+    try:
+        # Use coaiapy's patch_trace_output function
+        result = patch_trace_output(
+            trace_id=trace_id,
+            output_data=output_data,
+        )
+
+        return {
+            "success": True,
+            "trace_id": trace_id,
+            "message": f"Successfully patched output for trace {trace_id}",
+            "details": {
+                "output_data": output_data if not isinstance(output_data, str) or len(str(output_data)) < 100 else f"{str(output_data)[:100]}...",
+            }
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "error": f"Langfuse trace output patch error: {str(e)}"
+        }
+
+
+async def coaia_fuse_trace_get(trace_id: str, json_output: bool = False) -> Dict[str, Any]:
+    """
+    Get a specific trace by ID from Langfuse with all its observations.
+
+    Args:
+        trace_id: Unique trace identifier
+        json_output: If True, return raw JSON; if False, return formatted tree
 
     Returns:
         Dict with success status and trace data/error
@@ -323,20 +368,49 @@ async def coaia_fuse_trace_view(trace_id: str) -> Dict[str, Any]:
         }
 
     try:
-        # Note: The Langfuse Python SDK doesn't have a direct fetch_trace method
-        # in the same way as described. We'll return a placeholder or use API directly.
-        # For now, we'll indicate that this needs to be done via web UI or API
-        return {
-            "success": True,
-            "trace_id": trace_id,
-            "message": "Trace created. View it in Langfuse web UI.",
-            "url": f"{config.get('langfuse_host', 'https://cloud.langfuse.com')}/traces/{trace_id}"
-        }
+        # Fetch trace with observations
+        trace_data = get_trace_with_observations(trace_id)
+
+        import json
+        parsed = json.loads(trace_data)
+        if 'error' in parsed:
+            return {
+                "success": False,
+                "error": parsed['error']
+            }
+
+        if json_output:
+            return {
+                "success": True,
+                "trace": parsed,
+                "json": trace_data
+            }
+        else:
+            formatted = format_trace_tree(parsed)
+            return {
+                "success": True,
+                "trace": parsed,
+                "formatted": formatted
+            }
     except Exception as e:
         return {
             "success": False,
-            "error": f"Langfuse trace view error: {str(e)}"
+            "error": f"Trace retrieval error: {str(e)}"
         }
+
+
+async def coaia_fuse_trace_view(trace_id: str, json_output: bool = False) -> Dict[str, Any]:
+    """
+    View trace details with observations from Langfuse (alias for coaia_fuse_trace_get).
+
+    Args:
+        trace_id: Trace identifier to fetch
+        json_output: If True, return raw JSON; if False, return formatted tree
+
+    Returns:
+        Dict with success status and trace data/error
+    """
+    return await coaia_fuse_trace_get(trace_id, json_output)
 
 
 async def coaia_fuse_observation_get(observation_id: str, json_output: bool = False) -> Dict[str, Any]:
@@ -824,8 +898,10 @@ TOOLS = {
     # Langfuse trace tools
     "coaia_fuse_trace_create": coaia_fuse_trace_create,
     "coaia_fuse_add_observation": coaia_fuse_add_observation,
-    "coaia_fuse_observation_get": coaia_fuse_observation_get,
+    "coaia_fuse_trace_patch_output": coaia_fuse_trace_patch_output,
+    "coaia_fuse_trace_get": coaia_fuse_trace_get,
     "coaia_fuse_trace_view": coaia_fuse_trace_view,
+    "coaia_fuse_observation_get": coaia_fuse_observation_get,
     "coaia_fuse_traces_session_view": coaia_fuse_traces_session_view,
 
     # Langfuse prompts tools
@@ -852,8 +928,10 @@ __all__ = [
     "coaia_fetch",
     "coaia_fuse_trace_create",
     "coaia_fuse_add_observation",
-    "coaia_fuse_observation_get",
+    "coaia_fuse_trace_patch_output",
+    "coaia_fuse_trace_get",
     "coaia_fuse_trace_view",
+    "coaia_fuse_observation_get",
     "coaia_fuse_traces_session_view",
     "coaia_fuse_prompts_list",
     "coaia_fuse_prompts_get",
