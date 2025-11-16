@@ -22,7 +22,7 @@ from cofuse import (
     list_datasets, get_dataset, create_dataset, format_datasets_table,
     list_dataset_items, format_dataset_display, format_dataset_for_finetuning,
     list_traces, list_projects, create_dataset_item, format_traces_table,
-    add_trace, add_observation, add_observations_batch,
+    add_trace, add_observation, add_observations_batch, patch_trace_output,
     get_trace_with_observations, format_trace_tree,
     get_observation, format_observation_display
 )
@@ -333,6 +333,13 @@ def main():
     parser_fuse_obs_batch.add_argument('-f','--file', help="File containing observations (JSON or YAML format)")
     parser_fuse_obs_batch.add_argument('--format', choices=['json', 'yaml'], default='json', help="Input format (default: json)")
     parser_fuse_obs_batch.add_argument('--dry-run', action='store_true', help="Show what would be created without actually creating")
+
+    # Add patch-output command to update trace output
+    parser_fuse_patch_output = sub_fuse_traces.add_parser('patch-output', help='Update the output field of an existing trace')
+    parser_fuse_patch_output.add_argument('trace_id', help="Trace ID to update")
+    parser_fuse_patch_output.add_argument('output_data', nargs='?', help="Output data (JSON string or plain text, or read from stdin if not provided)")
+    parser_fuse_patch_output.add_argument('-f','--file', help="File containing output data (JSON)")
+    parser_fuse_patch_output.add_argument('--json', action='store_true', help="Treat output_data as JSON (default: auto-detect)")
 
     parser_fuse_projects = sub_fuse.add_parser('projects', help="List projects in Langfuse")
     parser_fuse_ds_items = sub_fuse.add_parser('dataset-items', help="Manage dataset items (create) in Langfuse")
@@ -986,6 +993,54 @@ def main():
                     format_type=args.format,
                     dry_run=args.dry_run
                 )
+                print(result)
+            elif args.trace_action == 'patch-output':
+                # Handle trace output patching
+                output_data = None
+
+                # Get output data from various sources
+                if args.file:
+                    # Read from file
+                    if not os.path.isfile(args.file):
+                        print(f"Error: File '{args.file}' does not exist.")
+                        return
+                    with open(args.file, 'r') as f:
+                        output_data = f.read().strip()
+                elif args.output_data:
+                    # Use provided argument
+                    output_data = args.output_data
+                elif not sys.stdin.isatty():
+                    # Read from stdin
+                    output_data = sys.stdin.read().strip()
+                else:
+                    print("Error: No output data provided. Provide as argument, --file, or via stdin.")
+                    return
+
+                if not output_data:
+                    print("Error: No output data provided.")
+                    return
+
+                # Parse as JSON if flag is set or if it looks like JSON
+                parsed_output = output_data
+                if args.json or (output_data.startswith('{') or output_data.startswith('[')):
+                    try:
+                        parsed_output = json.loads(output_data)
+                    except json.JSONDecodeError:
+                        if args.json:
+                            print(f"Error: Failed to parse output as JSON: {output_data}")
+                            return
+                        # Fall back to string if JSON parsing failed and not explicitly requested
+                        parsed_output = output_data
+
+                # Validate trace_id
+                try:
+                    validate_identifier(args.trace_id, "trace_id")
+                except ValueError as e:
+                    print(f"Error: {e}")
+                    return
+
+                # Patch the trace output
+                result = patch_trace_output(args.trace_id, parsed_output)
                 print(result)
             elif args.trace_action in ['session-view', 'sv']:
                 session_id = args.session_id
