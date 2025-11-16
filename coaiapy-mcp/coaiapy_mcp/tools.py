@@ -383,12 +383,15 @@ async def coaia_fuse_trace_get(trace_id: str, json_output: bool = False) -> Dict
         try:
             projects_json = list_projects()
             projects = json.loads(projects_json)
-            project_id = projects.get('id') if isinstance(projects, dict) else None
+            # Projects response has structure: {"data": [{"id": "...", "name": "...", ...}]}
+            project_id = None
+            if isinstance(projects, dict) and 'data' in projects and isinstance(projects['data'], list) and len(projects['data']) > 0:
+                project_id = projects['data'][0].get('id')
 
             # Construct proper Langfuse URL with project_id
             langfuse_host = config.get('langfuse_host', 'https://cloud.langfuse.com')
             trace_url = f"{langfuse_host}/project/{project_id}/traces/{trace_id}" if project_id else f"{langfuse_host}/traces/{trace_id}"
-        except:
+        except Exception as url_error:
             # Fallback if project fetch fails
             langfuse_host = config.get('langfuse_host', 'https://cloud.langfuse.com')
             trace_url = f"{langfuse_host}/traces/{trace_id}"
@@ -502,12 +505,15 @@ async def coaia_fuse_traces_session_view(session_id: str, json_output: bool = Fa
         try:
             projects_json = list_projects()
             projects = json.loads(projects_json)
-            project_id = projects.get('id') if isinstance(projects, dict) else None
+            # Projects response has structure: {"data": [{"id": "...", "name": "...", ...}]}
+            project_id = None
+            if isinstance(projects, dict) and 'data' in projects and isinstance(projects['data'], list) and len(projects['data']) > 0:
+                project_id = projects['data'][0].get('id')
 
             # Construct proper Langfuse URL with project_id
             langfuse_host = config.get('langfuse_host', 'https://cloud.langfuse.com')
             session_url = f"{langfuse_host}/project/{project_id}/sessions/{session_id}" if project_id else f"{langfuse_host}/sessions/{session_id}"
-        except:
+        except Exception as url_error:
             # Fallback if project fetch fails
             langfuse_host = config.get('langfuse_host', 'https://cloud.langfuse.com')
             session_url = f"{langfuse_host}/sessions/{session_id}"
