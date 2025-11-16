@@ -155,7 +155,8 @@ CoaiAPy enables users to manifest intelligent audio processing and workflow auto
   - `traces create <trace_id>`: Initialize new creative journey tracking
   - `traces add-observation <obs_id> <trace_id>`: Document key moments
   - `traces add-observations <trace_id>`: Batch document multiple stages
-  - Library usage: `from coaiapy.cofuse import create_trace, add_observation`
+  - `traces patch-output <trace_id> <output_data>`: Update output of existing trace
+  - Library usage: `from coaiapy.cofuse import create_trace, add_observation, patch_trace_output`
 
 - **Sessions Management**: Persistent creative journey tracking
   - `sessions create <session_id>`: Start new creative session
@@ -413,10 +414,11 @@ for obs in observations:
 - `coaia_tash`: Stash key-value pairs to Redis
 - `coaia_fetch`: Fetch values from Redis
 
-#### Langfuse Trace Tools (3)
+#### Langfuse Trace Tools (4)
 - `coaia_fuse_trace_create`: Create new observability trace
 - `coaia_fuse_add_observation`: Add observation to trace
 - `coaia_fuse_trace_view`: View trace details
+- `coaia_fuse_trace_patch_output`: Update output of existing trace
 
 #### Langfuse Prompts Tools (2)
 - `coaia_fuse_prompts_list`: List all available prompts
