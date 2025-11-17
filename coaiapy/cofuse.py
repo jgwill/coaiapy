@@ -10,6 +10,13 @@ import uuid
 from pathlib import Path
 from dataclasses import dataclass, field
 from typing import Optional, List, Dict, Any, Union
+import hashlib
+import mimetypes
+import tempfile
+try:
+    from urllib.request import urlopen  # Python 3
+except ImportError:
+    from urllib2 import urlopen  # Python 2
 
 @dataclass
 class ScoreCategory:
@@ -3608,3 +3615,172 @@ def format_observation_display(obs_json):
 
     except Exception as e:
         return f"Error formatting observation: {str(e)}\n\nRaw JSON:\n{obs_json}"
+
+
+# ============================================================================
+# MEDIA UPLOAD SUPPORT - Langfuse Media Attachment Functions
+# ============================================================================
+
+# Supported content types from Langfuse OpenAPI specification
+SUPPORTED_CONTENT_TYPES = [
+    "image/jpeg", "image/jpg", "image/png", "image/webp", "image/gif",
+    "image/svg+xml", "image/bmp", "image/tiff", "image/x-icon",
+    "video/mp4", "video/mpeg", "video/quicktime", "video/x-msvideo",
+    "video/x-matroska", "video/webm",
+    "audio/mpeg", "audio/wav", "audio/ogg", "audio/webm", "audio/aac",
+    "audio/flac", "audio/x-m4a",
+    "application/pdf", "text/plain", "text/csv", "text/html", "text/markdown",
+    "application/json", "application/xml", "application/javascript",
+    "application/msword", "application/vnd.ms-excel",
+    "application/vnd.ms-powerpoint",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+    "application/zip", "application/x-tar", "application/gzip",
+    "application/x-7z-compressed", "application/x-rar-compressed",
+    "application/octet-stream"
+]
+
+
+def calculate_sha256(file_path):
+    """
+    Calculate SHA-256 hash of a file for deduplication.
+
+    Args:
+        file_path: Path to the file
+
+    Returns:
+        str: Hexadecimal SHA-256 hash
+
+    Example:
+        >>> hash_value = calculate_sha256("/path/to/image.jpg")
+        >>> print(hash_value)
+        'a3b2c1d4e5f6...'
+    """
+    sha256_hash = hashlib.sha256()
+
+    try:
+        with open(file_path, "rb") as f:
+            # Read file in chunks to handle large files
+            for byte_block in iter(lambda: f.read(4096), b""):
+                sha256_hash.update(byte_block)
+        return sha256_hash.hexdigest()
+    except Exception as e:
+        raise Exception(f"Failed to calculate SHA-256 hash: {str(e)}")
+
+
+def detect_content_type(file_path):
+    """
+    Auto-detect MIME type from file extension and content.
+
+    Args:
+        file_path: Path to the file
+
+    Returns:
+        str: MIME type (e.g., 'image/jpeg')
+
+    Example:
+        >>> content_type = detect_content_type("photo.jpg")
+        >>> print(content_type)
+        'image/jpeg'
+    """
+    # Initialize mimetypes if needed
+    if not mimetypes.inited:
+        mimetypes.init()
+
+    # Guess from extension
+    guessed_type, _ = mimetypes.guess_type(file_path)
+
+    if guessed_type:
+        return guessed_type
+
+    # Default to octet-stream if unknown
+    return "application/octet-stream"
+
+
+def validate_content_type(content_type):
+    """
+    Validate content type against Langfuse supported types.
+
+    Args:
+        content_type: MIME type string
+
+    Returns:
+        dict: {"valid": bool, "message": str}
+
+    Example:
+        >>> result = validate_content_type("image/jpeg")
+        >>> print(result)
+        {'valid': True, 'message': 'Content type is supported'}
+    """
+    if content_type in SUPPORTED_CONTENT_TYPES:
+        return {
+            "valid": True,
+            "message": "Content type is supported"
+        }
+    else:
+        return {
+            "valid": False,
+            "message": f"Content type '{content_type}' not supported. Supported types: {', '.join(SUPPORTED_CONTENT_TYPES[:10])}..."
+        }
+
+
+def format_media_display(media_json):
+    """
+    Format media object for CLI-friendly display.
+
+    Args:
+        media_json: JSON string or dict containing media data
+
+    Returns:
+        str: Formatted display string
+
+    Example:
+        >>> formatted = format_media_display(media_data)
+        >>> print(formatted)
+        🖼️ Media: image.jpg
+        ├── 🆔 ID: media-123...
+    """
+    try:
+        media = json.loads(media_json) if isinstance(media_json, str) else media_json
+
+        if 'error' in media:
+            return f"Error: {media['error']}"
+
+        # Media type glyphs
+        content_type = media.get('contentType', 'unknown')
+        if content_type.startswith('image/'):
+            glyph = '🖼️'
+        elif content_type.startswith('video/'):
+            glyph = '🎥'
+        elif content_type.startswith('audio/'):
+            glyph = '🎵'
+        elif content_type.startswith('application/pdf'):
+            glyph = '📄'
+        else:
+            glyph = '📎'
+
+        lines = []
+        lines.append(f"{glyph} Media: {media.get('fileName', 'Unnamed')}")
+        lines.append(f"├── 🆔 ID: {media.get('id', 'N/A')}")
+        lines.append(f"├── 📝 Content Type: {content_type}")
+        lines.append(f"├── 📏 Size: {media.get('contentLength', 0)} bytes")
+        lines.append(f"├── 🔗 Trace ID: {media.get('traceId', 'N/A')}")
+
+        if media.get('observationId'):
+            lines.append(f"├── 👁️ Observation ID: {media.get('observationId')}")
+
+        if media.get('field'):
+            lines.append(f"├── 🏷️ Field: {media.get('field')}")
+
+        if media.get('sha256Hash'):
+            hash_short = media['sha256Hash'][:16] + "..."
+            lines.append(f"├── 🔐 SHA-256: {hash_short}")
+
+        if media.get('uploadedAt'):
+            lines.append(f"└── 📅 Uploaded: {media['uploadedAt'][:19]}")
+
+        return '\n'.join(lines)
+
+    except Exception as e:
+        return f"Error formatting media: {str(e)}\n\nRaw JSON:\n{media_json}"
