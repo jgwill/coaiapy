@@ -37,6 +37,9 @@ try:
         get_trace_with_observations,
         format_traces_table,
         format_trace_tree,
+        upload_and_attach_media,
+        get_media,
+        format_media_display,
     )
     from coaiapy.pipeline import TemplateLoader
 except ImportError as e:
@@ -925,6 +928,121 @@ async def coaia_fuse_comments_create(
 
 
 # ============================================================================
+# Langfuse Media Upload Tools
+# ============================================================================
+
+async def coaia_fuse_media_upload(
+    file_path: str,
+    trace_id: str,
+    field: str = "input",
+    observation_id: Optional[str] = None,
+    content_type: Optional[str] = None,
+    json_output: bool = False
+) -> Dict[str, Any]:
+    """
+    Upload local file to Langfuse trace/observation.
+
+    Args:
+        file_path: Path to local file to upload
+        trace_id: Trace ID to attach media to
+        field: Field to attach to ('input', 'output', 'metadata')
+        observation_id: Optional observation ID for observation-level attachment
+        content_type: Optional MIME type (auto-detected if not provided)
+        json_output: Return raw JSON output
+
+    Returns:
+        Dict with success status, media_id, and details/error
+
+    Example:
+        result = await coaia_fuse_media_upload(
+            file_path="photo.jpg",
+            trace_id="trace_abc123",
+            field="input"
+        )
+    """
+    try:
+        result = upload_and_attach_media(
+            file_path=file_path,
+            trace_id=trace_id,
+            field=field,
+            observation_id=observation_id,
+            content_type=content_type
+        )
+
+        if json_output:
+            return result
+
+        # Format friendly output
+        if result["success"]:
+            formatted = format_media_display(result['media_data'])
+            return {
+                "success": True,
+                "media_id": result['media_id'],
+                "message": result['message'],
+                "upload_time_ms": result['upload_time_ms'],
+                "formatted_display": formatted
+            }
+        else:
+            return result
+
+    except Exception as e:
+        return {
+            "success": False,
+            "error": f"Media upload error: {str(e)}"
+        }
+
+
+async def coaia_fuse_media_get(
+    media_id: str,
+    json_output: bool = False
+) -> Dict[str, Any]:
+    """
+    Get media object details from Langfuse.
+
+    Args:
+        media_id: The media ID to retrieve
+        json_output: Return raw JSON output
+
+    Returns:
+        Dict with success status and media details/error
+
+    Example:
+        result = await coaia_fuse_media_get("media_xyz789")
+    """
+    try:
+        import json as json_lib
+
+        media_json_str = get_media(media_id)
+        media_data = json_lib.loads(media_json_str)
+
+        if "error" in media_data:
+            return {
+                "success": False,
+                "error": media_data["error"]
+            }
+
+        if json_output:
+            return {
+                "success": True,
+                "media": media_data
+            }
+
+        # Format friendly output
+        formatted = format_media_display(media_data)
+        return {
+            "success": True,
+            "media": media_data,
+            "formatted_display": formatted
+        }
+
+    except Exception as e:
+        return {
+            "success": False,
+            "error": f"Media retrieval error: {str(e)}"
+        }
+
+
+# ============================================================================
 # Tool Registry
 # ============================================================================
 
@@ -959,6 +1077,10 @@ TOOLS = {
     "coaia_fuse_comments_list": coaia_fuse_comments_list,
     "coaia_fuse_comments_get": coaia_fuse_comments_get,
     "coaia_fuse_comments_create": coaia_fuse_comments_create,
+
+    # Langfuse media tools
+    "coaia_fuse_media_upload": coaia_fuse_media_upload,
+    "coaia_fuse_media_get": coaia_fuse_media_get,
 }
 
 __all__ = [
@@ -981,4 +1103,6 @@ __all__ = [
     "coaia_fuse_comments_list",
     "coaia_fuse_comments_get",
     "coaia_fuse_comments_create",
+    "coaia_fuse_media_upload",
+    "coaia_fuse_media_get",
 ]

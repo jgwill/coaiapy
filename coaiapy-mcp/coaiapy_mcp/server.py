@@ -322,6 +322,37 @@ def create_server() -> Server:
             }
         ))
 
+        # Media upload tools
+        tool_definitions.append(types.Tool(
+            name="coaia_fuse_media_upload",
+            description="Upload local file to Langfuse trace/observation as media attachment",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "file_path": {"type": "string", "description": "Path to local file to upload"},
+                    "trace_id": {"type": "string", "description": "Trace ID to attach media to"},
+                    "field": {"type": "string", "description": "Field to attach to (input, output, metadata)", "default": "input"},
+                    "observation_id": {"type": "string", "description": "Optional observation ID for observation-level attachment"},
+                    "content_type": {"type": "string", "description": "Optional MIME type (auto-detected if not provided)"},
+                    "json_output": {"type": "boolean", "description": "Return raw JSON output", "default": False},
+                },
+                "required": ["file_path", "trace_id"],
+            }
+        ))
+
+        tool_definitions.append(types.Tool(
+            name="coaia_fuse_media_get",
+            description="Get media object details from Langfuse by media ID",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "media_id": {"type": "string", "description": "The media ID to retrieve"},
+                    "json_output": {"type": "boolean", "description": "Return raw JSON output", "default": False},
+                },
+                "required": ["media_id"],
+            }
+        ))
+
         return tool_definitions
     
     @server.call_tool()
