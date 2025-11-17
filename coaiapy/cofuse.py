@@ -3784,3 +3784,332 @@ def format_media_display(media_json):
 
     except Exception as e:
         return f"Error formatting media: {str(e)}\n\nRaw JSON:\n{media_json}"
+
+
+# ============================================================================
+# MEDIA API FUNCTIONS - Langfuse Media Upload/Management
+# ============================================================================
+
+def get_media_upload_url(trace_id, content_type, content_length, sha256_hash,
+                        field="input", observation_id=None):
+    """
+    Request a presigned upload URL from Langfuse for media attachment.
+
+    POST /api/public/media
+
+    Args:
+        trace_id: ID of the trace to attach media to
+        content_type: MIME type (e.g., 'image/jpeg')
+        content_length: Size of file in bytes
+        sha256_hash: SHA-256 hash for deduplication
+        field: Field to attach to ('input', 'output', 'metadata')
+        observation_id: Optional observation ID for observation-level attachment
+
+    Returns:
+        JSON string with uploadUrl, mediaId, and other details
+        Example:
+        {
+          "uploadUrl": "https://s3.amazonaws.com/...",
+          "mediaId": "media_abc123"
+        }
+    """
+    config = read_config()
+    auth = HTTPBasicAuth(config['langfuse_public_key'], config['langfuse_secret_key'])
+    url = f"{config['langfuse_base_url']}/api/public/media"
+
+    # Build request data
+    data = {
+        "traceId": trace_id,
+        "contentType": content_type,
+        "contentLength": content_length,
+        "sha256Hash": sha256_hash,
+        "field": field
+    }
+
+    if observation_id:
+        data["observationId"] = observation_id
+
+    try:
+        response = requests.post(url, json=data, auth=auth)
+
+        if response.status_code != 200:
+            error_detail = response.text
+            try:
+                error_json = response.json()
+                error_detail = json.dumps(error_json, indent=2)
+            except:
+                pass
+            return json.dumps({
+                "error": f"Failed to get upload URL: {response.status_code}",
+                "detail": error_detail
+            }, indent=2)
+
+        return response.text
+
+    except Exception as e:
+        return json.dumps({"error": str(e)}, indent=2)
+
+
+def upload_media_to_url(upload_url, file_path, content_type):
+    """
+    Upload file to presigned S3 URL.
+
+    PUT to presigned URL
+
+    Args:
+        upload_url: Presigned S3 URL from get_media_upload_url()
+        file_path: Path to file to upload
+        content_type: MIME type (must match original request)
+
+    Returns:
+        dict: {"success": bool, "status_code": int, "message": str, "upload_time_ms": float}
+    """
+    import time
+
+    try:
+        start_time = time.time()
+
+        with open(file_path, 'rb') as f:
+            file_data = f.read()
+
+        headers = {
+            'Content-Type': content_type
+        }
+
+        response = requests.put(upload_url, data=file_data, headers=headers)
+
+        end_time = time.time()
+        upload_time_ms = (end_time - start_time) * 1000
+
+        if response.status_code in [200, 201, 204]:
+            return {
+                "success": True,
+                "status_code": response.status_code,
+                "message": "Upload successful",
+                "upload_time_ms": upload_time_ms
+            }
+        else:
+            return {
+                "success": False,
+                "status_code": response.status_code,
+                "message": f"Upload failed: {response.text}",
+                "upload_time_ms": upload_time_ms
+            }
+
+    except Exception as e:
+        return {
+            "success": False,
+            "status_code": 0,
+            "message": f"Upload error: {str(e)}",
+            "upload_time_ms": 0
+        }
+
+
+def patch_media_upload_status(media_id, status_code, upload_time_ms, error=None):
+    """
+    Update Langfuse with upload completion status.
+
+    PATCH /api/public/media/{mediaId}
+
+    Args:
+        media_id: Media ID from get_media_upload_url()
+        status_code: HTTP status from S3 upload (200, 201, 204 = success)
+        upload_time_ms: Time taken for upload in milliseconds
+        error: Optional error message if upload failed
+
+    Returns:
+        JSON string with updated media object
+    """
+    config = read_config()
+    auth = HTTPBasicAuth(config['langfuse_public_key'], config['langfuse_secret_key'])
+    url = f"{config['langfuse_base_url']}/api/public/media/{media_id}"
+
+    data = {
+        "uploadHttpStatus": status_code,
+        "uploadTimeMs": int(upload_time_ms)
+    }
+
+    if error:
+        data["uploadHttpError"] = str(error)
+
+    try:
+        response = requests.patch(url, json=data, auth=auth)
+
+        if response.status_code != 200:
+            error_detail = response.text
+            try:
+                error_json = response.json()
+                error_detail = json.dumps(error_json, indent=2)
+            except:
+                pass
+            return json.dumps({
+                "error": f"Failed to update media status: {response.status_code}",
+                "detail": error_detail
+            }, indent=2)
+
+        return response.text
+
+    except Exception as e:
+        return json.dumps({"error": str(e)}, indent=2)
+
+
+def get_media(media_id):
+    """
+    Retrieve media object details from Langfuse.
+
+    GET /api/public/media/{mediaId}
+
+    Args:
+        media_id: The media ID to retrieve
+
+    Returns:
+        JSON string with media object details
+    """
+    config = read_config()
+    auth = HTTPBasicAuth(config['langfuse_public_key'], config['langfuse_secret_key'])
+    url = f"{config['langfuse_base_url']}/api/public/media/{media_id}"
+
+    try:
+        response = requests.get(url, auth=auth)
+
+        if response.status_code != 200:
+            error_detail = response.text
+            try:
+                error_json = response.json()
+                error_detail = json.dumps(error_json, indent=2)
+            except:
+                pass
+            return json.dumps({
+                "error": f"Failed to get media: {response.status_code}",
+                "detail": error_detail
+            }, indent=2)
+
+        return response.text
+
+    except Exception as e:
+        return json.dumps({"error": str(e)}, indent=2)
+
+
+# ============================================================================
+# HIGH-LEVEL MEDIA HELPERS - Complete Upload Workflows
+# ============================================================================
+
+def upload_and_attach_media(file_path, trace_id, field="input",
+                           observation_id=None, content_type=None):
+    """
+    Complete workflow: calculate hash, request URL, upload file, update status.
+
+    This is the main function to use for uploading media to Langfuse.
+
+    Args:
+        file_path: Path to local file to upload
+        trace_id: Trace ID to attach media to
+        field: Field to attach to ('input', 'output', 'metadata')
+        observation_id: Optional observation ID for observation-level attachment
+        content_type: Optional MIME type (auto-detected if not provided)
+
+    Returns:
+        dict: {
+          "success": bool,
+          "media_id": str,
+          "media_data": dict,
+          "message": str,
+          "error": str (if failed)
+        }
+
+    Example:
+        >>> result = upload_and_attach_media(
+        ...     "photo.jpg",
+        ...     "trace_abc123",
+        ...     field="input"
+        ... )
+        >>> if result["success"]:
+        ...     print(f"Media uploaded: {result['media_id']}")
+    """
+    import os
+
+    try:
+        # Validate file exists
+        if not os.path.exists(file_path):
+            return {
+                "success": False,
+                "error": f"File not found: {file_path}"
+            }
+
+        # Auto-detect content type if not provided
+        if not content_type:
+            content_type = detect_content_type(file_path)
+
+        # Validate content type
+        validation = validate_content_type(content_type)
+        if not validation["valid"]:
+            return {
+                "success": False,
+                "error": validation["message"]
+            }
+
+        # Calculate SHA-256 hash
+        sha256_hash = calculate_sha256(file_path)
+
+        # Get file size
+        content_length = os.path.getsize(file_path)
+
+        # Step 1: Request presigned upload URL
+        upload_response = get_media_upload_url(
+            trace_id=trace_id,
+            content_type=content_type,
+            content_length=content_length,
+            sha256_hash=sha256_hash,
+            field=field,
+            observation_id=observation_id
+        )
+
+        upload_data = json.loads(upload_response)
+        if "error" in upload_data:
+            return {
+                "success": False,
+                "error": f"Failed to get upload URL: {upload_data['error']}"
+            }
+
+        upload_url = upload_data.get("uploadUrl")
+        media_id = upload_data.get("mediaId")
+
+        if not upload_url or not media_id:
+            return {
+                "success": False,
+                "error": "Invalid response from Langfuse: missing uploadUrl or mediaId"
+            }
+
+        # Step 2: Upload file to S3
+        upload_result = upload_media_to_url(upload_url, file_path, content_type)
+
+        # Step 3: Update Langfuse with upload status
+        patch_response = patch_media_upload_status(
+            media_id=media_id,
+            status_code=upload_result["status_code"],
+            upload_time_ms=upload_result["upload_time_ms"],
+            error=upload_result.get("message") if not upload_result["success"] else None
+        )
+
+        patch_data = json.loads(patch_response)
+        if "error" in patch_data:
+            return {
+                "success": False,
+                "error": f"Upload succeeded but status update failed: {patch_data['error']}",
+                "media_id": media_id
+            }
+
+        # Return success
+        return {
+            "success": True,
+            "media_id": media_id,
+            "media_data": patch_data,
+            "message": f"Successfully uploaded {os.path.basename(file_path)} ({content_length} bytes)",
+            "upload_time_ms": upload_result["upload_time_ms"]
+        }
+
+    except Exception as e:
+        return {
+            "success": False,
+            "error": f"Unexpected error: {str(e)}"
+        }
