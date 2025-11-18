@@ -325,16 +325,42 @@ def create_server() -> Server:
         # Media upload tools
         tool_definitions.append(types.Tool(
             name="coaia_fuse_media_upload",
-            description="Upload local file to Langfuse trace/observation as media attachment",
+            description=(
+                "Upload a file (image, video, audio, document) and attach it to a Langfuse trace or observation. "
+                "Supports 52 content types including JPEG, PNG, MP4, MP3, PDF. Auto-detects MIME type from file extension. "
+                "Returns media_id for retrieval. Use field='input' for source materials, 'output' for generated content, "
+                "'metadata' for supporting documents."
+            ),
             inputSchema={
                 "type": "object",
                 "properties": {
-                    "file_path": {"type": "string", "description": "Path to local file to upload"},
-                    "trace_id": {"type": "string", "description": "Trace ID to attach media to"},
-                    "field": {"type": "string", "description": "Field to attach to (input, output, metadata)", "default": "input"},
-                    "observation_id": {"type": "string", "description": "Optional observation ID for observation-level attachment"},
-                    "content_type": {"type": "string", "description": "Optional MIME type (auto-detected if not provided)"},
-                    "json_output": {"type": "boolean", "description": "Return raw JSON output", "default": False},
+                    "file_path": {
+                        "type": "string",
+                        "description": "Absolute or relative path to file (e.g., 'photo.jpg', './docs/report.pdf')"
+                    },
+                    "trace_id": {
+                        "type": "string",
+                        "description": "Langfuse trace ID to attach media to (e.g., 'trace_abc123')"
+                    },
+                    "field": {
+                        "type": "string",
+                        "description": "Semantic context: 'input' (source material), 'output' (generated content), or 'metadata' (supporting docs)",
+                        "enum": ["input", "output", "metadata"],
+                        "default": "input"
+                    },
+                    "observation_id": {
+                        "type": "string",
+                        "description": "Optional: Attach to specific observation within trace instead of trace itself"
+                    },
+                    "content_type": {
+                        "type": "string",
+                        "description": "Optional: MIME type override (e.g., 'image/jpeg'). Usually auto-detected from file extension"
+                    },
+                    "json_output": {
+                        "type": "boolean",
+                        "description": "Return raw JSON instead of formatted output",
+                        "default": False
+                    },
                 },
                 "required": ["file_path", "trace_id"],
             }
@@ -342,12 +368,23 @@ def create_server() -> Server:
 
         tool_definitions.append(types.Tool(
             name="coaia_fuse_media_get",
-            description="Get media object details from Langfuse by media ID",
+            description=(
+                "Retrieve metadata about a previously uploaded media file from Langfuse. "
+                "Returns content type, file size, upload timestamp, and trace/observation linkage. "
+                "Use the media_id from coaia_fuse_media_upload response."
+            ),
             inputSchema={
                 "type": "object",
                 "properties": {
-                    "media_id": {"type": "string", "description": "The media ID to retrieve"},
-                    "json_output": {"type": "boolean", "description": "Return raw JSON output", "default": False},
+                    "media_id": {
+                        "type": "string",
+                        "description": "Media ID from previous upload (e.g., 'media_xyz789')"
+                    },
+                    "json_output": {
+                        "type": "boolean",
+                        "description": "Return raw JSON instead of formatted display with icons",
+                        "default": False
+                    },
                 },
                 "required": ["media_id"],
             }

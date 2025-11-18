@@ -3951,15 +3951,43 @@ def patch_media_upload_status(media_id, status_code, upload_time_ms, error=None)
 
 def get_media(media_id):
     """
-    Retrieve media object details from Langfuse.
+    Retrieve media object metadata from Langfuse by media ID.
 
-    GET /api/public/media/{mediaId}
+    Returns complete information about an uploaded media file including content
+    type, size, trace/observation linkage, and upload timestamp.
 
     Args:
-        media_id: The media ID to retrieve
+        media_id (str): Media ID returned from upload_and_attach_media
+                       (e.g., "media_xyz789")
 
     Returns:
-        JSON string with media object details
+        str: JSON string containing media object:
+            {
+              "id": "media_xyz789",
+              "traceId": "trace_abc123",
+              "observationId": "obs_456" (if attached to observation),
+              "field": "input|output|metadata",
+              "contentType": "image/jpeg",
+              "contentLength": 193424,
+              "sha256Hash": "a1b2c3...",
+              "uploadedAt": "2025-11-17T12:34:56Z"
+            }
+            Or error object: {"error": "...", "detail": "..."}
+
+    Examples:
+        Retrieve and parse media metadata:
+        >>> import json
+        >>> media_json = get_media("media_xyz789")
+        >>> media = json.loads(media_json)
+        >>> print(f"Type: {media['contentType']}, Size: {media['contentLength']} bytes")
+
+        Use with format_media_display for human-readable output:
+        >>> media_json = get_media("media_xyz789")
+        >>> print(format_media_display(media_json))
+        🖼️ Media: photo.jpg
+        ├── 🆔 ID: media_xyz789
+        ├── 📝 Content Type: image/jpeg
+        └── 📏 Size: 193424 bytes
     """
     config = read_config()
     auth = HTTPBasicAuth(config['langfuse_public_key'], config['langfuse_secret_key'])
@@ -3993,34 +4021,45 @@ def get_media(media_id):
 def upload_and_attach_media(file_path, trace_id, field="input",
                            observation_id=None, content_type=None):
     """
-    Complete workflow: calculate hash, request URL, upload file, update status.
+    Upload a file and attach it to a Langfuse trace or observation.
 
-    This is the main function to use for uploading media to Langfuse.
+    Handles the complete upload workflow: validates file, calculates hash for
+    deduplication, uploads to S3, and registers with Langfuse. Supports images,
+    videos, audio, documents, and 52 content types total.
 
     Args:
-        file_path: Path to local file to upload
-        trace_id: Trace ID to attach media to
-        field: Field to attach to ('input', 'output', 'metadata')
-        observation_id: Optional observation ID for observation-level attachment
-        content_type: Optional MIME type (auto-detected if not provided)
+        file_path (str): Absolute or relative path to file (e.g., "photo.jpg")
+        trace_id (str): Langfuse trace ID (e.g., "trace_abc123")
+        field (str): Semantic context - "input", "output", or "metadata" (default: "input")
+        observation_id (str, optional): Attach to specific observation instead of trace
+        content_type (str, optional): MIME type (auto-detected from file extension if omitted)
 
     Returns:
         dict: {
-          "success": bool,
-          "media_id": str,
-          "media_data": dict,
-          "message": str,
-          "error": str (if failed)
+            "success": bool - True if upload succeeded
+            "media_id": str - Langfuse media ID (use with get_media)
+            "media_data": dict - Full media object with metadata
+            "message": str - Success message with file size
+            "upload_time_ms": float - Upload duration in milliseconds
+            "error": str - Error message (only if success=False)
         }
 
-    Example:
+    Examples:
+        Upload image to trace input:
+        >>> result = upload_and_attach_media("sketch.jpg", "trace_001")
+        >>> print(result["media_id"])  # "media_xyz789"
+
+        Upload audio to observation output:
         >>> result = upload_and_attach_media(
-        ...     "photo.jpg",
-        ...     "trace_abc123",
-        ...     field="input"
+        ...     file_path="recording.mp3",
+        ...     trace_id="trace_001",
+        ...     observation_id="obs_456",
+        ...     field="output"
         ... )
-        >>> if result["success"]:
-        ...     print(f"Media uploaded: {result['media_id']}")
+
+        Check for errors:
+        >>> if not result["success"]:
+        ...     print(f"Upload failed: {result['error']}")
     """
     import os
 

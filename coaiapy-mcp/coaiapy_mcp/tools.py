@@ -940,25 +940,46 @@ async def coaia_fuse_media_upload(
     json_output: bool = False
 ) -> Dict[str, Any]:
     """
-    Upload local file to Langfuse trace/observation.
+    Upload a file and attach it to a Langfuse trace or observation.
+
+    Uploads images, videos, audio, documents (52 content types) with automatic
+    MIME type detection, SHA-256 deduplication, and S3 storage. Returns media_id
+    for later retrieval.
 
     Args:
-        file_path: Path to local file to upload
-        trace_id: Trace ID to attach media to
-        field: Field to attach to ('input', 'output', 'metadata')
-        observation_id: Optional observation ID for observation-level attachment
-        content_type: Optional MIME type (auto-detected if not provided)
-        json_output: Return raw JSON output
+        file_path (str): Path to file (e.g., "photo.jpg", "./docs/report.pdf")
+        trace_id (str): Langfuse trace ID (e.g., "trace_abc123")
+        field (str): Semantic context - "input", "output", or "metadata" (default: "input")
+        observation_id (str, optional): Attach to observation instead of trace
+        content_type (str, optional): MIME type override (usually auto-detected)
+        json_output (bool): Return raw JSON (default: False returns formatted display)
 
     Returns:
-        Dict with success status, media_id, and details/error
+        dict: {
+            "success": bool,
+            "media_id": str - Use this with coaia_fuse_media_get,
+            "message": str - Success message with file size,
+            "upload_time_ms": float - Upload duration,
+            "formatted_display": str - Human-readable output (if json_output=False),
+            "error": str - Error message (only if success=False)
+        }
 
-    Example:
-        result = await coaia_fuse_media_upload(
-            file_path="photo.jpg",
-            trace_id="trace_abc123",
-            field="input"
-        )
+    Examples:
+        Upload image to trace:
+        >>> result = await coaia_fuse_media_upload(
+        ...     file_path="sketch.jpg",
+        ...     trace_id="trace_001",
+        ...     field="input"
+        ... )
+        >>> print(result["media_id"])  # "media_xyz789"
+
+        Upload audio to observation:
+        >>> result = await coaia_fuse_media_upload(
+        ...     file_path="recording.mp3",
+        ...     trace_id="trace_001",
+        ...     observation_id="obs_456",
+        ...     field="output"
+        ... )
     """
     try:
         result = upload_and_attach_media(
@@ -997,17 +1018,46 @@ async def coaia_fuse_media_get(
     json_output: bool = False
 ) -> Dict[str, Any]:
     """
-    Get media object details from Langfuse.
+    Retrieve metadata about a previously uploaded media file.
+
+    Returns information about a media file including content type, size,
+    trace/observation linkage, upload timestamp, and SHA-256 hash. Use the
+    media_id from coaia_fuse_media_upload response.
 
     Args:
-        media_id: The media ID to retrieve
-        json_output: Return raw JSON output
+        media_id (str): Media ID from upload (e.g., "media_xyz789")
+        json_output (bool): Return raw JSON (default: False returns formatted display)
 
     Returns:
-        Dict with success status and media details/error
+        dict: {
+            "success": bool,
+            "media": dict - Media object with all metadata,
+            "formatted_display": str - Human-readable output with icons (if json_output=False),
+            "error": str - Error message (only if success=False)
+        }
 
-    Example:
-        result = await coaia_fuse_media_get("media_xyz789")
+        Media object contains:
+        - id: Media ID
+        - traceId: Associated trace
+        - observationId: Associated observation (if any)
+        - field: "input", "output", or "metadata"
+        - contentType: MIME type (e.g., "image/jpeg")
+        - contentLength: File size in bytes
+        - sha256Hash: Deduplication hash
+        - uploadedAt: ISO timestamp
+
+    Examples:
+        Retrieve media metadata:
+        >>> result = await coaia_fuse_media_get("media_xyz789")
+        >>> print(result["formatted_display"])
+        🖼️ Media: photo.jpg
+        ├── 🆔 ID: media_xyz789
+        ├── 📝 Content Type: image/jpeg
+        └── 📏 Size: 193424 bytes
+
+        Get raw data:
+        >>> result = await coaia_fuse_media_get("media_xyz789", json_output=True)
+        >>> print(f"Size: {result['media']['contentLength']} bytes")
     """
     try:
         import json
