@@ -1,6 +1,13 @@
 #!/usr/bin/env python
 """
 Test script for CLI media commands (syntax validation)
+
+Tests the CLI command structure and help messages:
+- coaia fuse media --help
+- coaia fuse media upload --help
+- coaia fuse media get --help
+
+Does NOT test actual media upload (requires Langfuse credentials).
 """
 import subprocess
 import sys

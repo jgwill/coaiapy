@@ -1,12 +1,18 @@
 #!/usr/bin/env python
 """
-Quick test script for media utility functions
+Test script for media utility functions
+
+Tests the core utility functions for media upload support:
+- SHA-256 hash calculation
+- Content type detection
+- Content type validation
+- Media display formatting
 """
 import sys
 import os
 
 # Add parent directory to path to import coaiapy
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from coaiapy.cofuse import (
     calculate_sha256,
@@ -22,7 +28,10 @@ def test_calculate_sha256():
     print("TEST 1: Calculate SHA-256 Hash")
     print("=" * 60)
 
-    test_file = "tests/notebook_graph.jpg"
+    # Get path to test file (same directory as this script)
+    test_dir = os.path.dirname(os.path.abspath(__file__))
+    test_file = os.path.join(test_dir, "notebook_graph.jpg")
+
     if not os.path.exists(test_file):
         print(f"SKIP: Test file not found: {test_file}")
         return
