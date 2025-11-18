@@ -1010,10 +1010,10 @@ async def coaia_fuse_media_get(
         result = await coaia_fuse_media_get("media_xyz789")
     """
     try:
-        import json as json_lib
+        import json
 
         media_json_str = get_media(media_id)
-        media_data = json_lib.loads(media_json_str)
+        media_data = json.loads(media_json_str)
 
         if "error" in media_data:
             return {
