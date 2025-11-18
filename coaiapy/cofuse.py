@@ -3973,7 +3973,7 @@ def get_media(media_id):
             try:
                 error_json = response.json()
                 error_detail = json.dumps(error_json, indent=2)
-            except:
+            except (ValueError, json.JSONDecodeError):
                 pass
             return json.dumps({
                 "error": f"Failed to get media: {response.status_code}",
