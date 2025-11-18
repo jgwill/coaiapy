@@ -13,10 +13,6 @@ from typing import Optional, List, Dict, Any, Union
 import hashlib
 import mimetypes
 import tempfile
-try:
-    from urllib.request import urlopen  # Python 3
-except ImportError:
-    from urllib2 import urlopen  # Python 2
 
 @dataclass
 class ScoreCategory:
