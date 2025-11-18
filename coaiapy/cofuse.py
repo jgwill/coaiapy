@@ -3935,7 +3935,7 @@ def patch_media_upload_status(media_id, status_code, upload_time_ms, error=None)
             try:
                 error_json = response.json()
                 error_detail = json.dumps(error_json, indent=2)
-            except:
+            except ValueError:
                 # If response is not JSON, just use the raw text
                 pass
             return json.dumps({
