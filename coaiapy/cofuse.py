@@ -3850,7 +3850,7 @@ def get_media_upload_url(trace_id, content_type, content_length, sha256_hash,
 
 def upload_media_to_url(upload_url, file_path, content_type):
     """
-    Upload file to presigned S3 URL.
+    Upload file to presigned S3 URL with security validation.
 
     PUT to presigned URL
 
@@ -3860,27 +3860,61 @@ def upload_media_to_url(upload_url, file_path, content_type):
         content_type: MIME type (must match original request)
 
     Returns:
-        dict: {"success": bool, "status_code": int, "message": str, "upload_time_ms": float}
-    
-    Raises:
-        ValueError: If upload_url domain is not from a trusted cloud storage provider
+        dict: {
+            "success": bool - False if domain validation fails or upload errors
+            "status_code": int - HTTP status code (0 if domain validation failed)
+            "message": str - Success or error message
+            "upload_time_ms": float - Upload duration in milliseconds
+        }
     """
     # Security validation: Verify presigned URL is from trusted cloud storage
-    TRUSTED_DOMAINS = [
-        'amazonaws.com',  # AWS S3
-        'storage.googleapis.com',  # Google Cloud Storage
-        'blob.core.windows.net',  # Azure Blob Storage
-        's3.amazonaws.com',  # AWS S3 alternative
-        'r2.cloudflarestorage.com',  # Cloudflare R2
-    ]
+    # Only accept exact domain matches or proper subdomains (not spoofed domains)
+    def is_trusted_domain(domain):
+        """Check if domain is from a trusted cloud storage provider."""
+        # Exact matches for root domains
+        exact_matches = [
+            'amazonaws.com',
+            's3.amazonaws.com',
+            'storage.googleapis.com',
+            'blob.core.windows.net',
+            'r2.cloudflarestorage.com',
+        ]
+        
+        if domain in exact_matches:
+            return True
+        
+        # Subdomain patterns - must have subdomain.trusted-suffix format
+        # Split domain into parts to validate structure
+        trusted_suffixes = [
+            'amazonaws.com',
+            'storage.googleapis.com',
+            'blob.core.windows.net',
+            'r2.cloudflarestorage.com',
+        ]
+        
+        for suffix in trusted_suffixes:
+            # Check if domain ends with .suffix (note the dot)
+            # This ensures we have a subdomain prefix
+            if domain.endswith('.' + suffix):
+                # Verify there are no additional dots after the subdomain
+                # to prevent attacks like evil.amazonaws.com.malicious.com
+                prefix = domain[:-len('.' + suffix)]
+                # Prefix should not contain dots (single-level subdomain only for security)
+                # or allow multiple levels for AWS (bucket.s3.amazonaws.com is common)
+                if suffix == 'amazonaws.com':
+                    # AWS allows multi-level subdomains
+                    return '.' not in prefix or prefix.endswith('.s3')
+                else:
+                    # Other providers: allow single subdomain level
+                    return '.' not in prefix
+        
+        return False
     
     try:
         parsed_url = urlparse(upload_url)
         domain = parsed_url.netloc.lower()
         
-        # Check if domain matches any trusted provider
-        is_trusted = any(trusted in domain for trusted in TRUSTED_DOMAINS)
-        if not is_trusted:
+        if not is_trusted_domain(domain):
             return {
                 "success": False,
                 "status_code": 0,
