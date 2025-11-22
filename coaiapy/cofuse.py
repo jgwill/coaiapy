@@ -3900,12 +3900,20 @@ def upload_media_to_url(upload_url, file_path, content_type):
                 # to prevent attacks like evil.amazonaws.com.malicious.com
                 prefix = domain[:-len('.' + suffix)]
                 # Prefix should not contain dots (single-level subdomain only for security)
-                # or allow multiple levels for AWS (bucket.s3.amazonaws.com is common)
+                # or allow multiple levels ONLY for AWS S3 patterns (bucket.s3.amazonaws.com)
                 if suffix == 'amazonaws.com':
-                    # AWS allows multi-level subdomains
-                    return '.' not in prefix or prefix.endswith('.s3')
+                    # AWS: Accept single-level subdomains OR multi-level ending with .s3
+                    # Valid: bucket.amazonaws.com, bucket.s3.amazonaws.com
+                    # Invalid: evil.amazonaws.com (unless it's a known AWS service subdomain)
+                    # For security, only allow multi-level if it ends with .s3
+                    if '.' in prefix:
+                        # Multi-level subdomain - must end with .s3
+                        return prefix.endswith('.s3')
+                    else:
+                        # Single-level subdomain - allow it
+                        return True
                 else:
-                    # Other providers: allow single subdomain level
+                    # Other providers: allow single subdomain level only
                     return '.' not in prefix
         
         return False
@@ -4062,7 +4070,7 @@ def get_media(media_id):
                 error_json = response.json()
                 error_detail = json.dumps(error_json, indent=2)
             except (ValueError, json.JSONDecodeError):
-                # If response is not valid JSON, use the raw text as error detail
+                # If response is not valid JSON, error_detail keeps the raw text
                 pass
             return json.dumps({
                 "error": f"Failed to get media: {response.status_code}",
