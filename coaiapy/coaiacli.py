@@ -24,7 +24,8 @@ from cofuse import (
     list_traces, list_projects, create_dataset_item, format_traces_table,
     add_trace, add_observation, add_observations_batch, patch_trace_output,
     get_trace_with_observations, format_trace_tree,
-    get_observation, format_observation_display
+    get_observation, format_observation_display,
+    upload_and_attach_media, get_media, format_media_display
 )
 from .pipeline import TemplateLoader, TemplateRenderer, PipelineTemplate, PipelineVariable, PipelineStep
 from .environment import EnvironmentManager, format_environment_table
@@ -342,6 +343,26 @@ def main():
     parser_fuse_patch_output.add_argument('--json', action='store_true', help="Treat output_data as JSON (default: auto-detect)")
 
     parser_fuse_projects = sub_fuse.add_parser('projects', help="List projects in Langfuse")
+
+    # Media upload/attachment management
+    parser_fuse_media = sub_fuse.add_parser('media', help="Upload and manage media attachments in Langfuse")
+    sub_fuse_media = parser_fuse_media.add_subparsers(dest='media_action')
+
+    # Upload local file
+    parser_media_upload = sub_fuse_media.add_parser('upload', help='Upload local file to trace/observation')
+    parser_media_upload.add_argument('file_path', help='Path to file to upload')
+    parser_media_upload.add_argument('trace_id', help='Trace ID to attach media to')
+    parser_media_upload.add_argument('-o', '--observation-id', help='Observation ID for observation-level attachment')
+    parser_media_upload.add_argument('-f', '--field', choices=['input', 'output', 'metadata'], default='input',
+                                    help='Field to attach to (default: input)')
+    parser_media_upload.add_argument('-c', '--content-type', help='MIME type (auto-detected if not provided)')
+    parser_media_upload.add_argument('--json', action='store_true', help='Output in JSON format')
+
+    # Get media details
+    parser_media_get = sub_fuse_media.add_parser('get', help='Get media object details')
+    parser_media_get.add_argument('media_id', help='Media ID to retrieve')
+    parser_media_get.add_argument('--json', action='store_true', help='Output in raw JSON format')
+
     parser_fuse_ds_items = sub_fuse.add_parser('dataset-items', help="Manage dataset items (create) in Langfuse")
     parser_fuse_ds_items_sub = parser_fuse_ds_items.add_subparsers(dest='ds_items_action')
     parser_ds_items_create = parser_fuse_ds_items_sub.add_parser('create')
@@ -1071,6 +1092,39 @@ def main():
                     print(format_traces_table(traces_data))
         elif args.fuse_command == 'projects':
             print(list_projects())
+        elif args.fuse_command == 'media':
+            if args.media_action == 'upload':
+                # Upload local file to trace/observation
+                result = upload_and_attach_media(
+                    file_path=args.file_path,
+                    trace_id=args.trace_id,
+                    field=args.field,
+                    observation_id=getattr(args, 'observation_id', None),
+                    content_type=getattr(args, 'content_type', None)
+                )
+
+                if args.json:
+                    print(json.dumps(result, indent=2))
+                else:
+                    if result["success"]:
+                        print(f"✅ {result['message']}")
+                        print(f"📎 Media ID: {result['media_id']}")
+                        print(f"⏱️  Upload time: {result['upload_time_ms']:.2f}ms")
+                        print(f"\nMedia details:")
+                        print(format_media_display(result['media_data']))
+                    else:
+                        print(f"❌ Upload failed: {result['error']}")
+                        sys.exit(1)
+
+            elif args.media_action == 'get':
+                # Get media object details
+                media_json = get_media(args.media_id)
+
+                if args.json:
+                    print(media_json)
+                else:
+                    print(format_media_display(media_json))
+
         elif args.fuse_command == 'dataset-items':
             if args.ds_items_action == 'create':
                 result = create_dataset_item(

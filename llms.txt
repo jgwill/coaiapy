@@ -13,6 +13,7 @@
 ## 🎯 Core Purpose {#core-purpose}
 CoaiAPy enables users to manifest intelligent audio processing and workflow automation by providing:
 - Seamless audio transcription and synthesis
+- **Visual Memory Enhancement**: Media upload/attachment for traces and observations
 - Dynamic pipeline template creation
 - Persistent cross-session environment management
 - Smart caching for configuration and score management
@@ -398,6 +399,52 @@ for obs in observations:
   - Persist and manipulate workflow environment
   - Enable dynamic, adaptive creative ecosystems
 
+### 🖼️ Media Upload: Visual Memory Enhancement {#media-upload}
+
+**Transform computational narratives with visual context** - attach images, videos, audio, and documents to traces and observations.
+
+#### Core Philosophy
+- **Visual Memory**: Every computational moment deserves visual context
+- **Semantic Organization**: Media organized by input/output/metadata fields
+- **Intelligent Recognition**: Auto-detection of 52 content types (images, videos, audio, documents)
+- **Efficient Storage**: SHA-256 deduplication prevents redundant uploads
+
+#### CLI Commands
+
+```bash
+# Upload image to trace input (character sketch for story trace)
+coaia fuse media upload character_sketch.jpg trace_abc123 -f input
+
+# Upload audio to observation (voice note for dialogue ideas)
+coaia fuse media upload dialogue_idea.mp3 trace_abc123 \
+  -o obs_xyz789 -f output
+
+# Upload PDF document to trace metadata (research material)
+coaia fuse media upload research_paper.pdf trace_abc123 -f metadata
+
+# Retrieve media details with formatted display
+coaia fuse media get media_def456
+
+# JSON output for programmatic use
+coaia fuse media upload photo.jpg trace_abc123 --json
+```
+
+#### Supported Content Types (52 Total)
+- **Images**: JPEG, PNG, WebP, GIF, SVG, BMP, TIFF, ICO
+- **Videos**: MP4, MPEG, QuickTime, AVI, MKV, WebM
+- **Audio**: MP3, WAV, OGG, WebM, AAC, FLAC, M4A
+- **Documents**: PDF, Plain Text, CSV, HTML, Markdown
+- **Structured Data**: JSON, XML, JavaScript
+- **Office Formats**: Word, Excel, PowerPoint (DOCX, XLSX, PPTX)
+- **Archives**: ZIP, TAR, GZIP, 7Z, RAR
+
+#### Creative Use Cases
+- **Visual Storytelling**: Attach character sketches, scene inspirations
+- **Audio Context**: Voice notes, ambient sounds, dialogue recordings
+- **Research Documentation**: PDFs, articles, reference materials
+- **Data Visualization**: Charts, graphs, infographics
+- **Workflow Artifacts**: Screenshots, design mockups, prototypes
+
 ## 🔌 CoaiAPy-MCP: Model Context Protocol Integration {#coaiapy-mcp}
 
 ### MCP Server Overview {#mcp-overview}
@@ -408,7 +455,7 @@ for obs in observations:
 - **Architecture**: Direct library imports (no subprocess overhead)
 - **Performance**: Shared configuration, faster execution, typed exceptions
 
-### Available MCP Tools (14 Total) {#mcp-tools}
+### Available MCP Tools (16 Total) {#mcp-tools}
 
 #### Redis Tools (2)
 - `coaia_tash`: Stash key-value pairs to Redis
@@ -441,6 +488,18 @@ for obs in observations:
   - **Supports**: TRACE, OBSERVATION, SESSION, PROMPT objects
   - **Features**: Optional author_user_id, auto project detection
 
+#### Langfuse Media Tools (2) ✨ NEW - Visual Memory Enhancement
+- `coaia_fuse_media_upload`: Upload local files to trace/observation
+  - **Visual Enrichment**: Attach images, videos, audio, documents to traces
+  - **Semantic Fields**: Organize media by input/output/metadata context
+  - **Auto-Detection**: Intelligent MIME type recognition (52 supported formats)
+  - **Deduplication**: SHA-256 hashing for efficient storage
+  - **Creative Potential**: Transform computational narratives with visual context
+- `coaia_fuse_media_get`: Retrieve media object details and metadata
+  - **Memory Retrieval**: Access visual context of computational moments
+  - **Formatted Display**: Human-friendly presentation with icons (🖼️🎥🎵📄)
+  - **Complete Metadata**: Content type, size, trace/observation linkage
+
 ### MCP Integration Benefits {#mcp-benefits}
 - **Zero Subprocess Overhead**: Direct Python imports for maximum performance
 - **Shared Configuration**: Single config load for all operations
@@ -456,12 +515,25 @@ await mcp__coaiapy__coaia_fuse_trace_create({
     "name": "Creative Writing Session"
 })
 
+# Enrich trace with visual memory - upload character sketch
+media_result = await mcp__coaiapy__coaia_fuse_media_upload({
+    "file_path": "character_sketch.jpg",
+    "trace_id": "story-trace-001",
+    "field": "input"
+})
+# Returns: media_id, formatted display, upload timing
+
 # Add comment to trace
 await mcp__coaiapy__coaia_fuse_comments_create({
     "text": "Excellent character development in chapter 3",
     "object_type": "trace",
     "object_id": "story-trace-001",
     "author_user_id": "editor-jane"
+})
+
+# Retrieve visual context
+media_details = await mcp__coaiapy__coaia_fuse_media_get({
+    "media_id": media_result["media_id"]
 })
 
 # List all comments for the trace
