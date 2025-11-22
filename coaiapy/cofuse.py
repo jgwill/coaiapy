@@ -12,6 +12,8 @@ from dataclasses import dataclass, field
 from typing import Optional, List, Dict, Any, Union
 import hashlib
 import mimetypes
+import time
+from urllib.parse import urlparse
 
 @dataclass
 class ScoreCategory:
@@ -3859,10 +3861,33 @@ def upload_media_to_url(upload_url, file_path, content_type):
 
     Returns:
         dict: {"success": bool, "status_code": int, "message": str, "upload_time_ms": float}
+    
+    Raises:
+        ValueError: If upload_url domain is not from a trusted cloud storage provider
     """
-    import time
-
+    # Security validation: Verify presigned URL is from trusted cloud storage
+    TRUSTED_DOMAINS = [
+        'amazonaws.com',  # AWS S3
+        'storage.googleapis.com',  # Google Cloud Storage
+        'blob.core.windows.net',  # Azure Blob Storage
+        's3.amazonaws.com',  # AWS S3 alternative
+        'r2.cloudflarestorage.com',  # Cloudflare R2
+    ]
+    
     try:
+        parsed_url = urlparse(upload_url)
+        domain = parsed_url.netloc.lower()
+        
+        # Check if domain matches any trusted provider
+        is_trusted = any(trusted in domain for trusted in TRUSTED_DOMAINS)
+        if not is_trusted:
+            return {
+                "success": False,
+                "status_code": 0,
+                "message": f"Security error: Upload URL domain '{domain}' is not from a trusted cloud storage provider",
+                "upload_time_ms": 0
+            }
+        
         start_time = time.time()
 
         with open(file_path, 'rb') as f:
@@ -4003,6 +4028,7 @@ def get_media(media_id):
                 error_json = response.json()
                 error_detail = json.dumps(error_json, indent=2)
             except (ValueError, json.JSONDecodeError):
+                # If response is not valid JSON, use the raw text as error detail
                 pass
             return json.dumps({
                 "error": f"Failed to get media: {response.status_code}",
@@ -4062,7 +4088,6 @@ def upload_and_attach_media(file_path, trace_id, field="input",
         >>> if not result["success"]:
         ...     print(f"Upload failed: {result['error']}")
     """
-    import os
 
     try:
         # Validate file exists
