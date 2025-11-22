@@ -4045,14 +4045,164 @@ def get_media(media_id):
 # HIGH-LEVEL MEDIA HELPERS - Complete Upload Workflows
 # ============================================================================
 
+def create_langfuse_media_token(media_id, content_type, source="file"):
+    """
+    Generate a Langfuse Media Token for referencing uploaded media.
+    
+    The token format is used to reference media files in trace/observation fields.
+    Langfuse UI automatically detects and renders these tokens as inline media.
+    
+    Token format:
+        @@@langfuseMedia:type={MIME_TYPE}|id={MEDIA_ID}|source={SOURCE_TYPE}@@@
+    
+    Args:
+        media_id (str): Langfuse media ID from upload (e.g., "media_xyz789")
+        content_type (str): MIME type (e.g., "image/jpeg", "audio/mp3")
+        source (str): Source type - "file", "base64_data_uri", or "bytes" (default: "file")
+    
+    Returns:
+        str: Langfuse Media Token string
+    
+    Examples:
+        >>> token = create_langfuse_media_token("media_abc123", "image/jpeg")
+        >>> print(token)
+        '@@@langfuseMedia:type=image/jpeg|id=media_abc123|source=file@@@'
+        
+        >>> token = create_langfuse_media_token("media_xyz789", "audio/mp3", source="base64_data_uri")
+        >>> print(token)
+        '@@@langfuseMedia:type=audio/mp3|id=media_xyz789|source=base64_data_uri@@@'
+    """
+    return f"@@@langfuseMedia:type={content_type}|id={media_id}|source={source}@@@"
+
+
+def attach_media_token_to_trace(trace_id, media_token, field="input"):
+    """
+    Attach a Langfuse Media Token to a trace's field.
+    
+    Updates the trace by patching the specified field (input/output/metadata)
+    with the media token. This allows Langfuse UI to render the media inline.
+    
+    Args:
+        trace_id (str): Trace ID to attach media token to
+        media_token (str): Langfuse Media Token from create_langfuse_media_token()
+        field (str): Field to attach to - "input", "output", or "metadata" (default: "input")
+    
+    Returns:
+        dict: Response from Langfuse API
+    
+    Examples:
+        >>> token = create_langfuse_media_token("media_abc123", "image/jpeg")
+        >>> result = attach_media_token_to_trace("trace_001", token, field="input")
+    """
+    config = read_config()
+    auth = HTTPBasicAuth(config['langfuse_public_key'], config['langfuse_secret_key'])
+    now = datetime.datetime.utcnow().isoformat() + 'Z'
+    
+    # Build trace body with the media token in the specified field
+    body = {
+        "id": trace_id,
+        "timestamp": now
+    }
+    
+    # Add media token to the specified field
+    if field == "input":
+        body["input"] = media_token
+    elif field == "output":
+        body["output"] = media_token
+    elif field == "metadata":
+        body["metadata"] = {"media": media_token}
+    else:
+        return {"error": f"Invalid field: {field}. Must be 'input', 'output', or 'metadata'"}
+    
+    # Create unique event ID for this patch operation
+    event_id = f"{trace_id}-media-attach-{uuid.uuid4().hex[:8]}"
+    
+    data = {
+        "batch": [
+            {
+                "id": event_id,
+                "timestamp": now,
+                "type": "trace-create",
+                "body": body
+            }
+        ]
+    }
+    
+    url = f"{config['langfuse_base_url']}/api/public/ingestion"
+    response = requests.post(url, json=data, auth=auth)
+    return process_langfuse_response(response.text, trace_id, "media token attachment")
+
+
+def attach_media_token_to_observation(observation_id, trace_id, media_token, field="input"):
+    """
+    Attach a Langfuse Media Token to an observation's field.
+    
+    Updates the observation by patching the specified field (input/output/metadata)
+    with the media token. This allows Langfuse UI to render the media inline.
+    
+    Args:
+        observation_id (str): Observation ID to attach media token to
+        trace_id (str): Parent trace ID
+        media_token (str): Langfuse Media Token from create_langfuse_media_token()
+        field (str): Field to attach to - "input", "output", or "metadata" (default: "input")
+    
+    Returns:
+        dict: Response from Langfuse API
+    
+    Examples:
+        >>> token = create_langfuse_media_token("media_xyz789", "audio/mp3")
+        >>> result = attach_media_token_to_observation("obs_456", "trace_001", token, field="output")
+    """
+    config = read_config()
+    auth = HTTPBasicAuth(config['langfuse_public_key'], config['langfuse_secret_key'])
+    now = datetime.datetime.utcnow().isoformat() + 'Z'
+    
+    # Build observation body with the media token in the specified field
+    body = {
+        "id": observation_id,
+        "traceId": trace_id,
+        "type": "EVENT",
+        "startTime": now
+    }
+    
+    # Add media token to the specified field
+    if field == "input":
+        body["input"] = media_token
+    elif field == "output":
+        body["output"] = media_token
+    elif field == "metadata":
+        body["metadata"] = {"media": media_token}
+    else:
+        return {"error": f"Invalid field: {field}. Must be 'input', 'output', or 'metadata'"}
+    
+    # Create unique event ID for this patch operation
+    event_id = f"{observation_id}-media-attach-{uuid.uuid4().hex[:8]}"
+    
+    data = {
+        "batch": [
+            {
+                "id": event_id,
+                "timestamp": now,
+                "type": "observation-create",
+                "body": body
+            }
+        ]
+    }
+    
+    url = f"{config['langfuse_base_url']}/api/public/ingestion"
+    response = requests.post(url, json=data, auth=auth)
+    return process_langfuse_response(response.text, observation_id, "media token attachment")
+
+
 def upload_and_attach_media(file_path, trace_id, field="input",
                            observation_id=None, content_type=None):
     """
     Upload a file and attach it to a Langfuse trace or observation.
 
     Handles the complete upload workflow: validates file, calculates hash for
-    deduplication, uploads to S3, and registers with Langfuse. Supports images,
-    videos, audio, documents, and 52 content types total.
+    deduplication, uploads to S3, registers with Langfuse, and attaches the
+    Langfuse Media Token to the specified field for inline rendering in the UI.
+    Supports images, videos, audio, documents, and 52 content types total.
 
     Args:
         file_path (str): Absolute or relative path to file (e.g., "photo.jpg")
@@ -4065,6 +4215,7 @@ def upload_and_attach_media(file_path, trace_id, field="input",
         dict: {
             "success": bool - True if upload succeeded
             "media_id": str - Langfuse media ID (use with get_media)
+            "media_token": str - Langfuse Media Token (reference in trace/observation)
             "media_data": dict - Full media object with metadata
             "message": str - Success message with file size
             "upload_time_ms": float - Upload duration in milliseconds
@@ -4075,6 +4226,7 @@ def upload_and_attach_media(file_path, trace_id, field="input",
         Upload image to trace input:
         >>> result = upload_and_attach_media("sketch.jpg", "trace_001")
         >>> print(result["media_id"])  # "media_xyz789"
+        >>> print(result["media_token"])  # "@@@langfuseMedia:type=image/jpeg|id=media_xyz789|source=file@@@"
 
         Upload audio to observation output:
         >>> result = upload_and_attach_media(
@@ -4160,10 +4312,39 @@ def upload_and_attach_media(file_path, trace_id, field="input",
                 "media_id": media_id
             }
 
-        # Return success
+        # Step 4: Create and attach Langfuse Media Token to trace/observation
+        media_token = create_langfuse_media_token(media_id, content_type, source="file")
+        
+        if observation_id:
+            # Attach to observation
+            attach_result = attach_media_token_to_observation(
+                observation_id=observation_id,
+                trace_id=trace_id,
+                media_token=media_token,
+                field=field
+            )
+        else:
+            # Attach to trace
+            attach_result = attach_media_token_to_trace(
+                trace_id=trace_id,
+                media_token=media_token,
+                field=field
+            )
+        
+        # Check if attachment succeeded
+        if isinstance(attach_result, dict) and "error" in attach_result:
+            return {
+                "success": False,
+                "error": f"Upload succeeded but token attachment failed: {attach_result['error']}",
+                "media_id": media_id,
+                "media_token": media_token
+            }
+
+        # Return success with media token
         return {
             "success": True,
             "media_id": media_id,
+            "media_token": media_token,
             "media_data": patch_data,
             "message": f"Successfully uploaded {os.path.basename(file_path)} ({content_length} bytes)",
             "upload_time_ms": upload_result["upload_time_ms"]
