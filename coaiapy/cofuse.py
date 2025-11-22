@@ -3833,6 +3833,7 @@ def get_media_upload_url(trace_id, content_type, content_length, sha256_hash,
                 error_json = response.json()
                 error_detail = json.dumps(error_json, indent=2)
             except:
+                # If response is not JSON, just use the raw text as error detail
                 pass
             return json.dumps({
                 "error": f"Failed to get upload URL: {response.status_code}",
