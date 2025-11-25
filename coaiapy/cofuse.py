@@ -3647,13 +3647,14 @@ def calculate_sha256(file_path):
         file_path: Path to the file
 
     Returns:
-        str: Hexadecimal SHA-256 hash
+        str: Base64-encoded SHA-256 hash (44 characters)
 
     Example:
         >>> hash_value = calculate_sha256("/path/to/image.jpg")
         >>> print(hash_value)
-        'a3b2c1d4e5f6...'
+        'o7LB1OX2...'
     """
+    import base64
     sha256_hash = hashlib.sha256()
 
     try:
@@ -3661,7 +3662,8 @@ def calculate_sha256(file_path):
             # Read file in chunks to handle large files
             for byte_block in iter(lambda: f.read(4096), b""):
                 sha256_hash.update(byte_block)
-        return sha256_hash.hexdigest()
+        # Return base64-encoded hash (Langfuse requires 44-char base64, not hex)
+        return base64.b64encode(sha256_hash.digest()).decode('utf-8')
     except OSError as e:
         raise Exception(f"Failed to calculate SHA-256 hash: {str(e)}")
 
@@ -3829,7 +3831,8 @@ def get_media_upload_url(trace_id, content_type, content_length, sha256_hash,
     try:
         response = requests.post(url, json=data, auth=auth)
 
-        if response.status_code != 200:
+        # Accept both 200 and 201 as success (201 = Created)
+        if response.status_code not in [200, 201]:
             error_detail = response.text
             try:
                 error_json = response.json()
@@ -3848,7 +3851,7 @@ def get_media_upload_url(trace_id, content_type, content_length, sha256_hash,
         return json.dumps({"error": str(e)}, indent=2)
 
 
-def upload_media_to_url(upload_url, file_path, content_type):
+def upload_media_to_url(upload_url, file_path, content_type, sha256_hash=None):
     """
     Upload file to presigned S3 URL with security validation.
 
@@ -3858,6 +3861,7 @@ def upload_media_to_url(upload_url, file_path, content_type):
         upload_url: Presigned S3 URL from get_media_upload_url()
         file_path: Path to file to upload
         content_type: MIME type (must match original request)
+        sha256_hash: Base64-encoded SHA256 hash for x-amz-checksum-sha256 header
 
     Returns:
         dict: {
@@ -3866,6 +3870,9 @@ def upload_media_to_url(upload_url, file_path, content_type):
             "message": str - Success or error message
             "upload_time_ms": float - Upload duration in milliseconds
         }
+
+    Raises:
+        ValueError: If upload_url domain is not from a trusted cloud storage provider
     """
     # Security validation: Verify presigned URL is from trusted cloud storage
     # Only accept exact domain matches or proper subdomains (not spoofed domains)
@@ -3939,6 +3946,10 @@ def upload_media_to_url(upload_url, file_path, content_type):
             'Content-Type': content_type
         }
 
+        # Add SHA256 checksum header if provided (required by S3 presigned URL)
+        if sha256_hash:
+            headers['x-amz-checksum-sha256'] = sha256_hash
+
         response = requests.put(upload_url, data=file_data, headers=headers)
 
         end_time = time.time()
@@ -3987,9 +3998,12 @@ def patch_media_upload_status(media_id, status_code, upload_time_ms, error=None)
     auth = HTTPBasicAuth(config['langfuse_public_key'], config['langfuse_secret_key'])
     url = f"{config['langfuse_base_url']}/api/public/media/{media_id}"
 
+    from datetime import datetime, timezone
+
     data = {
         "uploadHttpStatus": status_code,
-        "uploadTimeMs": int(upload_time_ms)
+        "uploadTimeMs": int(upload_time_ms),
+        "uploadedAt": datetime.now(timezone.utc).isoformat()
     }
 
     if error:
@@ -4329,30 +4343,41 @@ def upload_and_attach_media(file_path, trace_id, field="input",
         upload_url = upload_data.get("uploadUrl")
         media_id = upload_data.get("mediaId")
 
-        if not upload_url or not media_id:
+        if not media_id:
             return {
                 "success": False,
-                "error": "Invalid response from Langfuse: missing uploadUrl or mediaId"
+                "error": "Invalid response from Langfuse: missing mediaId"
             }
 
-        # Step 2: Upload file to S3
-        upload_result = upload_media_to_url(upload_url, file_path, content_type)
+        # Handle deduplication: uploadUrl is null when file already exists
+        if upload_url:
+            # Step 2: Upload file to S3
+            upload_result = upload_media_to_url(upload_url, file_path, content_type, sha256_hash)
 
-        # Step 3: Update Langfuse with upload status
-        patch_response = patch_media_upload_status(
-            media_id=media_id,
-            status_code=upload_result["status_code"],
-            upload_time_ms=upload_result["upload_time_ms"],
-            error=upload_result.get("message") if not upload_result["success"] else None
-        )
+            # Step 3: Update Langfuse with upload status
+            patch_response = patch_media_upload_status(
+                media_id=media_id,
+                status_code=upload_result["status_code"],
+                upload_time_ms=upload_result["upload_time_ms"],
+                error=upload_result.get("message") if not upload_result["success"] else None
+            )
 
-        patch_data = json.loads(patch_response)
-        if "error" in patch_data:
-            return {
-                "success": False,
-                "error": f"Upload succeeded but status update failed: {patch_data['error']}",
-                "media_id": media_id
-            }
+            patch_data = json.loads(patch_response)
+            if "error" in patch_data:
+                return {
+                    "success": False,
+                    "error": f"Upload succeeded but status update failed: {patch_data['error']}",
+                    "detail": patch_data.get('detail', 'No additional detail provided'),
+                    "media_id": media_id
+                }
+            upload_time_ms = upload_result["upload_time_ms"]
+            media_data = patch_data
+        else:
+            # File already exists (deduplication) - skip upload
+            upload_time_ms = 0
+            # Get existing media data
+            media_response = get_media(media_id)
+            media_data = json.loads(media_response) if isinstance(media_response, str) else media_response
 
         # Step 4: Create and attach Langfuse Media Token to trace/observation
         media_token = create_langfuse_media_token(media_id, content_type, source="file")
@@ -4387,9 +4412,9 @@ def upload_and_attach_media(file_path, trace_id, field="input",
             "success": True,
             "media_id": media_id,
             "media_token": media_token,
-            "media_data": patch_data,
+            "media_data": media_data,
             "message": f"Successfully uploaded {os.path.basename(file_path)} ({content_length} bytes)",
-            "upload_time_ms": upload_result["upload_time_ms"]
+            "upload_time_ms": upload_time_ms
         }
 
     except Exception as e:
