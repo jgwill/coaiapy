@@ -27,6 +27,9 @@ from cofuse import (
     get_observation, format_observation_display,
     upload_and_attach_media, get_media, format_media_display
 )
+from cogh import (
+    list_issues, get_issue, format_issues_table
+)
 from .pipeline import TemplateLoader, TemplateRenderer, PipelineTemplate, PipelineVariable, PipelineStep
 from .environment import EnvironmentManager, format_environment_table
 
@@ -461,6 +464,17 @@ def main():
     parser_env_save.add_argument('--name', help='Environment name to save as')
     parser_env_save.add_argument('--location', choices=['project', 'global'], default='project', help='Environment location')
     parser_env_save.add_argument('--context-name', help='Descriptive name for this context')
+
+    # Subparser for 'gh' command
+    parser_gh = subparsers.add_parser('gh', help='Manage GitHub integrations.')
+    sub_gh = parser_gh.add_subparsers(dest='gh_command', help="Subcommands for GitHub")
+
+    parser_gh_issues = sub_gh.add_parser('issues', help="Manage issues in GitHub")
+    parser_gh_issues.add_argument('action', choices=['list', 'get'], help="Action to perform.")
+    parser_gh_issues.add_argument('--owner', type=str, required=True, help="Repository owner.")
+    parser_gh_issues.add_argument('--repo', type=str, required=True, help="Repository name.")
+    parser_gh_issues.add_argument('--issue-number', type=int, help="Issue number for 'get' action.")
+    parser_gh_issues.add_argument('--json', action='store_true', help="Output in JSON format (default: table format)")
 
     args = parser.parse_args()
 
@@ -1579,6 +1593,21 @@ def main():
             except Exception as e:
                 print(f"Error saving context: {str(e)}")
     
+    elif args.command == 'gh':
+        if args.gh_command == 'issues':
+            if args.action == 'list':
+                issues_data = list_issues(args.owner, args.repo)
+                if args.json:
+                    print(issues_data)
+                else:
+                    print(format_issues_table(issues_data))
+            elif args.action == 'get':
+                if not args.issue_number:
+                    print("Error: issue number missing.")
+                    return
+                issue_data = get_issue(args.owner, args.repo, args.issue_number)
+                print(issue_data)
+
     else:
         parser.print_help()
 
