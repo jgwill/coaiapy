@@ -37,6 +37,9 @@ try:
         get_trace_with_observations,
         format_traces_table,
         format_trace_tree,
+        upload_and_attach_media,
+        get_media,
+        format_media_display,
     )
     from coaiapy.pipeline import TemplateLoader
 except ImportError as e:
@@ -925,6 +928,178 @@ async def coaia_fuse_comments_create(
 
 
 # ============================================================================
+# Langfuse Media Upload Tools
+# ============================================================================
+
+async def coaia_fuse_media_upload(
+    file_path: str,
+    trace_id: str,
+    field: str = "input",
+    observation_id: Optional[str] = None,
+    content_type: Optional[str] = None,
+    json_output: bool = False
+) -> Dict[str, Any]:
+    """
+    Upload a file and attach it to a Langfuse trace or observation.
+
+    Uploads images, videos, audio, documents (52 content types) with automatic
+    MIME type detection, SHA-256 deduplication, and S3 storage. Returns media_id
+    for later retrieval.
+
+    Args:
+        file_path (str): Path to file (e.g., "photo.jpg", "./docs/report.pdf")
+        trace_id (str): Langfuse trace ID (e.g., "trace_abc123")
+        field (str): Semantic context - "input", "output", or "metadata" (default: "input")
+        observation_id (str, optional): Attach to observation instead of trace
+        content_type (str, optional): MIME type override (usually auto-detected)
+        json_output (bool): Return raw JSON (default: False returns formatted display)
+
+    Returns:
+        dict: {
+            "success": bool,
+            "media_id": str - Use this with coaia_fuse_media_get,
+            "message": str - Success message with file size,
+            "upload_time_ms": float - Upload duration,
+            "formatted_display": str - Human-readable output (if json_output=False),
+            "error": str - Error message (only if success=False)
+        }
+
+    Examples:
+        Upload image to trace:
+        >>> result = await coaia_fuse_media_upload(
+        ...     file_path="sketch.jpg",
+        ...     trace_id="trace_001",
+        ...     field="input"
+        ... )
+        >>> print(result["media_id"])  # "media_xyz789"
+
+        Upload audio to observation:
+        >>> result = await coaia_fuse_media_upload(
+        ...     file_path="recording.mp3",
+        ...     trace_id="trace_001",
+        ...     observation_id="obs_456",
+        ...     field="output"
+        ... )
+    """
+    try:
+        result = upload_and_attach_media(
+            file_path=file_path,
+            trace_id=trace_id,
+            field=field,
+            observation_id=observation_id,
+            content_type=content_type
+        )
+
+        if json_output:
+            return result
+
+        # Format friendly output
+        if result["success"]:
+            formatted = format_media_display(result['media_data'])
+            return {
+                "success": True,
+                "media_id": result['media_id'],
+                "message": result['message'],
+                "upload_time_ms": result['upload_time_ms'],
+                "formatted_display": formatted
+            }
+        else:
+            # Propagate error details if available from underlying function
+            if not result["success"] and "detail" in result:
+                return {
+                    "success": False,
+                    "error": result["error"],
+                    "detail": result["detail"]
+                }
+            return result
+
+    except Exception as e:
+        return {
+            "success": False,
+            "error": f"Media upload error: {str(e)}"
+        }
+
+
+async def coaia_fuse_media_get(
+    media_id: str,
+    json_output: bool = False
+) -> Dict[str, Any]:
+    """
+    Retrieve metadata about a previously uploaded media file.
+
+    Returns information about a media file including content type, size,
+    trace/observation linkage, upload timestamp, and SHA-256 hash. Use the
+    media_id from coaia_fuse_media_upload response.
+
+    Args:
+        media_id (str): Media ID from upload (e.g., "media_xyz789")
+        json_output (bool): Return raw JSON (default: False returns formatted display)
+
+    Returns:
+        dict: {
+            "success": bool,
+            "media": dict - Media object with all metadata,
+            "formatted_display": str - Human-readable output with icons (if json_output=False),
+            "error": str - Error message (only if success=False)
+        }
+
+        Media object contains:
+        - id: Media ID
+        - traceId: Associated trace
+        - observationId: Associated observation (if any)
+        - field: "input", "output", or "metadata"
+        - contentType: MIME type (e.g., "image/jpeg")
+        - contentLength: File size in bytes
+        - sha256Hash: Deduplication hash
+        - uploadedAt: ISO timestamp
+
+    Examples:
+        Retrieve media metadata:
+        >>> result = await coaia_fuse_media_get("media_xyz789")
+        >>> print(result["formatted_display"])
+        🖼️ Media: photo.jpg
+        ├── 🆔 ID: media_xyz789
+        ├── 📝 Content Type: image/jpeg
+        └── 📏 Size: 193424 bytes
+
+        Get raw data:
+        >>> result = await coaia_fuse_media_get("media_xyz789", json_output=True)
+        >>> print(f"Size: {result['media']['contentLength']} bytes")
+    """
+    try:
+        import json
+
+        media_json_str = get_media(media_id)
+        media_data = json.loads(media_json_str)
+
+        if "error" in media_data:
+            return {
+                "success": False,
+                "error": media_data["error"]
+            }
+
+        if json_output:
+            return {
+                "success": True,
+                "media": media_data
+            }
+
+        # Format friendly output
+        formatted = format_media_display(media_data)
+        return {
+            "success": True,
+            "media": media_data,
+            "formatted_display": formatted
+        }
+
+    except Exception as e:
+        return {
+            "success": False,
+            "error": f"Media retrieval error: {str(e)}"
+        }
+
+
+# ============================================================================
 # Tool Registry
 # ============================================================================
 
@@ -959,6 +1134,10 @@ TOOLS = {
     "coaia_fuse_comments_list": coaia_fuse_comments_list,
     "coaia_fuse_comments_get": coaia_fuse_comments_get,
     "coaia_fuse_comments_create": coaia_fuse_comments_create,
+
+    # Langfuse media tools
+    "coaia_fuse_media_upload": coaia_fuse_media_upload,
+    "coaia_fuse_media_get": coaia_fuse_media_get,
 }
 
 __all__ = [
@@ -981,4 +1160,6 @@ __all__ = [
     "coaia_fuse_comments_list",
     "coaia_fuse_comments_get",
     "coaia_fuse_comments_create",
+    "coaia_fuse_media_upload",
+    "coaia_fuse_media_get",
 ]

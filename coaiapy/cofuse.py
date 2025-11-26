@@ -10,6 +10,10 @@ import uuid
 from pathlib import Path
 from dataclasses import dataclass, field
 from typing import Optional, List, Dict, Any, Union
+import hashlib
+import mimetypes
+import time
+from urllib.parse import urlparse
 
 @dataclass
 class ScoreCategory:
@@ -3608,3 +3612,813 @@ def format_observation_display(obs_json):
 
     except Exception as e:
         return f"Error formatting observation: {str(e)}\n\nRaw JSON:\n{obs_json}"
+
+
+# ============================================================================
+# MEDIA UPLOAD SUPPORT - Langfuse Media Attachment Functions
+# ============================================================================
+
+# Supported content types from Langfuse OpenAPI specification
+SUPPORTED_CONTENT_TYPES = [
+    "image/jpeg", "image/jpg", "image/png", "image/webp", "image/gif",
+    "image/svg+xml", "image/bmp", "image/tiff", "image/x-icon",
+    "video/mp4", "video/mpeg", "video/quicktime", "video/x-msvideo",
+    "video/x-matroska", "video/webm",
+    "audio/mpeg", "audio/wav", "audio/ogg", "audio/webm", "audio/aac",
+    "audio/flac", "audio/x-m4a",
+    "application/pdf", "text/plain", "text/csv", "text/html", "text/markdown",
+    "application/json", "application/xml", "application/javascript",
+    "application/msword", "application/vnd.ms-excel",
+    "application/vnd.ms-powerpoint",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+    "application/zip", "application/x-tar", "application/gzip",
+    "application/x-7z-compressed", "application/x-rar-compressed",
+    "application/octet-stream"
+]
+
+
+def calculate_sha256(file_path):
+    """
+    Calculate SHA-256 hash of a file for deduplication.
+
+    Args:
+        file_path: Path to the file
+
+    Returns:
+        str: Base64-encoded SHA-256 hash (44 characters)
+
+    Example:
+        >>> hash_value = calculate_sha256("/path/to/image.jpg")
+        >>> print(hash_value)
+        'o7LB1OX2...'
+    """
+    import base64
+    sha256_hash = hashlib.sha256()
+
+    try:
+        with open(file_path, "rb") as f:
+            # Read file in chunks to handle large files
+            for byte_block in iter(lambda: f.read(4096), b""):
+                sha256_hash.update(byte_block)
+        # Return base64-encoded hash (Langfuse requires 44-char base64, not hex)
+        return base64.b64encode(sha256_hash.digest()).decode('utf-8')
+    except OSError as e:
+        raise Exception(f"Failed to calculate SHA-256 hash: {str(e)}")
+
+
+def detect_content_type(file_path):
+    """
+    Auto-detect MIME type from file extension and content.
+
+    Args:
+        file_path: Path to the file
+
+    Returns:
+        str: MIME type (e.g., 'image/jpeg')
+
+    Example:
+        >>> content_type = detect_content_type("photo.jpg")
+        >>> print(content_type)
+        'image/jpeg'
+    """
+    # Initialize mimetypes if needed
+    if not mimetypes.inited:
+        mimetypes.init()
+
+    # Guess from extension
+    guessed_type, _ = mimetypes.guess_type(file_path)
+
+    if guessed_type:
+        return guessed_type
+
+    # Default to octet-stream if unknown
+    return "application/octet-stream"
+
+
+def validate_content_type(content_type):
+    """
+    Validate content type against Langfuse supported types.
+
+    Args:
+        content_type: MIME type string
+
+    Returns:
+        dict: {"valid": bool, "message": str}
+
+    Example:
+        >>> result = validate_content_type("image/jpeg")
+        >>> print(result)
+        {'valid': True, 'message': 'Content type is supported'}
+    """
+    if content_type in SUPPORTED_CONTENT_TYPES:
+        return {
+            "valid": True,
+            "message": "Content type is supported"
+        }
+    else:
+        return {
+            "valid": False,
+            "message": f"Content type '{content_type}' not supported. Supported types: {', '.join(SUPPORTED_CONTENT_TYPES[:10])}..."
+        }
+
+
+def format_media_display(media_json):
+    """
+    Format media object for CLI-friendly display.
+
+    Args:
+        media_json: JSON string or dict containing media data
+
+    Returns:
+        str: Formatted display string
+
+    Example:
+        >>> formatted = format_media_display(media_data)
+        >>> print(formatted)
+        🖼️ Media: image.jpg
+        ├── 🆔 ID: media-123...
+    """
+    try:
+        media = json.loads(media_json) if isinstance(media_json, str) else media_json
+
+        if 'error' in media:
+            return f"Error: {media['error']}"
+
+        # Media type glyphs
+        content_type = media.get('contentType', 'unknown')
+        if content_type.startswith('image/'):
+            glyph = '🖼️'
+        elif content_type.startswith('video/'):
+            glyph = '🎥'
+        elif content_type.startswith('audio/'):
+            glyph = '🎵'
+        elif content_type.startswith('application/pdf'):
+            glyph = '📄'
+        else:
+            glyph = '📎'
+
+        lines = []
+        lines.append(f"{glyph} Media: {media.get('fileName', 'Unnamed')}")
+        lines.append(f"├── 🆔 ID: {media.get('id', 'N/A')}")
+        lines.append(f"├── 📝 Content Type: {content_type}")
+        lines.append(f"├── 📏 Size: {media.get('contentLength', 0)} bytes")
+        lines.append(f"├── 🔗 Trace ID: {media.get('traceId', 'N/A')}")
+
+        if media.get('observationId'):
+            lines.append(f"├── 👁️ Observation ID: {media.get('observationId')}")
+
+        if media.get('field'):
+            lines.append(f"├── 🏷️ Field: {media.get('field')}")
+
+        if media.get('sha256Hash'):
+            hash_short = media['sha256Hash'][:16] + "..."
+            lines.append(f"├── 🔐 SHA-256: {hash_short}")
+
+        if media.get('uploadedAt'):
+            lines.append(f"└── 📅 Uploaded: {media['uploadedAt'][:19]}")
+
+        return '\n'.join(lines)
+
+    except Exception as e:
+        return f"Error formatting media: {str(e)}\n\nRaw JSON:\n{media_json}"
+
+
+# ============================================================================
+# MEDIA API FUNCTIONS - Langfuse Media Upload/Management
+# ============================================================================
+
+def get_media_upload_url(trace_id, content_type, content_length, sha256_hash,
+                        field="input", observation_id=None):
+    """
+    Request a presigned upload URL from Langfuse for media attachment.
+
+    POST /api/public/media
+
+    Args:
+        trace_id: ID of the trace to attach media to
+        content_type: MIME type (e.g., 'image/jpeg')
+        content_length: Size of file in bytes
+        sha256_hash: SHA-256 hash for deduplication
+        field: Field to attach to ('input', 'output', 'metadata')
+        observation_id: Optional observation ID for observation-level attachment
+
+    Returns:
+        JSON string with uploadUrl, mediaId, and other details
+        Example:
+        {
+          "uploadUrl": "https://s3.amazonaws.com/...",
+          "mediaId": "media_abc123"
+        }
+    """
+    config = read_config()
+    auth = HTTPBasicAuth(config['langfuse_public_key'], config['langfuse_secret_key'])
+    url = f"{config['langfuse_base_url']}/api/public/media"
+
+    # Build request data
+    data = {
+        "traceId": trace_id,
+        "contentType": content_type,
+        "contentLength": content_length,
+        "sha256Hash": sha256_hash,
+        "field": field
+    }
+
+    if observation_id:
+        data["observationId"] = observation_id
+
+    try:
+        response = requests.post(url, json=data, auth=auth)
+
+        # Accept both 200 and 201 as success (201 = Created)
+        if response.status_code not in [200, 201]:
+            error_detail = response.text
+            try:
+                error_json = response.json()
+                error_detail = json.dumps(error_json, indent=2)
+            except:
+                # If response is not JSON, just use the raw text as error detail
+                pass
+            return json.dumps({
+                "error": f"Failed to get upload URL: {response.status_code}",
+                "detail": error_detail
+            }, indent=2)
+
+        return response.text
+
+    except Exception as e:
+        return json.dumps({"error": str(e)}, indent=2)
+
+
+def upload_media_to_url(upload_url, file_path, content_type, sha256_hash=None):
+    """
+    Upload file to presigned S3 URL with security validation.
+
+    PUT to presigned URL
+
+    Args:
+        upload_url: Presigned S3 URL from get_media_upload_url()
+        file_path: Path to file to upload
+        content_type: MIME type (must match original request)
+        sha256_hash: Base64-encoded SHA256 hash for x-amz-checksum-sha256 header
+
+    Returns:
+        dict: {
+            "success": bool - False if domain validation fails or upload errors
+            "status_code": int - HTTP status code (0 if domain validation failed)
+            "message": str - Success or error message
+            "upload_time_ms": float - Upload duration in milliseconds
+        }
+
+    Raises:
+        ValueError: If upload_url domain is not from a trusted cloud storage provider
+    """
+    # Security validation: Verify presigned URL is from trusted cloud storage
+    # Only accept exact domain matches or proper subdomains (not spoofed domains)
+    def is_trusted_domain(domain):
+        """Check if domain is from a trusted cloud storage provider."""
+        # Exact matches for root domains
+        exact_matches = [
+            'amazonaws.com',
+            's3.amazonaws.com',
+            'storage.googleapis.com',
+            'blob.core.windows.net',
+            'r2.cloudflarestorage.com',
+        ]
+        
+        if domain in exact_matches:
+            return True
+        
+        # Subdomain patterns - must have subdomain.trusted-suffix format
+        # Split domain into parts to validate structure
+        trusted_suffixes = [
+            'amazonaws.com',
+            'storage.googleapis.com',
+            'blob.core.windows.net',
+            'r2.cloudflarestorage.com',
+        ]
+        
+        for suffix in trusted_suffixes:
+            # Check if domain ends with .suffix (note the dot)
+            # This ensures we have a subdomain prefix
+            if domain.endswith('.' + suffix):
+                # Verify there are no additional dots after the subdomain
+                # to prevent attacks like evil.amazonaws.com.malicious.com
+                prefix = domain[:-len('.' + suffix)]
+                # Prefix should not contain dots (single-level subdomain only for security)
+                # or allow multiple levels ONLY for AWS S3 patterns (bucket.s3.amazonaws.com)
+                if suffix == 'amazonaws.com':
+                    # AWS: Accept single-level subdomains OR multi-level ending with .s3
+                    # Valid: bucket.amazonaws.com, bucket.s3.amazonaws.com
+                    # Invalid: evil.amazonaws.com (unless it's a known AWS service subdomain)
+                    # For security, only allow multi-level if it ends with .s3
+                    if '.' in prefix:
+                        # Multi-level subdomain - must end with .s3
+                        return prefix.endswith('.s3')
+                    else:
+                        # Single-level subdomain - allow it
+                        return True
+                else:
+                    # Other providers: allow single subdomain level only
+                    return '.' not in prefix
+        
+        return False
+    
+    try:
+        parsed_url = urlparse(upload_url)
+        domain = parsed_url.netloc.lower()
+        
+        if not is_trusted_domain(domain):
+            return {
+                "success": False,
+                "status_code": 0,
+                "message": f"Security error: Upload URL domain '{domain}' is not from a trusted cloud storage provider",
+                "upload_time_ms": 0
+            }
+        
+        start_time = time.time()
+
+        with open(file_path, 'rb') as f:
+            file_data = f.read()
+
+        headers = {
+            'Content-Type': content_type
+        }
+
+        # Add SHA256 checksum header if provided (required by S3 presigned URL)
+        if sha256_hash:
+            headers['x-amz-checksum-sha256'] = sha256_hash
+
+        response = requests.put(upload_url, data=file_data, headers=headers)
+
+        end_time = time.time()
+        upload_time_ms = (end_time - start_time) * 1000
+
+        if response.status_code in [200, 201, 204]:
+            return {
+                "success": True,
+                "status_code": response.status_code,
+                "message": "Upload successful",
+                "upload_time_ms": upload_time_ms
+            }
+        else:
+            return {
+                "success": False,
+                "status_code": response.status_code,
+                "message": f"Upload failed: {response.text}",
+                "upload_time_ms": upload_time_ms
+            }
+
+    except Exception as e:
+        return {
+            "success": False,
+            "status_code": 0,
+            "message": f"Upload error: {str(e)}",
+            "upload_time_ms": 0
+        }
+
+
+def patch_media_upload_status(media_id, status_code, upload_time_ms, error=None):
+    """
+    Update Langfuse with upload completion status.
+
+    PATCH /api/public/media/{mediaId}
+
+    Args:
+        media_id: Media ID from get_media_upload_url()
+        status_code: HTTP status from S3 upload (200, 201, 204 = success)
+        upload_time_ms: Time taken for upload in milliseconds
+        error: Optional error message if upload failed
+
+    Returns:
+        JSON string with updated media object
+    """
+    config = read_config()
+    auth = HTTPBasicAuth(config['langfuse_public_key'], config['langfuse_secret_key'])
+    url = f"{config['langfuse_base_url']}/api/public/media/{media_id}"
+
+    from datetime import datetime, timezone
+
+    data = {
+        "uploadHttpStatus": status_code,
+        "uploadTimeMs": int(upload_time_ms),
+        "uploadedAt": datetime.now(timezone.utc).isoformat()
+    }
+
+    if error:
+        data["uploadHttpError"] = str(error)
+
+    try:
+        response = requests.patch(url, json=data, auth=auth)
+
+        if response.status_code != 200:
+            error_detail = response.text
+            try:
+                error_json = response.json()
+                error_detail = json.dumps(error_json, indent=2)
+            except ValueError:
+                # If response is not JSON, just use the raw text
+                pass
+            return json.dumps({
+                "error": f"Failed to update media status: {response.status_code}",
+                "detail": error_detail
+            }, indent=2)
+
+        return response.text
+
+    except Exception as e:
+        return json.dumps({"error": str(e)}, indent=2)
+
+
+def get_media(media_id):
+    """
+    Retrieve media object metadata from Langfuse by media ID.
+
+    Returns complete information about an uploaded media file including content
+    type, size, trace/observation linkage, and upload timestamp.
+
+    Args:
+        media_id (str): Media ID returned from upload_and_attach_media
+                       (e.g., "media_xyz789")
+
+    Returns:
+        str: JSON string containing media object:
+            {
+              "id": "media_xyz789",
+              "traceId": "trace_abc123",
+              "observationId": "obs_456" (if attached to observation),
+              "field": "input|output|metadata",
+              "contentType": "image/jpeg",
+              "contentLength": 193424,
+              "sha256Hash": "a1b2c3...",
+              "uploadedAt": "2025-11-17T12:34:56Z"
+            }
+            Or error object: {"error": "...", "detail": "..."}
+
+    Examples:
+        Retrieve and parse media metadata:
+        >>> import json
+        >>> media_json = get_media("media_xyz789")
+        >>> media = json.loads(media_json)
+        >>> print(f"Type: {media['contentType']}, Size: {media['contentLength']} bytes")
+
+        Use with format_media_display for human-readable output:
+        >>> media_json = get_media("media_xyz789")
+        >>> print(format_media_display(media_json))
+        🖼️ Media: photo.jpg
+        ├── 🆔 ID: media_xyz789
+        ├── 📝 Content Type: image/jpeg
+        └── 📏 Size: 193424 bytes
+    """
+    config = read_config()
+    auth = HTTPBasicAuth(config['langfuse_public_key'], config['langfuse_secret_key'])
+    url = f"{config['langfuse_base_url']}/api/public/media/{media_id}"
+
+    try:
+        response = requests.get(url, auth=auth)
+
+        if response.status_code != 200:
+            error_detail = response.text
+            try:
+                error_json = response.json()
+                error_detail = json.dumps(error_json, indent=2)
+            except (ValueError, json.JSONDecodeError):
+                # If response is not valid JSON, error_detail keeps the raw text
+                pass
+            return json.dumps({
+                "error": f"Failed to get media: {response.status_code}",
+                "detail": error_detail
+            }, indent=2)
+
+        return response.text
+
+    except Exception as e:
+        return json.dumps({"error": str(e)}, indent=2)
+
+
+# ============================================================================
+# HIGH-LEVEL MEDIA HELPERS - Complete Upload Workflows
+# ============================================================================
+
+def create_langfuse_media_token(media_id, content_type, source="file"):
+    """
+    Generate a Langfuse Media Token for referencing uploaded media.
+    
+    The token format is used to reference media files in trace/observation fields.
+    Langfuse UI automatically detects and renders these tokens as inline media.
+    
+    Token format:
+        @@@langfuseMedia:type={MIME_TYPE}|id={MEDIA_ID}|source={SOURCE_TYPE}@@@
+    
+    Args:
+        media_id (str): Langfuse media ID from upload (e.g., "media_xyz789")
+        content_type (str): MIME type (e.g., "image/jpeg", "audio/mp3")
+        source (str): Source type - "file", "base64_data_uri", or "bytes" (default: "file")
+    
+    Returns:
+        str: Langfuse Media Token string
+    
+    Examples:
+        >>> token = create_langfuse_media_token("media_abc123", "image/jpeg")
+        >>> print(token)
+        '@@@langfuseMedia:type=image/jpeg|id=media_abc123|source=file@@@'
+        
+        >>> token = create_langfuse_media_token("media_xyz789", "audio/mp3", source="base64_data_uri")
+        >>> print(token)
+        '@@@langfuseMedia:type=audio/mp3|id=media_xyz789|source=base64_data_uri@@@'
+    """
+    return f"@@@langfuseMedia:type={content_type}|id={media_id}|source={source}@@@"
+
+
+def attach_media_token_to_trace(trace_id, media_token, field="input"):
+    """
+    Attach a Langfuse Media Token to a trace's field.
+    
+    Updates the trace by patching the specified field (input/output/metadata)
+    with the media token. This allows Langfuse UI to render the media inline.
+    
+    Args:
+        trace_id (str): Trace ID to attach media token to
+        media_token (str): Langfuse Media Token from create_langfuse_media_token()
+        field (str): Field to attach to - "input", "output", or "metadata" (default: "input")
+    
+    Returns:
+        dict: Response from Langfuse API
+    
+    Examples:
+        >>> token = create_langfuse_media_token("media_abc123", "image/jpeg")
+        >>> result = attach_media_token_to_trace("trace_001", token, field="input")
+    """
+    config = read_config()
+    auth = HTTPBasicAuth(config['langfuse_public_key'], config['langfuse_secret_key'])
+    now = datetime.datetime.utcnow().isoformat() + 'Z'
+    
+    # Build trace body with the media token in the specified field
+    body = {
+        "id": trace_id,
+        "timestamp": now
+    }
+    
+    # Add media token to the specified field
+    if field == "input":
+        body["input"] = media_token
+    elif field == "output":
+        body["output"] = media_token
+    elif field == "metadata":
+        body["metadata"] = {"media": media_token}
+    else:
+        return {"error": f"Invalid field: {field}. Must be 'input', 'output', or 'metadata'"}
+    
+    # Create unique event ID for this patch operation
+    event_id = f"{trace_id}-media-attach-{uuid.uuid4().hex[:8]}"
+    
+    data = {
+        "batch": [
+            {
+                "id": event_id,
+                "timestamp": now,
+                "type": "trace-create",
+                "body": body
+            }
+        ]
+    }
+    
+    url = f"{config['langfuse_base_url']}/api/public/ingestion"
+    response = requests.post(url, json=data, auth=auth)
+    return process_langfuse_response(response.text, trace_id, "media token attachment")
+
+
+def attach_media_token_to_observation(observation_id, trace_id, media_token, field="input"):
+    """
+    Attach a Langfuse Media Token to an observation's field.
+    
+    Updates the observation by patching the specified field (input/output/metadata)
+    with the media token. This allows Langfuse UI to render the media inline.
+    
+    Args:
+        observation_id (str): Observation ID to attach media token to
+        trace_id (str): Parent trace ID
+        media_token (str): Langfuse Media Token from create_langfuse_media_token()
+        field (str): Field to attach to - "input", "output", or "metadata" (default: "input")
+    
+    Returns:
+        dict: Response from Langfuse API
+    
+    Examples:
+        >>> token = create_langfuse_media_token("media_xyz789", "audio/mp3")
+        >>> result = attach_media_token_to_observation("obs_456", "trace_001", token, field="output")
+    """
+    config = read_config()
+    auth = HTTPBasicAuth(config['langfuse_public_key'], config['langfuse_secret_key'])
+    now = datetime.datetime.utcnow().isoformat() + 'Z'
+    
+    # Build observation body with the media token in the specified field
+    body = {
+        "id": observation_id,
+        "traceId": trace_id,
+        "type": "EVENT",
+        "startTime": now
+    }
+    
+    # Add media token to the specified field
+    if field == "input":
+        body["input"] = media_token
+    elif field == "output":
+        body["output"] = media_token
+    elif field == "metadata":
+        body["metadata"] = {"media": media_token}
+    else:
+        return {"error": f"Invalid field: {field}. Must be 'input', 'output', or 'metadata'"}
+    
+    # Create unique event ID for this patch operation
+    event_id = f"{observation_id}-media-attach-{uuid.uuid4().hex[:8]}"
+    
+    data = {
+        "batch": [
+            {
+                "id": event_id,
+                "timestamp": now,
+                "type": "observation-create",
+                "body": body
+            }
+        ]
+    }
+    
+    url = f"{config['langfuse_base_url']}/api/public/ingestion"
+    response = requests.post(url, json=data, auth=auth)
+    return process_langfuse_response(response.text, observation_id, "media token attachment")
+
+
+def upload_and_attach_media(file_path, trace_id, field="input",
+                           observation_id=None, content_type=None):
+    """
+    Upload a file and attach it to a Langfuse trace or observation.
+
+    Handles the complete upload workflow: validates file, calculates hash for
+    deduplication, uploads to S3, registers with Langfuse, and attaches the
+    Langfuse Media Token to the specified field for inline rendering in the UI.
+    Supports images, videos, audio, documents, and 52 content types total.
+
+    Args:
+        file_path (str): Absolute or relative path to file (e.g., "photo.jpg")
+        trace_id (str): Langfuse trace ID (e.g., "trace_abc123")
+        field (str): Semantic context - "input", "output", or "metadata" (default: "input")
+        observation_id (str, optional): Attach to specific observation instead of trace
+        content_type (str, optional): MIME type (auto-detected from file extension if omitted)
+
+    Returns:
+        dict: {
+            "success": bool - True if upload succeeded
+            "media_id": str - Langfuse media ID (use with get_media)
+            "media_token": str - Langfuse Media Token (reference in trace/observation)
+            "media_data": dict - Full media object with metadata
+            "message": str - Success message with file size
+            "upload_time_ms": float - Upload duration in milliseconds
+            "error": str - Error message (only if success=False)
+        }
+
+    Examples:
+        Upload image to trace input:
+        >>> result = upload_and_attach_media("sketch.jpg", "trace_001")
+        >>> print(result["media_id"])  # "media_xyz789"
+        >>> print(result["media_token"])  # "@@@langfuseMedia:type=image/jpeg|id=media_xyz789|source=file@@@"
+
+        Upload audio to observation output:
+        >>> result = upload_and_attach_media(
+        ...     file_path="recording.mp3",
+        ...     trace_id="trace_001",
+        ...     observation_id="obs_456",
+        ...     field="output"
+        ... )
+
+        Check for errors:
+        >>> if not result["success"]:
+        ...     print(f"Upload failed: {result['error']}")
+    """
+
+    try:
+        # Validate file exists
+        if not os.path.exists(file_path):
+            return {
+                "success": False,
+                "error": f"File not found: {file_path}"
+            }
+
+        # Auto-detect content type if not provided
+        if not content_type:
+            content_type = detect_content_type(file_path)
+
+        # Validate content type
+        validation = validate_content_type(content_type)
+        if not validation["valid"]:
+            return {
+                "success": False,
+                "error": validation["message"]
+            }
+
+        # Calculate SHA-256 hash
+        sha256_hash = calculate_sha256(file_path)
+
+        # Get file size
+        content_length = os.path.getsize(file_path)
+
+        # Step 1: Request presigned upload URL
+        upload_response = get_media_upload_url(
+            trace_id=trace_id,
+            content_type=content_type,
+            content_length=content_length,
+            sha256_hash=sha256_hash,
+            field=field,
+            observation_id=observation_id
+        )
+
+        upload_data = json.loads(upload_response)
+        if "error" in upload_data:
+            return {
+                "success": False,
+                "error": f"Failed to get upload URL: {upload_data['error']}"
+            }
+
+        upload_url = upload_data.get("uploadUrl")
+        media_id = upload_data.get("mediaId")
+
+        if not media_id:
+            return {
+                "success": False,
+                "error": "Invalid response from Langfuse: missing mediaId"
+            }
+
+        # Handle deduplication: uploadUrl is null when file already exists
+        if upload_url:
+            # Step 2: Upload file to S3
+            upload_result = upload_media_to_url(upload_url, file_path, content_type, sha256_hash)
+
+            # Step 3: Update Langfuse with upload status
+            patch_response = patch_media_upload_status(
+                media_id=media_id,
+                status_code=upload_result["status_code"],
+                upload_time_ms=upload_result["upload_time_ms"],
+                error=upload_result.get("message") if not upload_result["success"] else None
+            )
+
+            patch_data = json.loads(patch_response)
+            if "error" in patch_data:
+                return {
+                    "success": False,
+                    "error": f"Upload succeeded but status update failed: {patch_data['error']}",
+                    "detail": patch_data.get('detail', 'No additional detail provided'),
+                    "media_id": media_id
+                }
+            upload_time_ms = upload_result["upload_time_ms"]
+            media_data = patch_data
+        else:
+            # File already exists (deduplication) - skip upload
+            upload_time_ms = 0
+            # Get existing media data
+            media_response = get_media(media_id)
+            media_data = json.loads(media_response) if isinstance(media_response, str) else media_response
+
+        # Step 4: Create and attach Langfuse Media Token to trace/observation
+        media_token = create_langfuse_media_token(media_id, content_type, source="file")
+        
+        if observation_id:
+            # Attach to observation
+            attach_result = attach_media_token_to_observation(
+                observation_id=observation_id,
+                trace_id=trace_id,
+                media_token=media_token,
+                field=field
+            )
+        else:
+            # Attach to trace
+            attach_result = attach_media_token_to_trace(
+                trace_id=trace_id,
+                media_token=media_token,
+                field=field
+            )
+        
+        # Check if attachment succeeded
+        if isinstance(attach_result, dict) and "error" in attach_result:
+            return {
+                "success": False,
+                "error": f"Upload succeeded but token attachment failed: {attach_result['error']}",
+                "media_id": media_id,
+                "media_token": media_token
+            }
+
+        # Return success with media token
+        return {
+            "success": True,
+            "media_id": media_id,
+            "media_token": media_token,
+            "media_data": media_data,
+            "message": f"Successfully uploaded {os.path.basename(file_path)} ({content_length} bytes)",
+            "upload_time_ms": upload_time_ms
+        }
+
+    except Exception as e:
+        return {
+            "success": False,
+            "error": f"Unexpected error: {str(e)}"
+        }

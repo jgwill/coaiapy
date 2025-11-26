@@ -48,4 +48,9 @@ sdir=/src/_sessiondata/$session_id__coaiaFuseTracePatchOutput_2511112034
 
 
 session_id__MietteSClaudePlanInsightTracingObservation_2511131137=084038d7-e201-4ffa-ba89-091e7dc2a497
+
+# jgwill/coaiapy#65 to support medias in tracing
+session_id__parent_jgwill_Miadi_STCMastery_Claude_Agent_SDK_and_PR87_2510311507=d1bbb6bb-2c5d-41b0-a0f9-587b657ded06
 session_id__issue_65__Medias_Support_2511161357=c122108f-ae27-4d7c-96d8-48c952542ef6
+
+
