@@ -1004,6 +1004,13 @@ async def coaia_fuse_media_upload(
                 "formatted_display": formatted
             }
         else:
+            # Propagate error details if available from underlying function
+            if not result["success"] and "detail" in result:
+                return {
+                    "success": False,
+                    "error": result["error"],
+                    "detail": result["detail"]
+                }
             return result
 
     except Exception as e:
