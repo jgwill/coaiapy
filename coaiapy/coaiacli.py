@@ -4,6 +4,7 @@ import json
 import sys
 import warnings
 import uuid
+import re
 #ignore : RequestsDependencyWarning: Unable to find acceptable character detection dependency (chardet or charset_normalizer).
 warnings.filterwarnings("ignore", message="Unable to find acceptable character detection dependency")
 
@@ -470,11 +471,21 @@ def main():
     sub_gh = parser_gh.add_subparsers(dest='gh_command', help="Subcommands for GitHub")
 
     parser_gh_issues = sub_gh.add_parser('issues', help="Manage issues in GitHub")
-    parser_gh_issues.add_argument('action', choices=['list', 'get'], help="Action to perform.")
-    parser_gh_issues.add_argument('--owner', type=str, required=True, help="Repository owner.")
-    parser_gh_issues.add_argument('--repo', type=str, required=True, help="Repository name.")
-    parser_gh_issues.add_argument('--issue-number', type=int, help="Issue number for 'get' action.")
-    parser_gh_issues.add_argument('--json', action='store_true', help="Output in JSON format (default: table format)")
+    gh_issues_subparsers = parser_gh_issues.add_subparsers(dest='action', help="Action to perform")
+
+    # list action
+    parser_gh_issues_list = gh_issues_subparsers.add_parser('list')
+    parser_gh_issues_list.add_argument('--owner', type=str, required=True, help="Repository owner.")
+    parser_gh_issues_list.add_argument('--repo', type=str, required=True, help="Repository name.")
+    parser_gh_issues_list.add_argument('--json', action='store_true', help="Output in JSON format (default: table format)")
+
+    # get action
+    parser_gh_issues_get = gh_issues_subparsers.add_parser('get')
+    parser_gh_issues_get.add_argument('issue_ref', nargs='?', help="Issue reference in 'owner/repo#number' format.")
+    parser_gh_issues_get.add_argument('--owner', type=str, help="Repository owner.")
+    parser_gh_issues_get.add_argument('--repo', type=str, help="Repository name.")
+    parser_gh_issues_get.add_argument('--issue-number', type=int, help="Issue number for 'get' action.")
+    parser_gh_issues_get.add_argument('--json', action='store_true', help="Output in JSON format")
 
     args = parser.parse_args()
 
@@ -1602,10 +1613,24 @@ def main():
                 else:
                     print(format_issues_table(issues_data))
             elif args.action == 'get':
-                if not args.issue_number:
-                    print("Error: issue number missing.")
+                owner = args.owner
+                repo = args.repo
+                issue_number = args.issue_number
+
+                if args.issue_ref:
+                    match = re.match(r'([^/]+)/([^#]+)#(\d+)', args.issue_ref)
+                    if match:
+                        owner, repo, issue_number = match.groups()
+                        issue_number = int(issue_number)
+                    else:
+                        print("Error: Invalid issue reference format. Use 'owner/repo#number'.")
+                        return
+
+                if not owner or not repo or not issue_number:
+                    print("Error: owner, repo, and issue number are required (or use issue reference 'owner/repo#number').")
                     return
-                issue_data = get_issue(args.owner, args.repo, args.issue_number)
+
+                issue_data = get_issue(owner, repo, issue_number)
                 print(issue_data)
 
     else:
