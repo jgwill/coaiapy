@@ -121,7 +121,11 @@ def read_config(env_path=None):
                 "ssl": False
             },
             "openai_api_key": "",
-            "pollyconf": {"key": "", "secret": "", "region": "us-east-1"}
+            "pollyconf": {"key": "", "secret": "", "region": "us-east-1"},
+            "github": {
+                "api_token": "",
+                "base_url": "https://api.github.com"
+            }
         }
         
         # Load HOME config first (base configuration)
@@ -236,6 +240,9 @@ def read_config(env_path=None):
         config["langfuse_public_key"] = get_env_value("LANGFUSE_PUBLIC_KEY", config.get("langfuse_public_key", ""))
         config["langfuse_base_url"] = get_env_value("LANGFUSE_HOST", config.get("langfuse_base_url", "https://us.cloud.langfuse.com"))
         config["langfuse_auth3"] = get_env_value("LANGFUSE_AUTH3", config.get("langfuse_auth3", ""))
+
+        # Add GitHub environment variable support
+        config["github"]["api_token"] = get_env_value("GH_TOKEN", config.get("github", {}).get("api_token", ""))
 
         # Track which env_path was used to load this config
         _loaded_env_path = env_path
