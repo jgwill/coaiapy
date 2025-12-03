@@ -39,6 +39,7 @@ except ImportError:
 
 from coaiapy_mcp import tools, resources, prompts
 from coaiapy_mcp import __version__
+from coaiapy_mcp.config import get_config
 
 # ============================================================================
 # Server Configuration
@@ -79,36 +80,40 @@ def create_server() -> Server:
     @server.list_tools()
     async def list_tools() -> List[types.Tool]:
         """List all available tools."""
+        feature_config = get_config()
         tool_definitions = []
-        
+
         # Redis tools
-        tool_definitions.append(types.Tool(
-            name="coaia_tash",
-            description="Stash key-value pair to Redis",
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "key": {"type": "string", "description": "Redis key"},
-                    "value": {"type": "string", "description": "Value to store"},
-                },
-                "required": ["key", "value"],
-            }
-        ))
-        
-        tool_definitions.append(types.Tool(
-            name="coaia_fetch",
-            description="Fetch value from Redis",
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "key": {"type": "string", "description": "Redis key to fetch"},
-                },
-                "required": ["key"],
-            }
-        ))
-        
+        if feature_config.is_tool_enabled("coaia_tash"):
+            tool_definitions.append(types.Tool(
+                name="coaia_tash",
+                description="Stash key-value pair to Redis",
+                inputSchema={
+                    "type": "object",
+                    "properties": {
+                        "key": {"type": "string", "description": "Redis key"},
+                        "value": {"type": "string", "description": "Value to store"},
+                    },
+                    "required": ["key", "value"],
+                }
+            ))
+
+        if feature_config.is_tool_enabled("coaia_fetch"):
+            tool_definitions.append(types.Tool(
+                name="coaia_fetch",
+                description="Fetch value from Redis",
+                inputSchema={
+                    "type": "object",
+                    "properties": {
+                        "key": {"type": "string", "description": "Redis key to fetch"},
+                    },
+                    "required": ["key"],
+                }
+            ))
+
         # Langfuse trace tools
-        tool_definitions.append(types.Tool(
+        if feature_config.is_tool_enabled("coaia_fuse_trace_create"):
+            tool_definitions.append(types.Tool(
             name="coaia_fuse_trace_create",
             description="Create Langfuse trace for observability. IMPORTANT: Use 'input_data' for context/inputs and 'output_data' for results/outputs. Use 'metadata' only for additional tags/labels.",
             inputSchema={
