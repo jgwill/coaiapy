@@ -322,6 +322,9 @@ Variables:
 ### Environment Variables
 
 ```bash
+# Feature Configuration (controls which tools/prompts/resources are exposed)
+export COAIAPY_MCP_FEATURES="STANDARD"  # Options: MINIMAL, STANDARD, OBSERVABILITY, FULL
+
 # Langfuse Configuration
 export LANGFUSE_SECRET_KEY="sk-lf-..."
 export LANGFUSE_PUBLIC_KEY="pk-lf-..."
@@ -336,6 +339,63 @@ export AWS_DEFAULT_REGION="us-east-1"
 export REDIS_HOST="localhost"
 export REDIS_PORT="6379"
 export REDIS_DB="0"
+```
+
+### Feature Configuration
+
+Control which MCP features are exposed to reduce token usage in Claude Code context:
+
+#### Feature Levels
+
+**MINIMAL** (Lowest token usage)
+- **Tools**: Core observability only
+  - Redis: tash, fetch
+  - Traces: create, view, patch, add observations
+  - Langfuse management: prompts, datasets, score configs, comments
+- **Prompts**: None
+- **Resources**: None
+- **Token savings**: ~3000 tokens vs FULL
+
+**STANDARD** (Default - Balanced)
+- **Tools**: Same as MINIMAL
+- **Prompts**: Workflow guides only
+  - `create_observability_pipeline`
+  - `analyze_audio_workflow`
+- **Resources**: Pipeline templates
+- **Token savings**: ~1300 tokens vs FULL
+
+**OBSERVABILITY** (Observability-focused)
+- **Tools**: Same as STANDARD
+- **Prompts**: Same as STANDARD
+- **Resources**: Same as STANDARD
+- **Token savings**: ~1300 tokens vs FULL
+
+**FULL** (Everything)
+- **Tools**: All tools including media upload
+- **Prompts**: All prompts including Mia & Miette persona
+  - `mia_miette_duo` (dual AI embodiment)
+  - `create_observability_pipeline`
+  - `analyze_audio_workflow`
+- **Resources**: All resources
+- **Token savings**: 0 (baseline)
+
+#### Usage
+
+```bash
+# Use MINIMAL for basic trace creation (lowest token usage)
+export COAIAPY_MCP_FEATURES="MINIMAL"
+
+# Use STANDARD for everyday workflows (default)
+export COAIAPY_MCP_FEATURES="STANDARD"
+
+# Use FULL for Mia & Miette persona and media features
+export COAIAPY_MCP_FEATURES="FULL"
+```
+
+The feature level is logged on server startup:
+```
+INFO - Starting coaiapy-mcp server with feature level: STANDARD
+INFO - Enabled features: 18 tools, 2 prompts, 1 resources
 ```
 
 ### MCP Server Configuration

@@ -131,7 +131,8 @@ def create_server() -> Server:
             }
         ))
         
-        tool_definitions.append(types.Tool(
+        if feature_config.is_tool_enabled("coaia_fuse_add_observation"):
+            tool_definitions.append(types.Tool(
             name="coaia_fuse_add_observation",
             description="Add observation to Langfuse trace. IMPORTANT: Use 'input_data' for inputs/context and 'output_data' for results. Use 'metadata' only for tags/labels.",
             inputSchema={
@@ -152,7 +153,8 @@ def create_server() -> Server:
             }
         ))
 
-        tool_definitions.append(types.Tool(
+        if feature_config.is_tool_enabled("coaia_fuse_trace_patch_output"):
+            tool_definitions.append(types.Tool(
             name="coaia_fuse_trace_patch_output",
             description="Update the output field of an existing trace. Use this to patch/modify trace results after creation.",
             inputSchema={
@@ -165,7 +167,8 @@ def create_server() -> Server:
             }
         ))
 
-        tool_definitions.append(types.Tool(
+        if feature_config.is_tool_enabled("coaia_fuse_trace_get"):
+            tool_definitions.append(types.Tool(
             name="coaia_fuse_trace_get",
             description="Get a specific trace by ID from Langfuse with all its observations. Returns trace data with optional formatted tree view.",
             inputSchema={
@@ -178,7 +181,8 @@ def create_server() -> Server:
             }
         ))
 
-        tool_definitions.append(types.Tool(
+        if feature_config.is_tool_enabled("coaia_fuse_trace_view"):
+            tool_definitions.append(types.Tool(
             name="coaia_fuse_trace_view",
             description="View Langfuse trace details with observations (alias for coaia_fuse_trace_get). Returns trace data with optional formatted tree view.",
             inputSchema={
@@ -191,7 +195,8 @@ def create_server() -> Server:
             }
         ))
 
-        tool_definitions.append(types.Tool(
+        if feature_config.is_tool_enabled("coaia_fuse_observation_get"):
+            tool_definitions.append(types.Tool(
             name="coaia_fuse_observation_get",
             description="Get a specific observation by ID from Langfuse. Returns observation data with optional formatted display.",
             inputSchema={
@@ -204,7 +209,8 @@ def create_server() -> Server:
             }
         ))
 
-        tool_definitions.append(types.Tool(
+        if feature_config.is_tool_enabled("coaia_fuse_traces_session_view"):
+            tool_definitions.append(types.Tool(
             name="coaia_fuse_traces_session_view",
             description="View all traces for a specific Langfuse session. Returns formatted table by default or raw JSON if json_output=true",
             inputSchema={
@@ -218,7 +224,8 @@ def create_server() -> Server:
         ))
 
         # Langfuse prompts tools
-        tool_definitions.append(types.Tool(
+        if feature_config.is_tool_enabled("coaia_fuse_prompts_list"):
+            tool_definitions.append(types.Tool(
             name="coaia_fuse_prompts_list",
             description="List all Langfuse prompts",
             inputSchema={
@@ -227,7 +234,8 @@ def create_server() -> Server:
             }
         ))
         
-        tool_definitions.append(types.Tool(
+        if feature_config.is_tool_enabled("coaia_fuse_prompts_get"):
+            tool_definitions.append(types.Tool(
             name="coaia_fuse_prompts_get",
             description="Get specific Langfuse prompt",
             inputSchema={
@@ -241,7 +249,8 @@ def create_server() -> Server:
         ))
         
         # Langfuse datasets tools
-        tool_definitions.append(types.Tool(
+        if feature_config.is_tool_enabled("coaia_fuse_datasets_list"):
+            tool_definitions.append(types.Tool(
             name="coaia_fuse_datasets_list",
             description="List all Langfuse datasets",
             inputSchema={
@@ -250,7 +259,8 @@ def create_server() -> Server:
             }
         ))
         
-        tool_definitions.append(types.Tool(
+        if feature_config.is_tool_enabled("coaia_fuse_datasets_get"):
+            tool_definitions.append(types.Tool(
             name="coaia_fuse_datasets_get",
             description="Get specific Langfuse dataset",
             inputSchema={
@@ -263,7 +273,8 @@ def create_server() -> Server:
         ))
         
         # Langfuse score configs tools
-        tool_definitions.append(types.Tool(
+        if feature_config.is_tool_enabled("coaia_fuse_score_configs_list"):
+            tool_definitions.append(types.Tool(
             name="coaia_fuse_score_configs_list",
             description="List all Langfuse score configurations",
             inputSchema={
@@ -272,7 +283,8 @@ def create_server() -> Server:
             }
         ))
         
-        tool_definitions.append(types.Tool(
+        if feature_config.is_tool_enabled("coaia_fuse_score_configs_get"):
+            tool_definitions.append(types.Tool(
             name="coaia_fuse_score_configs_get",
             description="Get specific Langfuse score configuration",
             inputSchema={
@@ -285,7 +297,8 @@ def create_server() -> Server:
         ))
 
         # Langfuse comments tools
-        tool_definitions.append(types.Tool(
+        if feature_config.is_tool_enabled("coaia_fuse_comments_list"):
+            tool_definitions.append(types.Tool(
             name="coaia_fuse_comments_list",
             description="List comments with optional filtering by object type/ID or author",
             inputSchema={
@@ -300,7 +313,8 @@ def create_server() -> Server:
             }
         ))
 
-        tool_definitions.append(types.Tool(
+        if feature_config.is_tool_enabled("coaia_fuse_comments_get"):
+            tool_definitions.append(types.Tool(
             name="coaia_fuse_comments_get",
             description="Get a specific comment by ID",
             inputSchema={
@@ -312,7 +326,8 @@ def create_server() -> Server:
             }
         ))
 
-        tool_definitions.append(types.Tool(
+        if feature_config.is_tool_enabled("coaia_fuse_comments_create"):
+            tool_definitions.append(types.Tool(
             name="coaia_fuse_comments_create",
             description="Create a comment attached to an object (trace, observation, session, or prompt)",
             inputSchema={
@@ -328,7 +343,8 @@ def create_server() -> Server:
         ))
 
         # Media upload tools
-        tool_definitions.append(types.Tool(
+        if feature_config.is_tool_enabled("coaia_fuse_media_upload"):
+            tool_definitions.append(types.Tool(
             name="coaia_fuse_media_upload",
             description=(
                 "Upload a file (image, video, audio, document) and attach it to a Langfuse trace or observation. "
@@ -371,7 +387,8 @@ def create_server() -> Server:
             }
         ))
 
-        tool_definitions.append(types.Tool(
+        if feature_config.is_tool_enabled("coaia_fuse_media_get"):
+            tool_definitions.append(types.Tool(
             name="coaia_fuse_media_get",
             description=(
                 "Retrieve metadata about a previously uploaded media file from Langfuse. "
@@ -432,24 +449,35 @@ def create_server() -> Server:
     @server.list_resources()
     async def list_resources() -> List[types.Resource]:
         """List all available resources."""
-        resource_list = [
-            types.Resource(
+        feature_config = get_config()
+        resource_list = []
+
+        # Only include resources that are enabled
+        if feature_config.is_resource_enabled("coaia://templates/"):
+            resource_list.append(types.Resource(
                 uri="coaia://templates/",
                 name="Pipeline Templates",
                 description="List of all available pipeline templates",
                 mimeType="application/json",
-            ),
-        ]
-        
+            ))
+
         return resource_list
     
     @server.read_resource()
     async def read_resource(uri: str) -> str:
         """Read a resource by URI."""
         logger.info(f"Reading resource: {uri}")
-        
+
+        feature_config = get_config()
+
+        # Check if resource is enabled
+        if not feature_config.is_resource_enabled(uri):
+            error_msg = f"Resource '{uri}' is not available in {feature_config.get_feature_level()} feature set"
+            logger.warning(error_msg)
+            return json.dumps({"error": error_msg})
+
         import json
-        
+
         try:
             if uri == "coaia://templates/":
                 result = await resources.list_templates()
@@ -486,9 +514,14 @@ def create_server() -> Server:
     @server.list_prompts()
     async def list_prompts_handler() -> List[types.Prompt]:
         """List all available prompts."""
+        feature_config = get_config()
         prompt_list = []
-        
+
         for prompt_data in prompts.list_prompts():
+            # Filter by feature config
+            if not feature_config.is_prompt_enabled(prompt_data["id"]):
+                continue
+
             prompt_list.append(types.Prompt(
                 name=prompt_data["id"],
                 description=prompt_data["description"],
@@ -501,14 +534,30 @@ def create_server() -> Server:
                     for var in prompt_data["variables"]
                 ],
             ))
-        
+
         return prompt_list
     
     @server.get_prompt()
     async def get_prompt_handler(name: str, arguments: Dict[str, str]) -> types.GetPromptResult:
         """Get a specific prompt with variables filled in."""
         logger.info(f"Getting prompt: {name} with arguments: {arguments}")
-        
+
+        feature_config = get_config()
+
+        # Check if prompt is enabled
+        if not feature_config.is_prompt_enabled(name):
+            error_msg = f"Prompt '{name}' is not available in {feature_config.get_feature_level()} feature set"
+            logger.warning(error_msg)
+            return types.GetPromptResult(
+                description=f"Error: {error_msg}",
+                messages=[
+                    types.PromptMessage(
+                        role="user",
+                        content=types.TextContent(type="text", text=error_msg)
+                    )
+                ],
+            )
+
         try:
             rendered = prompts.render_prompt(name, arguments)
             
@@ -561,9 +610,13 @@ async def main_async():
     if not MCP_AVAILABLE:
         logger.error("MCP SDK not installed. Install with: pip install mcp")
         sys.exit(1)
-    
-    logger.info("Starting coaiapy-mcp server...")
-    
+
+    # Log feature configuration
+    feature_config = get_config()
+    stats = feature_config.get_stats()
+    logger.info(f"Starting coaiapy-mcp server with feature level: {stats['level']}")
+    logger.info(f"Enabled features: {stats['tools']} tools, {stats['prompts']} prompts, {stats['resources']} resources")
+
     try:
         server = create_server()
         
