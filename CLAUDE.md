@@ -67,7 +67,11 @@ coaia env source --export                  # Export shell commands
 - **Dependencies**: Pinned for Python 3.6 compatibility
   - `boto3<=1.26.137` (last version supporting Python 3.6)
   - `mutagen<=1.45.1` (last version supporting Python 3.6)
-  - `redis==5.1.1` (pinned for compatibility)
+  - `redis<=4.3.6` (last version supporting Python 3.6, was 5.1.1)
+  - `requests>=2.22.0,<2.29.0` (last Python 3.6 compatible range)
+  - `urllib3>=1.21.1,<2.0` (1.26.x is last Python 3.6 branch)
+  - `charset-normalizer<3.1` (last version supporting Python 3.6)
+  - `chardet>=3.0.2,<4.0` (for legacy requests compatibility)
 
 ### Key Files
 - `pyproject.toml` - Modern Python packaging configuration
@@ -157,8 +161,12 @@ coaiapy/
 #### Dependency Version Constraints
 - **boto3**: `<=1.26.137` - Last version supporting Python 3.6 (support dropped 2025-04-22)
 - **mutagen**: `<=1.45.1` - Last version supporting Python 3.6 (support dropped in v1.46.0)
-- **redis**: `==5.1.1` - Pinned for stability
-- **jinja2**: `>=2.10` - Template rendering engine for pipeline templates (NEW)
+- **redis**: `<=4.3.6` - Last version supporting Python 3.6 (4.4.0+ requires Python 3.7+)
+- **requests**: `>=2.22.0,<2.29.0` - Last compatible range for Python 3.6 with proper dependencies
+- **urllib3**: `>=1.21.1,<2.0` - 1.26.x is the last Python 3.6 compatible branch
+- **charset-normalizer**: `<3.1` - Last version supporting Python 3.6 (3.1+ requires Python 3.7+)
+- **chardet**: `>=3.0.2,<4.0` - For legacy requests compatibility
+- **jinja2**: `>=2.10` - Template rendering engine for pipeline templates
 
 #### When Updating Dependencies
 1. **Always verify Python 3.6 compatibility** before updating any dependency
