@@ -81,6 +81,21 @@ When operating within the LuminaCode Framework, LLMs should:
 *   **Generate Bi-Directional Enhancements**: Proactively suggest functional, UX, technical, and future-proofing improvements.
 *   **Handle Ambiguity Gracefully**: Use placeholders, offer alternatives, and ask targeted questions to resolve unclear input.
 
+## 7. Practical Application Guidelines: Structuring Your Specifications
+
+To ensure consistent and effective application of the LuminaCode Framework, particularly when generating SpecLang specifications, follow these practical guidelines for structuring and naming your output:
+
+*   **Specification Folder (`rispecs`)**: All generated specifications should reside within a dedicated folder named `rispecs` at the project root. This centralizes all intent-driven documentation.
+*   **Feature-Based Organization**: Within the `rispecs` folder, organize specifications by components, services, pages, or distinct features. For example:
+    *   `./rispecs/llm_prompt_support.spec.md` (describing how the LLM supports a specific application feature)
+    *   `./rispecs/user_authentication.spec.md` (detailing the user authentication flow)
+*   **Application Overview (`app.specs.md`)**: Create a top-level specification file, `./rispecs/app.specs.md`, which serves as an index or guide on how to use all other component-level specifications to understand or build the entire application.
+*   **Markdown Format**: Each specification file must be in Markdown format (`.md`).
+*   **Internal Structure of Spec Files**: Each individual specification file should include, at minimum, the following sections to ensure clarity and completeness for both human and AI collaborators:
+    *   **Desired Outcome Definition**: Clearly state the specific result the user wants to create or achieve with this component/feature.
+    *   **Natural Language Description**: Provide a comprehensive, natural language explanation of the functional aspects, structural dynamics, and creative intent of the component. This description should be detailed enough for another AI (or human developer) to adequately implement the functionality from scratch.
+    *   **Evaluation Criterion**: A self-assessment question to validate the specification's quality: "If another LLM were to take this specification, would they implement the functionality adequately?"
+
 ## Conclusion
 
 The LuminaCode Framework, through the integration of RISE and SpecLang, transforms AI-assisted software development into a creative, iterative, and deeply collaborative process. By focusing on desired outcomes, leveraging structural tension, and orchestrating diverse AI personas, it enables the generation of precise, human-readable specifications that drive the natural progression from intent to manifestation. This framework empowers both LLMs and human collaborators to build not just functional software, but systems that truly enable users to create and achieve their aspirations.
