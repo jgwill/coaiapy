@@ -2,9 +2,20 @@ import requests
 import json
 import os
 import markdown
-import redis
 import sys
 from urllib.parse import urlparse
+
+# Redis is imported lazily to support environments where redis is not available
+# (e.g., Pythonista on iOS where the redis import chain may fail)
+_redis = None
+
+def _get_redis():
+    """Lazy import of redis module for Pythonista compatibility."""
+    global _redis
+    if _redis is None:
+        import redis
+        _redis = redis
+    return _redis
 
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
 
@@ -734,6 +745,7 @@ def send_openai_request_v3(input_message, temperature=0.7, preprompt_instruction
 
 #@STCGoal Tasher/Taler
 def _newjtaler(jtalecnf, verbose=False):
+  redis = _get_redis()
   try:
     if verbose:
         print(f"Connecting to Redis server:")
@@ -772,7 +784,7 @@ def _newjtaler(jtalecnf, verbose=False):
     print("  5. Use --verbose flag to see detailed connection information")
     return None
 
-def _taleadd(_r:redis.Redis,k:str,c:str,quiet=False,ttl=None):
+def _taleadd(_r,k:str,c:str,quiet=False,ttl=None):
   try:
     if ttl:
       _r.set(k, c, ex=ttl)
@@ -807,6 +819,7 @@ def tash(k:str,v:str,ttl=None,quiet=True,verbose=False):
     return result
 
 def fetch_key_val(key, output_file=None, verbose=False):
+    redis = _get_redis()
     try:
         jtalecnf = read_config()['jtaleconf']
         _r = _newjtaler(jtalecnf, verbose=verbose)
