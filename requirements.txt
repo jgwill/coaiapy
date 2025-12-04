@@ -1,9 +1,11 @@
 boto3<=1.26.137
 mutagen<=1.45.1
 certifi
-charset-normalizer
+charset-normalizer<3.1
+chardet>=3.0.2,<4.0
 idna
-redis==5.1.1
-requests
+urllib3>=1.21.1,<2.0
+redis<=4.3.6
+requests>=2.22.0,<2.29.0
 markdown
 PyYAML
