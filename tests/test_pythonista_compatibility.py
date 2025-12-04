@@ -61,9 +61,6 @@ class TestPythonistaImportCompatibility(unittest.TestCase):
         This is critical for Pythonista compatibility where redis import may fail
         due to corrupted dependencies in the iOS Python environment.
         """
-        # Clear any cached redis module
-        redis_before = 'redis' in sys.modules
-        
         # Force reimport of coaiamodule
         if 'coaiapy.coaiamodule' in sys.modules:
             del sys.modules['coaiapy.coaiamodule']
