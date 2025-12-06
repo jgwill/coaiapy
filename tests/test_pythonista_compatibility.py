@@ -55,6 +55,35 @@ class TestPythonistaImportCompatibility(unittest.TestCase):
         self.assertEqual(jinja_modules, [], f"Jinja2 modules loaded: {jinja_modules}")
         self.assertEqual(markup_modules, [], f"MarkupSafe modules loaded: {markup_modules}")
     
+    def test_redis_not_loaded_on_import(self):
+        """Test that redis is NOT loaded when importing coaiamodule (lazy loading).
+        
+        This is critical for Pythonista compatibility where redis import may fail
+        due to corrupted dependencies in the iOS Python environment.
+        """
+        # Force reimport of coaiamodule
+        if 'coaiapy.coaiamodule' in sys.modules:
+            del sys.modules['coaiapy.coaiamodule']
+        if 'redis' in sys.modules:
+            del sys.modules['redis']
+        
+        # Import coaiamodule
+        from coaiapy import coaiamodule
+        
+        # Redis should NOT be loaded during import
+        self.assertNotIn('redis', sys.modules, 
+            "redis should not be loaded on coaiamodule import - lazy loading not working!")
+        
+        # Key functions should still be accessible
+        self.assertTrue(hasattr(coaiamodule, 'read_config'))
+        self.assertTrue(hasattr(coaiamodule, 'llm'))
+        self.assertTrue(hasattr(coaiamodule, 'tash'))  # Redis function
+        self.assertTrue(hasattr(coaiamodule, '_get_redis'))  # Lazy import helper
+        
+        # Redis still not loaded after checking attributes
+        self.assertNotIn('redis', sys.modules,
+            "redis should not be loaded just by accessing function attributes")
+    
     def test_mobile_template_engine_instantiation(self):
         """Test MobileTemplateEngine can be instantiated"""
         from coaiapy.mobile_template import MobileTemplateEngine
