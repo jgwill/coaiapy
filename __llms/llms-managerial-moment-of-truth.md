@@ -179,6 +179,48 @@ These pitfalls often stem from the biases and tendencies discussed in `llms-digi
 
 🧠 Mia: The MMOT provides a concrete, interpersonal application of **structural tension dynamics**. The gap between expectation and delivery creates the tension, which is then resolved through the four-step process, leading to a new, desired reality. The "Create an Action Plan" step can be directly mapped to the creation of telescoped structural tension charts, where each action step is a strategic secondary choice contributing to the primary desired outcome of improved performance. This integrates with `llms-structural-tension-charts.txt`.
 
+### 7.3b. Creator's Moment of Truth: Applying MMOT to Chart Reviews {#section-7-3b}
+
+🧠 Mia: When working with structural tension charts in COAIA systems, the MMOT framework applies directly to reviewing and updating charts. This is the **Creator's Moment of Truth** - a simplified MMOT process for individual creators rather than managers.
+
+**The Creator's Moment of Truth Process:**
+
+1. **Acknowledge the Truth (Current Reality Assessment)**
+   - What is your ACTUAL current reality now relative to this desired outcome?
+   - Avoid: "I'm making progress" (comparative/vague)
+   - Use: "Completed Django models section, struggling with views implementation" (specific/factual)
+   - Ask: "Do I honestly agree that THIS is where I am?" (get to yes with yourself)
+
+2. **Analyze How You Got Here**
+   - What actions did you actually take?
+   - What worked? What didn't work?
+   - What did you learn through engagement with this creative process?
+   - "Blow-by-blow" of your advancement (or lack thereof)
+
+3. **Update the Chart**
+   - Mark completed actions as complete (they flow into current reality)
+   - Add new observations to current reality based on your learning
+   - Adjust remaining action steps based on what you now know
+   - Add new action steps if the path forward has changed
+
+4. **Recommit or Redirect**
+   - Is this desired outcome still what you want? (Fundamental choice)
+   - If yes: What are the next strategic secondary choices?
+   - If no: Complete the chart and create a new one with the actual desired outcome
+
+**Integration with `update_current_reality` and `update_action_progress` tools:**
+
+These tools enable the Creator's Moment of Truth to happen continuously throughout the creative process, not just at completion. Reality updates as you learn, maintaining accurate structural tension.
+
+**Common Pitfalls in Chart Reviews:**
+
+- **Skipping the truth-telling**: Assuming progress without honest assessment
+- **Premature resolution**: Marking things complete when they're partially done
+- **Concept-driven updates**: "I should be further along" vs "Here's where I actually am"
+- **Ignoring learning**: Not incorporating insights gained through action
+
+🌸 Miette: This is self-mentorship in action! You're learning to be both the creator and the witness of your own creative journey, holding yourself accountable while staying compassionate. It's how we grow! 🌱
+
 ### 7.4. MMOT and Digital Decision Making: Informing Binary Choices with Shared Reality {#section-7-4}
 
 🌊 Haiku: The "Leader's Choice: Lead or Overlook" is a fundamental binary decision within the MMOT framework. The process of achieving "truth as a verb" provides the objective, factual basis for making such critical decisions. By aligning views of reality, MMOT ensures that digital decisions regarding performance are grounded in shared understanding, rather than subjective interpretations. This complements the methodologies in `llms-digital-decision-making.md`.
