@@ -152,6 +152,68 @@ async def test_coaia_fuse_score_configs_list():
     assert "success" in result
 
 
+@pytest.mark.asyncio
+async def test_coaia_fuse_score_apply():
+    """Test applying score configuration to a trace."""
+    result = await tools.coaia_fuse_score_apply(
+        config_name_or_id="test-config",
+        target_type="trace",
+        target_id="test-trace-id",
+        value=5.0
+    )
+    
+    assert isinstance(result, dict)
+    assert "success" in result
+    
+    # Even if it fails due to missing config/trace, it should return proper structure
+    if not result["success"]:
+        assert "error" in result
+    else:
+        assert "message" in result
+        assert "target_type" in result
+        assert "target_id" in result
+
+
+@pytest.mark.asyncio
+async def test_coaia_fuse_traces_list():
+    """Test listing traces with various filters."""
+    # Test basic listing
+    result = await tools.coaia_fuse_traces_list(limit=5)
+    
+    assert isinstance(result, dict)
+    assert "success" in result
+    
+    if tools.LANGFUSE_AVAILABLE:
+        # Print error for debugging if it fails
+        if not result["success"]:
+            print("Error in result:", result.get("error"))
+        
+        assert result["success"] is True or "error" in result  # Allow either success or graceful error
+        
+        if result["success"]:
+            assert "traces" in result
+            assert "formatted" in result or "traces" in result  # Should have formatted table or raw traces
+            assert "filters" in result
+            
+            # Test with filters
+            result_filtered = await tools.coaia_fuse_traces_list(
+                user_id="test-user",
+                limit=10,
+                order_by="timestamp.desc",
+                json_output=True
+            )
+            
+            assert isinstance(result_filtered, dict)
+            assert "success" in result_filtered
+            if result_filtered["success"]:
+                assert "traces" in result_filtered
+                assert result_filtered["filters"]["user_id"] == "test-user"
+                assert result_filtered["filters"]["limit"] == 10
+    else:
+        assert result["success"] is False
+        assert "error" in result
+
+
 # ============================================================================
 # Integration Tests
 # ============================================================================
@@ -226,6 +288,8 @@ def test_tool_registry():
         "coaia_fuse_datasets_get",
         "coaia_fuse_score_configs_list",
         "coaia_fuse_score_configs_get",
+        "coaia_fuse_score_apply",
+        "coaia_fuse_traces_list",
     ]
     
     for tool_name in expected_tools:

@@ -30,6 +30,7 @@ ALL_TOOLS = {
     "coaia_fuse_trace_get",
     "coaia_fuse_trace_view",
     "coaia_fuse_observation_get",
+    "coaia_fuse_traces_list",
     "coaia_fuse_traces_session_view",
     # Comments
     "coaia_fuse_comments_list",
@@ -44,6 +45,7 @@ ALL_TOOLS = {
     # Score configs
     "coaia_fuse_score_configs_list",
     "coaia_fuse_score_configs_get",
+    "coaia_fuse_score_apply",
     # Media (FULL only)
     "coaia_fuse_media_upload",
     "coaia_fuse_media_get",
@@ -61,6 +63,7 @@ MINIMAL_TOOLS = {
     "coaia_fuse_trace_get",
     "coaia_fuse_trace_view",
     "coaia_fuse_observation_get",
+    "coaia_fuse_traces_list",
     "coaia_fuse_traces_session_view",
     # Comments
     "coaia_fuse_comments_list",
@@ -75,6 +78,7 @@ MINIMAL_TOOLS = {
     # Score configs
     "coaia_fuse_score_configs_list",
     "coaia_fuse_score_configs_get",
+    "coaia_fuse_score_apply",
 }
 
 # Media tools (FULL only)

@@ -118,7 +118,10 @@ Use mia_miette_duo prompt with variables:
 | `coaia_fuse_trace_create` | Create new trace | `trace_id, user_id?, session_id?, name?, input_data?, output_data?, metadata?` |
 | `coaia_fuse_add_observation` | Add observation to trace | `observation_id, trace_id, name, type?, parent_id?, input_data?, output_data?, metadata?, start_time?, end_time?` |
 | `coaia_fuse_add_observations_batch` | Batch add observations | `trace_id, observations: list` |
+| `coaia_fuse_trace_get` | Get specific trace | `trace_id, json_output?` |
 | `coaia_fuse_trace_view` | View trace tree (JSON) | `trace_id` |
+| `coaia_fuse_traces_list` | **NEW** List traces with filters | `session_id?, user_id?, name?, tags?, from_timestamp?, to_timestamp?, order_by?, version?, release?, environment?, page?, limit?, json_output?` |
+| `coaia_fuse_traces_session_view` | View traces by session | `session_id, json_output?` |
 
 **IMPORTANT**: When creating traces and observations, use `input_data` for context/inputs and `output_data` for results/outputs. Use `metadata` only for additional tags and labels.
 
@@ -138,7 +141,27 @@ Use mia_miette_duo prompt with variables:
 | Tool | Description | Parameters |
 |------|-------------|------------|
 | `coaia_fuse_score_configs_list` | List configurations | ` ` |
-| `coaia_fuse_score_configs_get` | Get specific config | `name` |
+| `coaia_fuse_score_configs_get` | Get specific config | `name_or_id: str` |
+| `coaia_fuse_score_apply` | Apply score to trace/observation | `config_name_or_id: str, target_type: str, target_id: str, value: any, observation_id?: str, comment?: str` |
+
+**Score Application Examples:**
+```python
+# Apply numeric score to a trace
+Use coaia_fuse_score_apply:
+- config_name_or_id: "accuracy"
+- target_type: "trace"
+- target_id: "trace-123"
+- value: 0.95
+
+# Apply categorical score to an observation
+Use coaia_fuse_score_apply:
+- config_name_or_id: "quality-rating"
+- target_type: "trace"
+- target_id: "trace-123"
+- observation_id: "obs-456"
+- value: "excellent"
+- comment: "High quality output with clear reasoning"
+```
 
 ---
 
@@ -541,16 +564,17 @@ Same license as [coaiapy](https://github.com/jgwill/coaiapy) (MIT assumed)
 [DONE] **Graceful Degradation** - Tools work even when services unavailable  
 [DONE] **Error Handling** - All tools return success/error dicts, never crash  
 
-### Tools Implemented (11 total)
+### Tools Implemented (13 total)
 
 #### Redis Tools (2)
 - `coaia_tash` - Stash key-value to Redis
 - `coaia_fetch` - Fetch value from Redis
 
-#### Langfuse Trace Tools (3)
+#### Langfuse Trace Tools (4)
 - `coaia_fuse_trace_create` - Create new trace
 - `coaia_fuse_add_observation` - Add observation to trace
 - `coaia_fuse_trace_view` - View trace details
+- `coaia_fuse_traces_list` - **NEW** List traces with comprehensive filtering (session, user, name, tags, timestamps, etc.)
 
 #### Langfuse Prompts Tools (2)
 - `coaia_fuse_prompts_list` - List all prompts
@@ -560,9 +584,11 @@ Same license as [coaiapy](https://github.com/jgwill/coaiapy) (MIT assumed)
 - `coaia_fuse_datasets_list` - List all datasets
 - `coaia_fuse_datasets_get` - Get specific dataset
 
-#### Langfuse Score Configs Tools (2)
+#### Langfuse Score Configs Tools (3)
 - `coaia_fuse_score_configs_list` - List configurations
 - `coaia_fuse_score_configs_get` - Get specific config
+- `coaia_fuse_score_apply` - Apply score config to trace/observation with validation
+- `coaia_fuse_score_apply` - Apply score config to trace/observation with validation
 
 ### Resources Implemented (3)
 

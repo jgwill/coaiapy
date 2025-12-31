@@ -208,6 +208,30 @@ def create_server() -> Server:
                 "required": ["observation_id"],
             }
         ))
+        
+        if feature_config.is_tool_enabled("coaia_fuse_traces_list"):
+            tool_definitions.append(types.Tool(
+            name="coaia_fuse_traces_list",
+            description="List Langfuse traces with comprehensive filtering options. Supports filtering by session, user, name, tags, timestamps, and more.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "session_id": {"type": "string", "description": "Filter by session ID"},
+                    "user_id": {"type": "string", "description": "Filter by user ID"},
+                    "name": {"type": "string", "description": "Filter by trace name (exact match)"},
+                    "tags": {"type": "array", "items": {"type": "string"}, "description": "Filter by tags - only traces with ALL tags will be returned"},
+                    "from_timestamp": {"type": "string", "description": "Include traces from this timestamp (ISO 8601 format, e.g., '2024-12-31T00:00:00Z')"},
+                    "to_timestamp": {"type": "string", "description": "Include traces before this timestamp (ISO 8601 format)"},
+                    "order_by": {"type": "string", "description": "Sort order, format: field.direction (e.g., 'timestamp.asc', 'timestamp.desc'). Fields: id, timestamp, name, userId, release, version, sessionId"},
+                    "version": {"type": "string", "description": "Filter by version"},
+                    "release": {"type": "string", "description": "Filter by release"},
+                    "environment": {"type": "array", "items": {"type": "string"}, "description": "Filter by environment values"},
+                    "page": {"type": "integer", "description": "Page number (starts at 1)", "default": 1},
+                    "limit": {"type": "integer", "description": "Items per page (default 50)", "default": 50},
+                    "json_output": {"type": "boolean", "description": "Return raw JSON data instead of formatted table", "default": False},
+                },
+            }
+        ))
 
         if feature_config.is_tool_enabled("coaia_fuse_traces_session_view"):
             tool_definitions.append(types.Tool(
@@ -293,6 +317,24 @@ def create_server() -> Server:
                     "name_or_id": {"type": "string", "description": "Score config name or ID"},
                 },
                 "required": ["name_or_id"],
+            }
+        ))
+        
+        if feature_config.is_tool_enabled("coaia_fuse_score_apply"):
+            tool_definitions.append(types.Tool(
+            name="coaia_fuse_score_apply",
+            description="Apply a score configuration to a trace or observation with validation",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "config_name_or_id": {"type": "string", "description": "Name or ID of the score configuration"},
+                    "target_type": {"type": "string", "enum": ["trace", "session"], "description": "Type of target (trace or session)"},
+                    "target_id": {"type": "string", "description": "ID of the trace or session"},
+                    "value": {"description": "Score value (validated against config: number for NUMERIC, string/number for CATEGORICAL, boolean for BOOLEAN)"},
+                    "observation_id": {"type": "string", "description": "Optional observation ID (only for trace targets)"},
+                    "comment": {"type": "string", "description": "Optional comment to attach to the score"},
+                },
+                "required": ["config_name_or_id", "target_type", "target_id", "value"],
             }
         ))
 

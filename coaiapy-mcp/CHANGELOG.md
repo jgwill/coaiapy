@@ -5,6 +5,29 @@ All notable changes to coaiapy-mcp will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- **Trace Listing Tool** (`coaia_fuse_traces_list`)
+  - List Langfuse traces with comprehensive filtering options
+  - Filter by: session_id, user_id, name, tags, timestamps, version, release, environment
+  - Pagination support (page, limit)
+  - Sorting support (order_by: timestamp.asc/desc, name, userId, etc.)
+  - Returns formatted table by default or raw JSON
+- Enhanced `list_traces()` in core library with all Langfuse API filters
+  - Supports tags (array), environment (array), version, release
+  - Timestamp range filtering (from_timestamp, to_timestamp)
+  - Flexible sorting with order_by parameter
+
+- **Score Application Tool** (`coaia_fuse_score_apply`)
+  - Apply score configurations to traces/observations with automatic validation
+  - Supports NUMERIC, CATEGORICAL, and BOOLEAN score types
+  - Validates values against config constraints before applying
+  - Optional observation_id for scoring specific observations within a trace
+  - Optional comment parameter for contextual notes
+- Enhanced test coverage for score configuration operations
+- Comprehensive documentation with score application examples
+
 ## [0.1.9] - 2025-10-31 - Production-Ready Comment Support
 
 ### Fixed

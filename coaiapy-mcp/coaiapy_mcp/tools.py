@@ -20,6 +20,8 @@ try:
     from coaiapy.cofuse import (
         list_score_configs,
         get_score_config,
+        apply_score_config,
+        create_score_for_target,
         list_prompts as cofuse_list_prompts,
         get_prompt as cofuse_get_prompt,
         list_datasets as cofuse_list_datasets,
@@ -484,6 +486,118 @@ async def coaia_fuse_observation_get(observation_id: str, json_output: bool = Fa
         }
 
 
+async def coaia_fuse_traces_list(
+    session_id: Optional[str] = None,
+    user_id: Optional[str] = None,
+    name: Optional[str] = None,
+    tags: Optional[List[str]] = None,
+    from_timestamp: Optional[str] = None,
+    to_timestamp: Optional[str] = None,
+    order_by: Optional[str] = None,
+    version: Optional[str] = None,
+    release: Optional[str] = None,
+    environment: Optional[List[str]] = None,
+    page: Optional[int] = 1,
+    limit: Optional[int] = 50,
+    json_output: bool = False
+) -> Dict[str, Any]:
+    """
+    List traces with comprehensive filtering options.
+    
+    Args:
+        session_id: Filter by session ID
+        user_id: Filter by user ID
+        name: Filter by trace name (exact match)
+        tags: List of tags - only traces with ALL tags will be returned
+        from_timestamp: Include traces from this timestamp (ISO 8601 format)
+        to_timestamp: Include traces before this timestamp (ISO 8601 format)
+        order_by: Sort order, format: field.direction (e.g., "timestamp.asc", "timestamp.desc")
+                 Fields: id, timestamp, name, userId, release, version, sessionId
+        version: Filter by version
+        release: Filter by release
+        environment: List of environment values
+        page: Page number (starts at 1)
+        limit: Items per page (default 50)
+        json_output: Return raw JSON instead of formatted table
+        
+    Returns:
+        Dict with success status and traces data or formatted table
+    """
+    if not LANGFUSE_AVAILABLE:
+        return {
+            "success": False,
+            "error": "Langfuse is not available. Check credentials in configuration."
+        }
+    
+    try:
+        # Use coaiapy's list_traces function with all filters
+        traces_data = list_traces(
+            include_observations=False,
+            session_id=session_id,
+            user_id=user_id,
+            name=name,
+            tags=tags,
+            from_timestamp=from_timestamp,
+            to_timestamp=to_timestamp,
+            order_by=order_by,
+            version=version,
+            release=release,
+            environment=environment,
+            page=page,
+            limit=limit
+        )
+        
+        import json
+        parsed = json.loads(traces_data)
+        
+        if json_output:
+            return {
+                "success": True,
+                "traces": parsed,
+                "filters": {
+                    "session_id": session_id,
+                    "user_id": user_id,
+                    "name": name,
+                    "tags": tags,
+                    "from_timestamp": from_timestamp,
+                    "to_timestamp": to_timestamp,
+                    "order_by": order_by,
+                    "version": version,
+                    "release": release,
+                    "environment": environment,
+                    "page": page,
+                    "limit": limit
+                }
+            }
+        else:
+            # Format as table
+            formatted = format_traces_table(parsed)
+            return {
+                "success": True,
+                "formatted": formatted,
+                "traces": parsed,
+                "filters": {
+                    "session_id": session_id,
+                    "user_id": user_id,
+                    "name": name,
+                    "tags": tags,
+                    "from_timestamp": from_timestamp,
+                    "to_timestamp": to_timestamp,
+                    "order_by": order_by,
+                    "version": version,
+                    "release": release,
+                    "environment": environment,
+                    "page": page,
+                    "limit": limit
+                }
+            }
+    except Exception as e:
+        return {
+            "success": False,
+            "error": f"Trace listing error: {str(e)}"
+        }
+
+
 async def coaia_fuse_traces_session_view(session_id: str, json_output: bool = False) -> Dict[str, Any]:
     """
     View all traces for a specific session from Langfuse.
@@ -750,6 +864,69 @@ async def coaia_fuse_score_configs_get(name_or_id: str) -> Dict[str, Any]:
         return {
             "success": False,
             "error": f"Langfuse score config get error: {str(e)}"
+        }
+
+
+async def coaia_fuse_score_apply(
+    config_name_or_id: str,
+    target_type: str,
+    target_id: str,
+    value: Any,
+    observation_id: Optional[str] = None,
+    comment: Optional[str] = None
+) -> Dict[str, Any]:
+    """
+    Apply a score configuration to a trace or observation with validation.
+    
+    Args:
+        config_name_or_id: Name or ID of the score configuration to apply
+        target_type: Type of target - "trace" or "session"
+        target_id: ID of the trace or session
+        value: Score value to apply (will be validated against config constraints)
+        observation_id: Optional observation ID (only for trace targets)
+        comment: Optional comment to attach to the score
+        
+    Returns:
+        Dict with success status and score application result/error
+    """
+    if not LANGFUSE_AVAILABLE:
+        return {
+            "success": False,
+            "error": "Langfuse is not available. Check credentials in configuration."
+        }
+    
+    try:
+        # Use coaiapy's apply_score_config function which handles validation
+        result = apply_score_config(
+            config_name_or_id=config_name_or_id,
+            target_type=target_type,
+            target_id=target_id,
+            value=value,
+            observation_id=observation_id,
+            comment=comment
+        )
+        
+        # Check if result indicates an error
+        if isinstance(result, str) and result.startswith("Error:"):
+            return {
+                "success": False,
+                "error": result
+            }
+        
+        return {
+            "success": True,
+            "message": f"Score config '{config_name_or_id}' applied to {target_type} '{target_id}'",
+            "target_type": target_type,
+            "target_id": target_id,
+            "observation_id": observation_id,
+            "value": value,
+            "comment": comment,
+            "result": result
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "error": f"Score application error: {str(e)}"
         }
 
 
@@ -1116,6 +1293,7 @@ TOOLS = {
     "coaia_fuse_trace_get": coaia_fuse_trace_get,
     "coaia_fuse_trace_view": coaia_fuse_trace_view,
     "coaia_fuse_observation_get": coaia_fuse_observation_get,
+    "coaia_fuse_traces_list": coaia_fuse_traces_list,
     "coaia_fuse_traces_session_view": coaia_fuse_traces_session_view,
 
     # Langfuse prompts tools
@@ -1129,6 +1307,7 @@ TOOLS = {
     # Langfuse score configs tools
     "coaia_fuse_score_configs_list": coaia_fuse_score_configs_list,
     "coaia_fuse_score_configs_get": coaia_fuse_score_configs_get,
+    "coaia_fuse_score_apply": coaia_fuse_score_apply,
 
     # Langfuse comments tools
     "coaia_fuse_comments_list": coaia_fuse_comments_list,
@@ -1150,6 +1329,7 @@ __all__ = [
     "coaia_fuse_trace_get",
     "coaia_fuse_trace_view",
     "coaia_fuse_observation_get",
+    "coaia_fuse_traces_list",
     "coaia_fuse_traces_session_view",
     "coaia_fuse_prompts_list",
     "coaia_fuse_prompts_get",
@@ -1157,6 +1337,7 @@ __all__ = [
     "coaia_fuse_datasets_get",
     "coaia_fuse_score_configs_list",
     "coaia_fuse_score_configs_get",
+    "coaia_fuse_score_apply",
     "coaia_fuse_comments_list",
     "coaia_fuse_comments_get",
     "coaia_fuse_comments_create",
