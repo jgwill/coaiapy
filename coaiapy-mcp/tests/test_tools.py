@@ -152,6 +152,28 @@ async def test_coaia_fuse_score_configs_list():
     assert "success" in result
 
 
+@pytest.mark.asyncio
+async def test_coaia_fuse_score_apply():
+    """Test applying score configuration to a trace."""
+    result = await tools.coaia_fuse_score_apply(
+        config_name_or_id="test-config",
+        target_type="trace",
+        target_id="test-trace-id",
+        value=5.0
+    )
+    
+    assert isinstance(result, dict)
+    assert "success" in result
+    
+    # Even if it fails due to missing config/trace, it should return proper structure
+    if not result["success"]:
+        assert "error" in result
+    else:
+        assert "message" in result
+        assert "target_type" in result
+        assert "target_id" in result
+
+
 # ============================================================================
 # Integration Tests
 # ============================================================================
@@ -226,6 +248,7 @@ def test_tool_registry():
         "coaia_fuse_datasets_get",
         "coaia_fuse_score_configs_list",
         "coaia_fuse_score_configs_get",
+        "coaia_fuse_score_apply",
     ]
     
     for tool_name in expected_tools:

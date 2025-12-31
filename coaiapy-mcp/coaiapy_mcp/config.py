@@ -44,6 +44,7 @@ ALL_TOOLS = {
     # Score configs
     "coaia_fuse_score_configs_list",
     "coaia_fuse_score_configs_get",
+    "coaia_fuse_score_apply",
     # Media (FULL only)
     "coaia_fuse_media_upload",
     "coaia_fuse_media_get",
@@ -75,6 +76,7 @@ MINIMAL_TOOLS = {
     # Score configs
     "coaia_fuse_score_configs_list",
     "coaia_fuse_score_configs_get",
+    "coaia_fuse_score_apply",
 }
 
 # Media tools (FULL only)

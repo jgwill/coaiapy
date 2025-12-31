@@ -138,7 +138,27 @@ Use mia_miette_duo prompt with variables:
 | Tool | Description | Parameters |
 |------|-------------|------------|
 | `coaia_fuse_score_configs_list` | List configurations | ` ` |
-| `coaia_fuse_score_configs_get` | Get specific config | `name` |
+| `coaia_fuse_score_configs_get` | Get specific config | `name_or_id: str` |
+| `coaia_fuse_score_apply` | Apply score to trace/observation | `config_name_or_id: str, target_type: str, target_id: str, value: any, observation_id?: str, comment?: str` |
+
+**Score Application Examples:**
+```python
+# Apply numeric score to a trace
+Use coaia_fuse_score_apply:
+- config_name_or_id: "accuracy"
+- target_type: "trace"
+- target_id: "trace-123"
+- value: 0.95
+
+# Apply categorical score to an observation
+Use coaia_fuse_score_apply:
+- config_name_or_id: "quality-rating"
+- target_type: "trace"
+- target_id: "trace-123"
+- observation_id: "obs-456"
+- value: "excellent"
+- comment: "High quality output with clear reasoning"
+```
 
 ---
 
@@ -541,7 +561,7 @@ Same license as [coaiapy](https://github.com/jgwill/coaiapy) (MIT assumed)
 [DONE] **Graceful Degradation** - Tools work even when services unavailable  
 [DONE] **Error Handling** - All tools return success/error dicts, never crash  
 
-### Tools Implemented (11 total)
+### Tools Implemented (12 total)
 
 #### Redis Tools (2)
 - `coaia_tash` - Stash key-value to Redis
@@ -560,9 +580,11 @@ Same license as [coaiapy](https://github.com/jgwill/coaiapy) (MIT assumed)
 - `coaia_fuse_datasets_list` - List all datasets
 - `coaia_fuse_datasets_get` - Get specific dataset
 
-#### Langfuse Score Configs Tools (2)
+#### Langfuse Score Configs Tools (3)
 - `coaia_fuse_score_configs_list` - List configurations
 - `coaia_fuse_score_configs_get` - Get specific config
+- `coaia_fuse_score_apply` - Apply score config to trace/observation with validation
+- `coaia_fuse_score_apply` - Apply score config to trace/observation with validation
 
 ### Resources Implemented (3)
 

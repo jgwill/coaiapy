@@ -295,6 +295,24 @@ def create_server() -> Server:
                 "required": ["name_or_id"],
             }
         ))
+        
+        if feature_config.is_tool_enabled("coaia_fuse_score_apply"):
+            tool_definitions.append(types.Tool(
+            name="coaia_fuse_score_apply",
+            description="Apply a score configuration to a trace or observation with validation",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "config_name_or_id": {"type": "string", "description": "Name or ID of the score configuration"},
+                    "target_type": {"type": "string", "enum": ["trace", "session"], "description": "Type of target (trace or session)"},
+                    "target_id": {"type": "string", "description": "ID of the trace or session"},
+                    "value": {"description": "Score value (validated against config: number for NUMERIC, string/number for CATEGORICAL, boolean for BOOLEAN)"},
+                    "observation_id": {"type": "string", "description": "Optional observation ID (only for trace targets)"},
+                    "comment": {"type": "string", "description": "Optional comment to attach to the score"},
+                },
+                "required": ["config_name_or_id", "target_type", "target_id", "value"],
+            }
+        ))
 
         # Langfuse comments tools
         if feature_config.is_tool_enabled("coaia_fuse_comments_list"):
