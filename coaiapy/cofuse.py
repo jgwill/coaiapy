@@ -2687,17 +2687,74 @@ def add_trace_node_and_save(session_file, session_id, trace_id, user_id, node_na
     save_session_file(session_file, data)
     return result
 
-def list_traces(include_observations=False, session_id=None):
+def list_traces(
+    include_observations=False, 
+    session_id=None,
+    user_id=None,
+    name=None,
+    tags=None,
+    from_timestamp=None,
+    to_timestamp=None,
+    order_by=None,
+    version=None,
+    release=None,
+    environment=None,
+    page=None,
+    limit=None
+):
+    """
+    List traces with comprehensive filtering support.
+    
+    Args:
+        include_observations: Include observations in response
+        session_id: Filter by session ID
+        user_id: Filter by user ID
+        name: Filter by trace name
+        tags: List of tags (all must be present)
+        from_timestamp: Filter traces from this timestamp (ISO 8601)
+        to_timestamp: Filter traces before this timestamp (ISO 8601)
+        order_by: Sort order (e.g., "timestamp.asc", "timestamp.desc")
+        version: Filter by version
+        release: Filter by release
+        environment: List of environments
+        page: Page number (starts at 1)
+        limit: Items per page
+    
+    Returns:
+        JSON string of traces
+    """
     c = read_config()
     auth = HTTPBasicAuth(c['langfuse_public_key'], c['langfuse_secret_key'])
     base_url = c['langfuse_base_url']
 
     traces_url = f"{base_url}/api/public/traces"
 
-    # Add session_id filter if provided
+    # Build query parameters
     params = {}
     if session_id:
         params['sessionId'] = session_id
+    if user_id:
+        params['userId'] = user_id
+    if name:
+        params['name'] = name
+    if tags:
+        params['tags'] = tags if isinstance(tags, list) else [tags]
+    if from_timestamp:
+        params['fromTimestamp'] = from_timestamp
+    if to_timestamp:
+        params['toTimestamp'] = to_timestamp
+    if order_by:
+        params['orderBy'] = order_by
+    if version:
+        params['version'] = version
+    if release:
+        params['release'] = release
+    if environment:
+        params['environment'] = environment if isinstance(environment, list) else [environment]
+    if page:
+        params['page'] = page
+    if limit:
+        params['limit'] = limit
 
     r = requests.get(traces_url, auth=auth, params=params)
 

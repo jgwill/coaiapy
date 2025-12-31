@@ -30,6 +30,7 @@ ALL_TOOLS = {
     "coaia_fuse_trace_get",
     "coaia_fuse_trace_view",
     "coaia_fuse_observation_get",
+    "coaia_fuse_traces_list",
     "coaia_fuse_traces_session_view",
     # Comments
     "coaia_fuse_comments_list",
@@ -62,6 +63,7 @@ MINIMAL_TOOLS = {
     "coaia_fuse_trace_get",
     "coaia_fuse_trace_view",
     "coaia_fuse_observation_get",
+    "coaia_fuse_traces_list",
     "coaia_fuse_traces_session_view",
     # Comments
     "coaia_fuse_comments_list",

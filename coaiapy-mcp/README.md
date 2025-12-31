@@ -118,7 +118,10 @@ Use mia_miette_duo prompt with variables:
 | `coaia_fuse_trace_create` | Create new trace | `trace_id, user_id?, session_id?, name?, input_data?, output_data?, metadata?` |
 | `coaia_fuse_add_observation` | Add observation to trace | `observation_id, trace_id, name, type?, parent_id?, input_data?, output_data?, metadata?, start_time?, end_time?` |
 | `coaia_fuse_add_observations_batch` | Batch add observations | `trace_id, observations: list` |
+| `coaia_fuse_trace_get` | Get specific trace | `trace_id, json_output?` |
 | `coaia_fuse_trace_view` | View trace tree (JSON) | `trace_id` |
+| `coaia_fuse_traces_list` | **NEW** List traces with filters | `session_id?, user_id?, name?, tags?, from_timestamp?, to_timestamp?, order_by?, version?, release?, environment?, page?, limit?, json_output?` |
+| `coaia_fuse_traces_session_view` | View traces by session | `session_id, json_output?` |
 
 **IMPORTANT**: When creating traces and observations, use `input_data` for context/inputs and `output_data` for results/outputs. Use `metadata` only for additional tags and labels.
 
@@ -561,16 +564,17 @@ Same license as [coaiapy](https://github.com/jgwill/coaiapy) (MIT assumed)
 [DONE] **Graceful Degradation** - Tools work even when services unavailable  
 [DONE] **Error Handling** - All tools return success/error dicts, never crash  
 
-### Tools Implemented (12 total)
+### Tools Implemented (13 total)
 
 #### Redis Tools (2)
 - `coaia_tash` - Stash key-value to Redis
 - `coaia_fetch` - Fetch value from Redis
 
-#### Langfuse Trace Tools (3)
+#### Langfuse Trace Tools (4)
 - `coaia_fuse_trace_create` - Create new trace
 - `coaia_fuse_add_observation` - Add observation to trace
 - `coaia_fuse_trace_view` - View trace details
+- `coaia_fuse_traces_list` - **NEW** List traces with comprehensive filtering (session, user, name, tags, timestamps, etc.)
 
 #### Langfuse Prompts Tools (2)
 - `coaia_fuse_prompts_list` - List all prompts
