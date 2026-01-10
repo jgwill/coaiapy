@@ -92,12 +92,12 @@ This document outlines the features of CoAiAPy, marking them as completed, in pr
 
 ### Environment Management System
 
-- `[x]` **Initialize Environment**: (`coaia env init`) Create environment files with default variables.
-- `[x]` **List Environments**: (`coaia env list`) Show available environment files and variables.
-- `[x]` **Variable Management**: (`coaia env set/get/unset`) Manage environment variables.
-- `[x]` **Source Environment**: (`coaia env source`) Load variables into current session.
-- `[x]` **Clear Environment**: (`coaia env clear`) Remove environment files.
-- `[x]` **Save Context**: (`coaia env save`) Save current environment as template.
+- `[x]` **Initialize Environment**: (`coaia environment init`) Create environment files with default variables.
+- `[x]` **List Environments**: (`coaia environment list`) Show available environment files and variables.
+- `[x]` **Variable Management**: (`coaia environment set/get/unset`) Manage environment variables.
+- `[x]` **Source Environment**: (`coaia environment source`) Load variables into current session.
+- `[x]` **Clear Environment**: (`coaia environment clear`) Remove environment files.
+- `[x]` **Save Context**: (`coaia environment save`) Save current environment as template.
 - `[x]` **Environment Features**:
   - `[x]` Cross-session variable persistence with `.coaia-env` files.
   - `[x]` JSON and .env file format support.

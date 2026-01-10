@@ -58,7 +58,7 @@ All notable changes to this project will be documented in this file.
 - **`coaia pipeline show <template>`**: Inspect template details, variables, steps with optional preview rendering
 - **`coaia pipeline create <template>`**: Generate complete trace/observation workflows from templates with variable substitution
 - **`coaia pipeline init <name>`**: Create new custom templates with optional base template extension
-- **`coaia env init/list/set/get/unset/source/clear/save`**: Complete environment variable management system
+- **`coaia environment init/list/set/get/unset/source/clear/save`**: Complete environment variable management system
 
 ### 🔄 Cross-Session Persistence
 - **Environment Files**: `.coaia-env` files for project-level and `~/.coaia/global.env` for global persistence
@@ -76,7 +76,7 @@ All notable changes to this project will be documented in this file.
 ### 📈 Workflow Transformation Examples
 - **Before**: 30+ minute manual trace/observation setup with error-prone ID management
 - **After**: `coaia pipeline create data-pipeline --var user_id="john" --export-env` (< 30 seconds)
-- **Cross-Session**: `coaia env save --name "context"` and `eval $(coaia env source --name context --export)`
+- **Cross-Session**: `coaia environment save --name "context"` and `eval $(coaia environment source --name context --export)`
 
 ### 🔧 Technical Improvements
 - **New Dependencies**: Added Jinja2>=2.10 for template rendering

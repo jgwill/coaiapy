@@ -110,6 +110,11 @@ def main():
         prog="coaia",
         formatter_class=argparse.RawDescriptionHelpFormatter
     )
+    
+    # Add global --env flag to load environment file before command execution
+    parser.add_argument('--env', type=str, metavar='PATH', 
+                       help='Load environment variables from specified file path before executing command')
+    
     subparsers = parser.add_subparsers(dest='command')
 
     # Subparser for 'tash' command
@@ -417,7 +422,7 @@ def main():
     parser_pipeline_init.add_argument('--format', choices=['json', 'yaml'], default='json', help='Template file format')
 
     # Environment variable management commands
-    parser_env = subparsers.add_parser('env', help='Manage environment variables for pipeline workflows')
+    parser_env = subparsers.add_parser('environment', aliases=['env'], help='Manage environment variables for pipeline workflows')
     sub_env = parser_env.add_subparsers(dest='env_action')
     
     parser_env_init = sub_env.add_parser('init', help='Initialize environment file with default variables')
@@ -488,6 +493,31 @@ def main():
     parser_gh_issues_get.add_argument('--json', action='store_true', help="Output in JSON format")
 
     args = parser.parse_args()
+    
+    # Handle global --env flag: load environment file if specified
+    if hasattr(args, 'env') and args.env:
+        env_manager = EnvironmentManager()
+        try:
+            # Load environment from specified path
+            from pathlib import Path
+            env_file_path = Path(args.env).expanduser()
+            
+            if not env_file_path.exists():
+                print(f"Error: Environment file not found: {args.env}")
+                return 1
+            
+            # Read and apply environment variables
+            env_vars = env_manager._read_env_file(env_file_path)
+            for key, value in env_vars.items():
+                os.environ[key] = str(value)
+            
+            # Optional: provide feedback in verbose mode or debug
+            # Uncomment if you want confirmation:
+            # print(f"Loaded {len(env_vars)} environment variables from {args.env}", file=sys.stderr)
+            
+        except Exception as e:
+            print(f"Error loading environment from {args.env}: {str(e)}")
+            return 1
 
     if args.command == 'init':
         initial_setup()
@@ -1453,7 +1483,7 @@ def main():
             except Exception as e:
                 print(f"Error creating template: {str(e)}")
     
-    elif args.command == 'env':
+    elif args.command == 'environment' or args.command == 'env':
         env_manager = EnvironmentManager()
         
         if args.env_action == 'init':
@@ -1508,7 +1538,7 @@ def main():
                     
                     if not has_envs:
                         print("No environment files found.")
-                        print("Run 'coaia env init' to create a default environment.")
+                        print("Run 'coaia environment init' to create a default environment.")
         
         elif args.env_action == 'source':
             try:

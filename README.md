@@ -256,25 +256,32 @@ Environment files (`.coaia-env`) provide persistent variable storage across shel
 
 ```bash
 # Initialize environment with defaults
-coaia env init                    # Creates .coaia-env (project)
-coaia env init --global          # Creates ~/.coaia/global.env
-coaia env init --name dev        # Creates .coaia-env.dev
+coaia environment init                    # Creates .coaia-env (project)
+coaia environment init --global          # Creates ~/.coaia/global.env
+coaia environment init --name dev        # Creates .coaia-env.dev
 
 # Manage variables
-coaia env set COAIA_USER_ID "john"     # Persist to file
-coaia env set DEBUG_MODE "true" --temp # Session only
-coaia env get COAIA_TRACE_ID           # Get variable value
-coaia env unset OLD_VARIABLE           # Remove variable
+coaia environment set COAIA_USER_ID "john"     # Persist to file
+coaia environment set DEBUG_MODE "true" --temp # Session only
+coaia environment get COAIA_TRACE_ID           # Get variable value
+coaia environment unset OLD_VARIABLE           # Remove variable
 
 # List and inspect environments  
-coaia env list                    # Show all environments
-coaia env list --name dev        # Show specific environment
-coaia env list --json           # JSON output
+coaia environment list                    # Show all environments
+coaia environment list --name dev        # Show specific environment
+coaia environment list --json           # JSON output
 
 # Shell integration
-eval $(coaia env source --export)     # Load variables into shell
-coaia env save --name "my-context"    # Save current state
+eval $(coaia environment source --export)     # Load variables into shell
+coaia environment save --name "my-context"    # Save current state
+
+# Load environment for any command using --env flag
+coaia --env /path/to/.env.myproject fuse traces list
+coaia --env .coaia-env.dev pipeline create llm-chain --var model="gpt-4"
 ```
+
+> **Note**: The `environment` command can also be invoked using the shorter alias `env` for convenience:
+> `coaia env list` is equivalent to `coaia environment list`
 
 #### Advanced Workflow Examples
 
@@ -301,10 +308,10 @@ coaia pipeline create data-pipeline \
 ```bash
 # Session 1: Start pipeline and persist state
 coaia pipeline create llm-chain --var model="gpt-4" --export-env
-coaia env save --name "llm-session"
+coaia environment save --name "llm-session"
 
 # Session 2: Resume from saved state (hours/days later)
-eval $(coaia env source --name llm-session --export)
+eval $(coaia environment source --name llm-session --export)
 coaia fuse traces add-observation $COAIA_TRACE_ID -n "Continued processing"
 ```
 

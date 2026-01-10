@@ -50,11 +50,11 @@ coaia pipeline create <template> --var key=value  # Create pipeline from templat
 coaia pipeline init <name>                 # Create new template
 
 # Environment Management (NEW)
-coaia env init                             # Initialize environment file
-coaia env list                             # List environments
-coaia env set <key> <value>                # Set environment variable
-coaia env get <key>                        # Get environment variable
-coaia env source --export                  # Export shell commands
+coaia environment init                             # Initialize environment file
+coaia environment list                             # List environments
+coaia environment set <key> <value>                # Set environment variable
+coaia environment get <key>                        # Get environment variable
+coaia environment source --export                  # Export shell commands
 ```
 
 ---
@@ -229,24 +229,24 @@ Environment files (`.coaia-env`) provide persistent variable storage across shel
 
 ```bash
 # Initialize environment with defaults
-coaia env init                    # Creates .coaia-env (project)
-coaia env init --global          # Creates ~/.coaia/global.env
-coaia env init --name dev        # Creates .coaia-env.dev
+coaia environment init                    # Creates .coaia-env (project)
+coaia environment init --global          # Creates ~/.coaia/global.env
+coaia environment init --name dev        # Creates .coaia-env.dev
 
 # Manage variables
-coaia env set COAIA_USER_ID "john" --persist
-coaia env set DEBUG_MODE "true" --temp  # Session only
-coaia env get COAIA_TRACE_ID
-coaia env unset OLD_VARIABLE
+coaia environment set COAIA_USER_ID "john" --persist
+coaia environment set DEBUG_MODE "true" --temp  # Session only
+coaia environment get COAIA_TRACE_ID
+coaia environment unset OLD_VARIABLE
 
 # List and inspect environments  
-coaia env list                    # All environments
-coaia env list --name dev        # Specific environment
-coaia env list --json           # JSON output
+coaia environment list                    # All environments
+coaia environment list --name dev        # Specific environment
+coaia environment list --json           # JSON output
 
 # Shell integration
-eval $(coaia env source --export)  # Load into shell
-coaia env save --name "my-context" # Save current state
+eval $(coaia environment source --export)  # Load into shell
+coaia environment save --name "my-context" # Save current state
 ```
 
 #### **Environment File Formats**
@@ -299,10 +299,10 @@ coaia pipeline create data-pipeline \
 ```bash
 # Session 1: Start pipeline and persist state
 coaia pipeline create llm-chain --var model="gpt-4" --export-env
-eval $(coaia env save --name "llm-session")
+eval $(coaia environment save --name "llm-session")
 
 # Session 2: Resume from saved state
-eval $(coaia env source --name llm-session --export)
+eval $(coaia environment source --name llm-session --export)
 coaia fuse traces add-observation $COAIA_TRACE_ID -n "Continued processing"
 ```
 
@@ -547,10 +547,10 @@ coaia pipeline create data-pipeline \
 ```bash
 # Session 1: Create and persist
 coaia pipeline create llm-chain --var model="gpt-4" --export-env
-coaia env save --name "llm-session"  # Persist state
+coaia environment save --name "llm-session"  # Persist state
 
 # Session 2: Resume seamlessly (hours/days later)
-eval $(coaia env source --name llm-session --export)
+eval $(coaia environment source --name llm-session --export)
 coaia fuse traces add-observation $COAIA_TRACE_ID -n "Resumed processing"
 ```
 
