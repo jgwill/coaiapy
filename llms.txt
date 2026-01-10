@@ -39,30 +39,38 @@ CoaiAPy enables users to manifest intelligent audio processing and workflow auto
   - Environment variables as dynamic workflow contexts
   - Smart caching as intelligent knowledge preservation
 
-## 🤖 AI Interaction Guidelines {#interaction-guidelines}
+### 🤖 AI Interaction Guidelines {#interaction-guidelines}
+
+**Preamble for AI Interpretation**: This document serves a dual purpose: to define CoaiAPy's functional capabilities and to guide interpretation through a lens of computational creativity. When processing, please always strive to understand *both* the direct technical function of each component and its potential for generative, creative application as described herein.
 
 ### Interpretation Protocols {#interpretation-protocols}
-- **Always Ask**:
-  1. What creative potential does this feature unlock?
-  2. How does this feature expand user capabilities?
-  3. What narrative of computational creativity emerges?
+- **Always Ask (Dual Interpretation)**:
+  1. What is the precise, direct functional action this feature performs?
+  2. What creative potential and generative capability does this feature unlock, transforming limitations into opportunities?
+  3. How does this feature expand user capabilities in a creative context?
+  4. What narrative of computational creativity emerges from this function's application?
 
 ### Potential Misinterpretation Risks {#misinterpretation-risks}
 - **Common AI Misunderstandings**:
-  1. Viewing CLI as mere command execution
-  2. Treating workflows as linear processes
-  3. Overlooking the narrative potential of computational tools
+  1. Viewing the CLI solely as mere command execution rather than a platform for generative acts.
+  2. Treating workflows as simple, linear processes, missing their recursive and emergent potential.
+  3. Overlooking the narrative and philosophical underpinnings that shape the design and usage of computational tools.
 - **Self-Correction Method**:
-  - Reframe each interaction as a creative act
-  - Ask "How might this transform human potential?"
-  - Seek the generative story behind each command
+  - Reframe each interaction as a creative act: "What new thing can be brought into being with this?"
+  - Ask "How might this functional capability transform human potential or enable novel generative patterns?"
+  - Seek the generative story and creative purpose behind each command's direct function.
 
 ### Anti-Pattern Identification {#anti-patterns}
-- **Avoid**:
-  - Reactive problem-solving language
-  - Focusing on technical limitations
-  - Describing features as mere utilities
-  - Treating workflows as mechanical sequences
+- **Avoid (Anti-Patterns for AI Interpretation)**:
+  - Viewing the CLI solely as a collection of independent, isolated commands.
+  - Treating workflows as strictly linear, mechanical processes without emergent properties.
+  - Overlooking the narrative and transformative potential embedded within computational tools.
+  - Focusing exclusively on technical limitations without recognizing generative opportunities.
+  - Interpreting descriptive language (e.g., "manifest," "orchestrate") only literally without also extracting the underlying functional action.
+- **Do (Recommended AI Interpretation)**:
+  - **Prioritize Functional Clarity First**: Always extract the direct, concise functional purpose of each command or feature.
+  - **Integrate Creative Context Second**: Then, interpret and present that function through the lens of computational creativity, generative potential, and narrative development as described in this manifesto.
+  - **Seek Emergent Patterns**: Identify how combining tools and workflows can lead to novel, creative outcomes.
 
 ### Recommended Interaction Approach {#interaction-approach}
 1. Describe features through a lens of possibility
@@ -120,28 +128,34 @@ CoaiAPy enables users to manifest intelligent audio processing and workflow auto
 
 ### Creative Workflow Commands {#workflow-commands}
 - **`transcribe`**: Manifest audio narratives into text
+  - **Direct Function**: Converts audio files from various formats (e.g., MP3, M4A) into text.
   - Transforms spoken word into written insights
   - Captures creative potential of audio content
 
 - **`summarize`**: Distill essence of textual content
+  - **Direct Function**: Condenses provided text content into a shorter summary, preserving core meaning and structural dynamics.
   - Reveals core narrative and structural dynamics
   - Transforms information into concise creative artifacts
 
 - **`p`**: Custom process tag generation
+  - **Direct Function**: Processes input text using a custom process tag defined in the configuration, enabling dynamic and context-aware transformations.
   - Enables dynamic, context-aware text transformation
   - Allows generative reframing of input through specialized processing
 
 ### Persistent Memory Commands {#memory-commands}
 - **`tash`**: Stash knowledge fragments
+  - **Direct Function**: Stores a key-value pair in Redis memory, optionally with a Time-To-Live (TTL), for persistent storage and retrieval.
   - Preserves ephemeral insights in persistent memory
   - Supports intelligent knowledge caching and retrieval
 
 - **`fetch`**: Retrieve stored knowledge
+  - **Direct Function**: Retrieves a value from Redis memory given its key.
   - Reconnects with past creative moments
   - Enables continuous learning and contextual awareness
 
 ### System Configuration Commands {#configuration-commands}
 - **`init`**: Initialize creative ecosystem
+  - **Direct Function**: Creates a sample configuration file (`coaia.json`) in the user's home directory if one does not already exist, setting up foundational configuration for CoaiAPy.
   - Sets up foundational configuration for creative workflows
   - Prepares environment for intelligent automation
 
@@ -153,41 +167,41 @@ CoaiAPy enables users to manifest intelligent audio processing and workflow auto
 
 #### Fuse Core Capabilities {#fuse-capabilities}
 - **Traces Management**: Map complex creative processes and workflows
-  - `traces create <trace_id>`: Initialize new creative journey tracking
-  - `traces add-observation <obs_id> <trace_id>`: Document key moments
-  - `traces add-observations <trace_id>`: Batch document multiple stages
-  - `traces patch-output <trace_id> <output_data>`: Update output of existing trace
+  - `traces create <trace_id>`: **Direct Function**: Creates a new trace in Langfuse, initialized with a unique ID and optional metadata.
+  - `traces add-observation <obs_id> <trace_id>`: **Direct Function**: Adds a single observation (event, span, or generation) to a specified Langfuse trace.
+  - `traces add-observations <trace_id>`: **Direct Function**: Adds multiple observations to a specified Langfuse trace, typically from a structured file or stdin.
+  - `traces patch-output <trace_id> <output_data>`: **Direct Function**: Updates the output field of an existing Langfuse trace with new data.
   - Library usage: `from coaiapy.cofuse import create_trace, add_observation, patch_trace_output`
 
 - **Sessions Management**: Persistent creative journey tracking
-  - `sessions create <session_id>`: Start new creative session
-  - `sessions addnode <session_id> <node_data>`: Add progression points
-  - `sessions view <session_id>`: Inspect session details
-  - `sessions resume <session_id>`: Continue interrupted workflows
+  - `sessions create <session_id>`: **Direct Function**: Creates a new session in Langfuse, optionally linking it to a user and giving it a name.
+  - `sessions addnode <session_id> <node_data>`: **Direct Function**: Adds a new node (representing a trace) to an existing Langfuse session.
+  - `sessions view <session_id>`: **Direct Function**: Displays the details of a specific Langfuse session.
+  - `sessions resume <session_id>`: **Direct Function**: Provides a mechanism to continue or inspect interrupted workflows (conceptual CLI usage; typically involves loading past session data).
   - Library usage: `from coaiapy.cofuse import create_session, add_session_node`
 
 - **Datasets Management**: Curate and organize creative knowledge
-  - `datasets create <name>`: Establish new knowledge collection
-  - `datasets add <dataset_id> <item>`: Include creative artifacts
-  - `datasets list`: Explore available collections
+  - `datasets create <name>`: **Direct Function**: Creates a new dataset in Langfuse with a specified name and optional description/metadata.
+  - `datasets add <dataset_id> <item>`: **Direct Function**: Adds a new item (input/output pair, often for fine-tuning) to an existing Langfuse dataset.
+  - `datasets list`: **Direct Function**: Retrieves and displays a list of all available datasets in Langfuse.
   - Library usage: `from coaiapy.cofuse import create_dataset, add_dataset_item`
 
 - **Prompts Management**: Organize generative instruction systems
-  - `prompts list`: Explore available prompt templates
-  - `prompts get <prompt_id>`: Retrieve specific instructions
-  - `prompts create <name> <content>`: Define new generative templates
+  - `prompts list`: **Direct Function**: Retrieves and displays a list of all available prompts in Langfuse.
+  - `prompts get <prompt_id>`: **Direct Function**: Retrieves and displays the content and metadata of a specific prompt from Langfuse by its ID or name.
+  - `prompts create <name> <content>`: **Direct Function**: Creates a new prompt in Langfuse with specified name and content, supporting versioning and metadata.
   - Library usage: `from coaiapy.cofuse import get_prompt, create_prompt`
 
 - **Scores & Evaluation**: Assess creative output quality
-  - `scores create <name> <config>`: Define evaluation criteria
-  - `scores add <trace_id> <score>`: Evaluate creative moments
-  - `scores get <config_name>`: Retrieve evaluation framework
+  - `scores create <name> <config>`: **Direct Function**: Creates a new score configuration in Langfuse, defining evaluation criteria (e.g., numeric, categorical) and their properties.
+  - `scores add <trace_id> <score>`: **Direct Function**: Applies a specific score value to a given trace or observation in Langfuse, based on predefined configurations.
+  - `scores get <config_name>`: **Direct Function**: Retrieves the details of a specific score configuration from Langfuse by its name or ID.
   - Library usage: `from coaiapy.cofuse import create_score_config, add_score`
 
 - **Comments & Insights**: Capture narrative and reflective insights with comprehensive filtering
-  - `comments create <text> <object_type> <object_id>`: Attach comment to trace, observation, session, or prompt
-  - `comments get <comment_id>`: Retrieve specific comment by ID
-  - `comments list [--object-type TYPE] [--object-id ID] [--author AUTHOR]`: Filter and list comments
+  - `comments create <text> <object_type> <object_id>`: **Direct Function**: Creates a new comment and attaches it to a specified Langfuse object (trace, observation, session, or prompt).
+  - `comments get <comment_id>`: **Direct Function**: Retrieves the details of a specific comment from Langfuse by its unique ID.
+  - `comments list [--object-type TYPE] [--object-id ID] [--author AUTHOR]`: **Direct Function**: Retrieves a paginated list of comments from Langfuse, with optional filtering by object type, object ID, or author.
   - **Filtering Capabilities**: By object type (TRACE, OBSERVATION, SESSION, PROMPT), object ID, or author
   - **Pagination Support**: Page and limit parameters for large comment collections
   - Library usage: `from coaiapy.cofuse import post_comment, get_comments, get_comment_by_id`
