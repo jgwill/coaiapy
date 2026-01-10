@@ -2,6 +2,37 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.4.4] - 2026-01-10 - Major Feature Release & Refactoring
+
+### 🚀 Major Features
+- **Comprehensive Langfuse Integration Enhancements**:
+  - Expanded `cofuse.py` with significant updates for improved Langfuse observability.
+  - Introduction of Media Upload functionality to enrich traces and observations with visual context.
+  - Enhanced comments and scoring mechanisms within Langfuse integration.
+- **MCP Overhaul (`coaiapy-mcp`)**:
+  - Major refactoring and expansion of the Model Context Protocol (MCP) server and tools.
+  - Improved configuration management for MCP.
+- **CLI & Core Functionality Expansion**:
+  - Extensive updates to `coaiapy.coaiacli.py` for new and improved CLI commands.
+  - Introduction of `coaiapy.cogh.py` for GitHub-related functionalities.
+- **Advanced LLM Tooling**:
+  - Significant additions and modifications within the `__llms/` directory, indicating new LLM-specific tools and documentation (e.g., `llms-jgwill-miadi-issue-115-github-hooks-issues-subissues.md`).
+- **Pipeline Templates & Environment Management**:
+  - Further development and refinement of template-driven workflow automation and persistent environment variable management.
+
+### 📚 Documentation Updates
+- **`README.md`**: Updated to reflect new features, particularly Pipeline Templates & Environment Management, and Langfuse integration.
+- **`REDIS_CONFIGURATION.md`**: Comprehensive updates for Redis configuration, debugging, and priority order.
+- **`MEDIA_UPLOAD_GUIDE.md`**: New guide for media upload functionality.
+- **`llms.txt`**: Updated version information and general content adjustments.
+- Various other documentation files (`CLI_ENV_REFACTOR_SUMMARY.md`, `FIX_SUMMARY.md`, `ROADMAP_MEDIA_PIPELINE.md`, etc.) added or significantly updated.
+
+### 🧪 Testing & Quality Assurance
+- Added new test suites, particularly for media upload and Redis environment variable handling.
+
+### ⬆️ Dependency Updates
+- Updated `pyproject.toml` and `requirements.txt` to reflect new and modified dependencies.
+
 ## [0.2.84] - 2025-11-07 - Comprehensive Redis Configuration & Debugging
 
 ### ✨ Enhanced Features

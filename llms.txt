@@ -3,8 +3,8 @@
 > **Essence of CoaiAPy**: A transformative Python ecosystem that transcends traditional tooling, empowering developers to manifest intelligent workflows through creative computational thinking. Transforming workflow limitations into generative opportunities with intelligent automation.
 
 ## Version and Metadata {#metadata}
-- **Version**: 0.2.83+ (coaiapy), 0.1.9 (coaiapy-mcp)
-- **Last Updated**: 2025-10-31
+- **Version**: 0.4.4 (coaiapy), 0.2.4 (coaiapy-mcp)
+- **Last Updated**: 2026-01-10
 - **Document ID**: COAIAPY-LLMS-001
 - **Source**: Official CoaiAPy Documentation
 - **License**: Creative Commons Attribution 4.0 International
