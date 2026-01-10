@@ -287,3 +287,46 @@ coaia --env .coaia-env.my-work fuse traces list
 
 ---
 *End of Summary*
+
+## Critical Fix Applied
+
+### Problem Discovered
+The initial implementation loaded environment variables from `--env` file, but `read_config()` (called by command handlers) would subsequently reload `.env` from the current working directory, overwriting the values from `--env`.
+
+### Root Cause
+The `read_config()` function in `coaiamodule.py` automatically loads `.env` from the current directory unless `COAIAPY_ENV_PATH` environment variable is set. This happened AFTER the `--env` flag processing, causing the wrong credentials to be used.
+
+### Solution
+Set `COAIAPY_ENV_PATH` environment variable when `--env` flag is specified, so that when `read_config()` is called later by command handlers, it uses the file specified by `--env` instead of defaulting to `./.env`.
+
+**Code Change** (coaiacli.py line ~508):
+```python
+# Set COAIAPY_ENV_PATH so read_config() will use this file
+os.environ['COAIAPY_ENV_PATH'] = str(env_file_path)
+```
+
+### Verification
+```bash
+# Before fix: Failed with "Trace not found"
+cd /src/coaiapy
+coaia --env /src/aetherial/.env fuse traces trace-view 98ca85c9-...
+# Error: Trace not found within authorized project
+
+# After fix: Works correctly
+cd /src/coaiapy  
+coaia --env /src/aetherial/.env fuse traces trace-view 98ca85c9-...
+# 🔗 Trace: 🌟 The Constellation Keeper Story Series...
+# ✓ SUCCESS
+```
+
+### Technical Details
+1. `--env` flag is parsed at argument parsing time
+2. Environment variables are loaded immediately
+3. **`COAIAPY_ENV_PATH` is set** to persist the choice
+4. Later, when commands call `read_config()`, it respects `COAIAPY_ENV_PATH`
+5. No conflict between `--env` file and current directory's `.env`
+
+This ensures consistent behavior regardless of current working directory.
+
+---
+*Fix applied: 2026-01-10*

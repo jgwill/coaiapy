@@ -494,7 +494,7 @@ def main():
 
     args = parser.parse_args()
     
-    # Handle global --env flag: load environment file if specified
+    # Handle global --env flag: Set COAIAPY_ENV_PATH so read_config() uses it
     if hasattr(args, 'env') and args.env:
         env_manager = EnvironmentManager()
         try:
@@ -506,14 +506,20 @@ def main():
                 print(f"Error: Environment file not found: {args.env}")
                 return 1
             
-            # Read and apply environment variables
+            # Set COAIAPY_ENV_PATH so read_config() will use this file
+            os.environ['COAIAPY_ENV_PATH'] = str(env_file_path)
+            
+            # Read and apply environment variables immediately  
             env_vars = env_manager._read_env_file(env_file_path)
             for key, value in env_vars.items():
                 os.environ[key] = str(value)
             
-            # Optional: provide feedback in verbose mode or debug
-            # Uncomment if you want confirmation:
-            # print(f"Loaded {len(env_vars)} environment variables from {args.env}", file=sys.stderr)
+            # DEBUG: Verify Langfuse vars loaded
+            if False:  # Set to True for debugging
+                print(f"DEBUG: Loaded {len(env_vars)} variables from {env_file_path}", file=sys.stderr)
+                for k in ['LANGFUSE_SECRET_KEY', 'LANGFUSE_PUBLIC_KEY', 'LANGFUSE_HOST']:
+                    v = os.environ.get(k, 'NOT_SET')
+                    print(f"DEBUG: {k}={v[:30] if len(v) > 30 else v}", file=sys.stderr)
             
         except Exception as e:
             print(f"Error loading environment from {args.env}: {str(e)}")
