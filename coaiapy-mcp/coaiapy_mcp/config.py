@@ -39,6 +39,8 @@ ALL_TOOLS = {
     # Prompts
     "coaia_fuse_prompts_list",
     "coaia_fuse_prompts_get",
+    "coaia_fuse_prompts_create",
+    "coaia_fuse_prompt_version_labels_update",
     # Datasets
     "coaia_fuse_datasets_list",
     "coaia_fuse_datasets_get",
@@ -72,6 +74,8 @@ MINIMAL_TOOLS = {
     # Prompts
     "coaia_fuse_prompts_list",
     "coaia_fuse_prompts_get",
+    "coaia_fuse_prompts_create",
+    "coaia_fuse_prompt_version_labels_update",
     # Datasets
     "coaia_fuse_datasets_list",
     "coaia_fuse_datasets_get",
