@@ -261,14 +261,48 @@ def create_server() -> Server:
         if feature_config.is_tool_enabled("coaia_fuse_prompts_get"):
             tool_definitions.append(types.Tool(
             name="coaia_fuse_prompts_get",
-            description="Get specific Langfuse prompt",
+            description="Get specific Langfuse prompt by name. Supports retrieving a specific version number or label. If neither version nor label is provided, defaults to the 'production' label.",
             inputSchema={
                 "type": "object",
                 "properties": {
                     "name": {"type": "string", "description": "Prompt name"},
-                    "label": {"type": "string", "description": "Prompt label/version"},
+                    "label": {"type": "string", "description": "Prompt label (e.g. 'production', 'staging', 'latest')"},
+                    "version": {"type": "integer", "description": "Specific version number to retrieve (takes precedence over label)"},
                 },
                 "required": ["name"],
+            }
+        ))
+        
+        if feature_config.is_tool_enabled("coaia_fuse_prompts_create"):
+            tool_definitions.append(types.Tool(
+            name="coaia_fuse_prompts_create",
+            description="Create a new prompt version in Langfuse. Creates a new version each time for the same name.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "name": {"type": "string", "description": "Prompt name"},
+                    "content": {"type": "string", "description": "Prompt content (text string or JSON for chat prompts)"},
+                    "prompt_type": {"type": "string", "enum": ["text", "chat"], "description": "Prompt type (default: text)"},
+                    "labels": {"type": "array", "items": {"type": "string"}, "description": "Deployment labels (e.g. ['production', 'staging'])"},
+                    "tags": {"type": "array", "items": {"type": "string"}, "description": "Tags for categorization"},
+                    "commit_message": {"type": "string", "description": "Version commit message for tracking"},
+                },
+                "required": ["name", "content"],
+            }
+        ))
+        
+        if feature_config.is_tool_enabled("coaia_fuse_prompt_version_labels_update"):
+            tool_definitions.append(types.Tool(
+            name="coaia_fuse_prompt_version_labels_update",
+            description="Update labels for a specific prompt version. Labels are unique across versions. The 'latest' label is reserved by Langfuse.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "name": {"type": "string", "description": "Prompt name"},
+                    "version": {"type": "integer", "description": "Version number to update"},
+                    "labels": {"type": "array", "items": {"type": "string"}, "description": "New labels to assign to this version"},
+                },
+                "required": ["name", "version", "labels"],
             }
         ))
         

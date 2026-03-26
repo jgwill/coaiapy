@@ -24,6 +24,8 @@ try:
         create_score_for_target,
         list_prompts as cofuse_list_prompts,
         get_prompt as cofuse_get_prompt,
+        create_prompt as cofuse_create_prompt,
+        update_prompt_version_labels as cofuse_update_prompt_version_labels,
         list_datasets as cofuse_list_datasets,
         get_dataset as cofuse_get_dataset,
         add_trace,
@@ -709,13 +711,14 @@ async def coaia_fuse_prompts_list() -> Dict[str, Any]:
         }
 
 
-async def coaia_fuse_prompts_get(name: str, label: Optional[str] = None) -> Dict[str, Any]:
+async def coaia_fuse_prompts_get(name: str, label: Optional[str] = None, version: Optional[int] = None) -> Dict[str, Any]:
     """
-    Get specific Langfuse prompt.
+    Get specific Langfuse prompt by name, with optional version or label filtering.
     
     Args:
         name: Prompt name
-        label: Optional prompt label/version
+        label: Optional prompt label (e.g., "production", "latest")
+        version: Optional integer version number for a specific prompt version
         
     Returns:
         Dict with success status and prompt data/error
@@ -728,7 +731,7 @@ async def coaia_fuse_prompts_get(name: str, label: Optional[str] = None) -> Dict
     
     try:
         # Use coaiapy's get_prompt function
-        prompt_data = cofuse_get_prompt(prompt_name=name, label=label)
+        prompt_data = cofuse_get_prompt(prompt_name=name, label=label, version=version)
         
         return {
             "success": True,
@@ -738,6 +741,97 @@ async def coaia_fuse_prompts_get(name: str, label: Optional[str] = None) -> Dict
         return {
             "success": False,
             "error": f"Langfuse prompt get error: {str(e)}"
+        }
+
+
+async def coaia_fuse_prompts_create(
+    name: str,
+    content: str,
+    prompt_type: str = "text",
+    labels: Optional[List[str]] = None,
+    tags: Optional[List[str]] = None,
+    commit_message: Optional[str] = None,
+    config: Optional[Dict[str, Any]] = None,
+) -> Dict[str, Any]:
+    """
+    Create a new prompt version in Langfuse.
+    
+    Args:
+        name: Prompt name
+        content: Prompt content (string for text, JSON string for chat)
+        prompt_type: "text" or "chat"
+        labels: Optional deployment labels (e.g. ["production", "staging"])
+        tags: Optional tags for categorization
+        commit_message: Optional version commit message
+        config: Optional config object (e.g. temperature, model settings)
+        
+    Returns:
+        Dict with success status and created prompt data/error
+    """
+    if not LANGFUSE_AVAILABLE:
+        return {
+            "success": False,
+            "error": "Langfuse is not available. Check credentials in configuration."
+        }
+    
+    try:
+        result = cofuse_create_prompt(
+            prompt_name=name,
+            content=content,
+            prompt_type=prompt_type,
+            labels=labels,
+            tags=tags,
+            commit_message=commit_message,
+            config=config,
+        )
+        return {
+            "success": True,
+            "prompt": result
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "error": f"Langfuse prompt create error: {str(e)}"
+        }
+
+
+async def coaia_fuse_prompt_version_labels_update(
+    name: str,
+    version: int,
+    labels: List[str],
+) -> Dict[str, Any]:
+    """
+    Update labels for a specific prompt version in Langfuse.
+    Labels are unique across versions. The "latest" label is reserved.
+    
+    Args:
+        name: Prompt name
+        version: Version number to update
+        labels: New labels to assign to this version
+        
+    Returns:
+        Dict with success status and updated prompt data/error
+    """
+    if not LANGFUSE_AVAILABLE:
+        return {
+            "success": False,
+            "error": "Langfuse is not available. Check credentials in configuration."
+        }
+    
+    try:
+        result = cofuse_update_prompt_version_labels(
+            prompt_name=name,
+            version=version,
+            new_labels=labels,
+        )
+        return {
+            "success": True,
+            "prompt": result
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "error": f"Langfuse prompt version labels update error: {str(e)}"
         }
 
 
@@ -1299,6 +1393,8 @@ TOOLS = {
     # Langfuse prompts tools
     "coaia_fuse_prompts_list": coaia_fuse_prompts_list,
     "coaia_fuse_prompts_get": coaia_fuse_prompts_get,
+    "coaia_fuse_prompts_create": coaia_fuse_prompts_create,
+    "coaia_fuse_prompt_version_labels_update": coaia_fuse_prompt_version_labels_update,
 
     # Langfuse datasets tools
     "coaia_fuse_datasets_list": coaia_fuse_datasets_list,
@@ -1333,6 +1429,8 @@ __all__ = [
     "coaia_fuse_traces_session_view",
     "coaia_fuse_prompts_list",
     "coaia_fuse_prompts_get",
+    "coaia_fuse_prompts_create",
+    "coaia_fuse_prompt_version_labels_update",
     "coaia_fuse_datasets_list",
     "coaia_fuse_datasets_get",
     "coaia_fuse_score_configs_list",

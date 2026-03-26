@@ -754,13 +754,27 @@ def format_prompt_display(prompt_json):
     except Exception as e:
         return f"Error formatting prompt display: {str(e)}\n\nRaw JSON:\n{prompt_json}"
 
-def get_prompt(prompt_name, label=None):
+def get_prompt(prompt_name, label=None, version=None):
+    """
+    Get a prompt from Langfuse by name, with optional version or label filtering.
+    
+    Args:
+        prompt_name: Name of the prompt to retrieve
+        label: Optional label filter (e.g., "production", "latest"). 
+               Defaults to "production" if neither label nor version is set.
+        version: Optional integer version number to retrieve a specific version
+    
+    Returns:
+        JSON string with prompt data
+    """
     c = read_config()
     auth = HTTPBasicAuth(c['langfuse_public_key'], c['langfuse_secret_key'])
     
     url = f"{c['langfuse_base_url']}/api/public/v2/prompts/{prompt_name}"
     params = {}
-    if label:
+    if version is not None:
+        params['version'] = int(version)
+    elif label:
         params['label'] = label
     
     r = requests.get(url, auth=auth, params=params)
@@ -805,6 +819,26 @@ def create_prompt(prompt_name, content, commit_message=None, labels=None, tags=N
         data["config"] = config
     
     r = requests.post(url, json=data, auth=auth)
+    return r.text
+
+def update_prompt_version_labels(prompt_name, version, new_labels):
+    """
+    Update labels for a specific prompt version in Langfuse.
+    
+    Args:
+        prompt_name: Name of the prompt
+        version: Integer version number to update
+        new_labels: List of label strings to assign to this version.
+                    Labels are unique across versions. The "latest" label is reserved.
+    
+    Returns:
+        JSON string with updated prompt data
+    """
+    c = read_config()
+    auth = HTTPBasicAuth(c['langfuse_public_key'], c['langfuse_secret_key'])
+    url = f"{c['langfuse_base_url']}/api/public/v2/prompts/{prompt_name}/versions/{int(version)}"
+    
+    r = requests.patch(url, json={"newLabels": new_labels}, auth=auth)
     return r.text
 
 def list_datasets():
