@@ -16,13 +16,17 @@ from cofuse import (
     create_session_and_save, add_trace_node_and_save,
     load_session_file,
     create_score, apply_score_to_trace, create_score_for_target, list_scores, format_scores_table,
+    get_score_by_id, update_score_config,
     list_score_configs, get_score_config, create_score_config, export_score_configs, format_score_configs_table,
     import_score_configs, format_import_preview, apply_score_config, list_available_configs, validate_score_value, get_config_with_auto_refresh,
     list_presets, get_preset_by_name, format_presets_table, format_preset_display, install_preset, install_presets_interactive,
-    list_prompts, get_prompt, create_prompt, format_prompts_table, format_prompt_display,
+    list_prompts, get_prompt, create_prompt, delete_prompt, format_prompts_table, format_prompt_display,
     list_datasets, get_dataset, create_dataset, format_datasets_table,
     list_dataset_items, format_dataset_display, format_dataset_for_finetuning,
     list_traces, list_projects, create_dataset_item, format_traces_table,
+    delete_trace, delete_traces_batch,
+    list_sessions, get_session,
+    list_observations_v2,
     add_trace, add_observation, add_observations_batch, patch_trace_output,
     get_trace_with_observations, format_trace_tree,
     get_observation, format_observation_display,
@@ -155,7 +159,7 @@ def main():
     parser_fuse_base.add_argument('comment', nargs='?', help="Text for comment creation.")
     
     parser_fuse_prompts = sub_fuse.add_parser('prompts', help="Manage prompts in Langfuse (list, get, create)")
-    parser_fuse_prompts.add_argument('action', choices=['list','get','create'], help="Action to perform.")
+    parser_fuse_prompts.add_argument('action', choices=['list','get','create','delete'], help="Action to perform.")
     parser_fuse_prompts.add_argument('name', nargs='?', help="Prompt name.")
     parser_fuse_prompts.add_argument('content', nargs='?', help="Prompt text.")
     parser_fuse_prompts.add_argument('--json', action='store_true', help="Output in JSON format (default: table format)")
@@ -202,6 +206,16 @@ def main():
     parser_fuse_sessions_view = parser_fuse_sessions_sub.add_parser('view')
     parser_fuse_sessions_view.add_argument('-f','--file', default="session.yml")
 
+    parser_fuse_sessions_list = parser_fuse_sessions_sub.add_parser('list', help="List sessions from Langfuse")
+    parser_fuse_sessions_list.add_argument('--json', action='store_true', help="Output in JSON format")
+    parser_fuse_sessions_list.add_argument('--page', type=int, default=1, help="Page number")
+    parser_fuse_sessions_list.add_argument('--limit', type=int, default=50, help="Items per page")
+    parser_fuse_sessions_list.add_argument('--environment', type=str, help="Filter by environment")
+
+    parser_fuse_sessions_get = parser_fuse_sessions_sub.add_parser('get', help="Get a specific session by ID")
+    parser_fuse_sessions_get.add_argument('session_id')
+    parser_fuse_sessions_get.add_argument('--json', action='store_true', help="Output in JSON format")
+
     parser_fuse_sc = sub_fuse.add_parser('scores', aliases=['sc'], help="Manage scores in Langfuse (create or apply)")
     sub_fuse_sc = parser_fuse_sc.add_subparsers(dest='scores_action')
 
@@ -221,6 +235,10 @@ def main():
 
     parser_fuse_sc_list = sub_fuse_sc.add_parser('list')
     parser_fuse_sc_list.add_argument('--json', action='store_true', help="Output in JSON format (default: table format)")
+
+    parser_fuse_sc_get = sub_fuse_sc.add_parser('get', help="Get a specific score by ID")
+    parser_fuse_sc_get.add_argument('score_id', help="Score ID to retrieve")
+    parser_fuse_sc_get.add_argument('--json', action='store_true', help="Output in JSON format")
 
     parser_fuse_scc = sub_fuse.add_parser('score-configs', aliases=['scc'], help="Manage score configurations in Langfuse (list, get, create)")
     sub_fuse_scc = parser_fuse_scc.add_subparsers(dest='score_configs_action')
@@ -337,6 +355,21 @@ def main():
     parser_fuse_obs_get = sub_fuse_traces.add_parser('get-observation', aliases=['obs-get', 'get-obs'], help='Get a specific observation by ID')
     parser_fuse_obs_get.add_argument('observation_id', help="Observation ID to retrieve")
     parser_fuse_obs_get.add_argument('--json', action='store_true', help="Output in JSON format")
+
+    parser_fuse_traces_delete = sub_fuse_traces.add_parser('delete', help='Delete a trace by ID')
+    parser_fuse_traces_delete.add_argument('trace_id', help="Trace ID to delete")
+
+    parser_fuse_traces_delete_batch = sub_fuse_traces.add_parser('delete-batch', help='Delete multiple traces by IDs')
+    parser_fuse_traces_delete_batch.add_argument('trace_ids', nargs='+', help="Trace IDs to delete")
+
+    parser_fuse_obs_list = sub_fuse_traces.add_parser('list-observations', aliases=['obs-list', 'list-obs'], help='List observations with v2 API (cursor-based pagination)')
+    parser_fuse_obs_list.add_argument('--trace-id', help="Filter by trace ID")
+    parser_fuse_obs_list.add_argument('--name', help="Filter by observation name")
+    parser_fuse_obs_list.add_argument('--type', choices=['SPAN', 'EVENT', 'GENERATION'], help="Filter by type")
+    parser_fuse_obs_list.add_argument('--limit', type=int, default=50, help="Max items per page")
+    parser_fuse_obs_list.add_argument('--cursor', help="Pagination cursor from previous response")
+    parser_fuse_obs_list.add_argument('--environment', help="Filter by environment")
+    parser_fuse_obs_list.add_argument('--json', action='store_true', help="Output in JSON format")
 
     # Add batch observations command with aliases
     parser_fuse_obs_batch = sub_fuse_traces.add_parser('add-observations', aliases=['add-obs-batch'], help='Add multiple observations to a trace from file or stdin')
@@ -675,6 +708,14 @@ def main():
                     prompt_type=getattr(args, 'type', 'text')
                 )
                 print(result)
+            elif args.action == 'delete':
+                if not args.name:
+                    print("Error: prompt name missing.")
+                    return
+                version = getattr(args, 'version', None)
+                label = getattr(args, 'label', None)
+                result = delete_prompt(args.name, version=version, label=label)
+                print(result)
         elif args.fuse_command == 'datasets':
             if args.action == 'list':
                 datasets_data = list_datasets()
@@ -734,6 +775,34 @@ def main():
             elif args.sessions_action == 'view':
                 data = load_session_file(args.file)
                 print(data)
+            elif args.sessions_action == 'list':
+                result = list_sessions(
+                    page=getattr(args, 'page', 1),
+                    limit=getattr(args, 'limit', 50),
+                    environment=getattr(args, 'environment', None)
+                )
+                if getattr(args, 'json', False):
+                    print(result)
+                else:
+                    try:
+                        data = json.loads(result)
+                        sessions = data.get('data', data) if isinstance(data, dict) else data
+                        if isinstance(sessions, list):
+                            for s in sessions:
+                                sid = s.get('id', 'N/A')
+                                created = (s.get('createdAt', '') or '')[:19]
+                                print(f"  {sid}  {created}")
+                            print(f"Total: {len(sessions)} sessions")
+                        else:
+                            print(result)
+                    except (json.JSONDecodeError, TypeError):
+                        print(result)
+            elif args.sessions_action == 'get':
+                result = get_session(args.session_id)
+                if getattr(args, 'json', False):
+                    print(result)
+                else:
+                    print(result)
         elif args.fuse_command == 'scores' or args.fuse_command == 'sc':
             if args.scores_action == 'create':
                 print(create_score(args.score_id, args.name, args.value))
@@ -781,6 +850,12 @@ def main():
                     print(scores_data)
                 else:
                     print(format_scores_table(scores_data))
+            elif args.scores_action == 'get':
+                result = get_score_by_id(args.score_id)
+                if getattr(args, 'json', False):
+                    print(result)
+                else:
+                    print(result)
         elif args.fuse_command == 'score-configs' or args.fuse_command == 'scc':
             if args.score_configs_action == 'list':
                 configs_data = list_score_configs()
@@ -1151,6 +1226,22 @@ def main():
                     print(obs_data)
                 else:
                     print(format_observation_display(obs_data))
+            elif args.trace_action == 'delete':
+                result = delete_trace(args.trace_id)
+                print(result)
+            elif args.trace_action == 'delete-batch':
+                result = delete_traces_batch(args.trace_ids)
+                print(result)
+            elif args.trace_action in ['list-observations', 'obs-list', 'list-obs']:
+                result = list_observations_v2(
+                    trace_id=getattr(args, 'trace_id', None),
+                    name=getattr(args, 'name', None),
+                    observation_type=getattr(args, 'type', None),
+                    limit=getattr(args, 'limit', 50),
+                    cursor=getattr(args, 'cursor', None),
+                    environment=getattr(args, 'environment', None),
+                )
+                print(result)
             else:
                 traces_data = list_traces(include_observations=getattr(args, 'include_observations', False))
                 if args.json:

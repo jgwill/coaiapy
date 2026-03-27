@@ -306,6 +306,21 @@ def create_server() -> Server:
             }
         ))
         
+        if feature_config.is_tool_enabled("coaia_fuse_prompts_delete"):
+            tool_definitions.append(types.Tool(
+            name="coaia_fuse_prompts_delete",
+            description="Delete a prompt from Langfuse. Can delete all versions or a specific version/label.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "name": {"type": "string", "description": "Prompt name to delete"},
+                    "version": {"type": "integer", "description": "Specific version to delete"},
+                    "label": {"type": "string", "description": "Specific label to delete"},
+                },
+                "required": ["name"],
+            }
+        ))
+
         # Langfuse datasets tools
         if feature_config.is_tool_enabled("coaia_fuse_datasets_list"):
             tool_definitions.append(types.Tool(
@@ -369,6 +384,34 @@ def create_server() -> Server:
                     "comment": {"type": "string", "description": "Optional comment to attach to the score"},
                 },
                 "required": ["config_name_or_id", "target_type", "target_id", "value"],
+            }
+        ))
+
+        if feature_config.is_tool_enabled("coaia_fuse_score_get"):
+            tool_definitions.append(types.Tool(
+            name="coaia_fuse_score_get",
+            description="Get a specific score by ID from Langfuse.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "score_id": {"type": "string", "description": "Score ID to retrieve"},
+                },
+                "required": ["score_id"],
+            }
+        ))
+
+        if feature_config.is_tool_enabled("coaia_fuse_score_config_update"):
+            tool_definitions.append(types.Tool(
+            name="coaia_fuse_score_config_update",
+            description="Update a score config (description, archive status) in Langfuse.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "config_id": {"type": "string", "description": "Score config ID"},
+                    "description": {"type": "string", "description": "New description"},
+                    "is_archived": {"type": "boolean", "description": "Set archive status"},
+                },
+                "required": ["config_id"],
             }
         ))
 
@@ -485,6 +528,84 @@ def create_server() -> Server:
                     },
                 },
                 "required": ["media_id"],
+            }
+        ))
+
+        # Langfuse trace delete tools
+        if feature_config.is_tool_enabled("coaia_fuse_trace_delete"):
+            tool_definitions.append(types.Tool(
+            name="coaia_fuse_trace_delete",
+            description="Delete a single trace from Langfuse.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "trace_id": {"type": "string", "description": "Trace ID to delete"},
+                },
+                "required": ["trace_id"],
+            }
+        ))
+
+        if feature_config.is_tool_enabled("coaia_fuse_traces_delete_batch"):
+            tool_definitions.append(types.Tool(
+            name="coaia_fuse_traces_delete_batch",
+            description="Delete multiple traces from Langfuse in a single request.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "trace_ids": {"type": "array", "items": {"type": "string"}, "description": "List of trace IDs to delete"},
+                },
+                "required": ["trace_ids"],
+            }
+        ))
+
+        # Langfuse sessions tools
+        if feature_config.is_tool_enabled("coaia_fuse_sessions_list"):
+            tool_definitions.append(types.Tool(
+            name="coaia_fuse_sessions_list",
+            description="List sessions from Langfuse with optional filtering.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "page": {"type": "integer", "description": "Page number (starts at 1)"},
+                    "limit": {"type": "integer", "description": "Items per page"},
+                    "environment": {"type": "string", "description": "Filter by environment"},
+                },
+            }
+        ))
+
+        if feature_config.is_tool_enabled("coaia_fuse_session_get"):
+            tool_definitions.append(types.Tool(
+            name="coaia_fuse_session_get",
+            description="Get a specific session by ID from Langfuse.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "session_id": {"type": "string", "description": "Session ID to retrieve"},
+                },
+                "required": ["session_id"],
+            }
+        ))
+
+        # Langfuse observations v2 list
+        if feature_config.is_tool_enabled("coaia_fuse_observations_list"):
+            tool_definitions.append(types.Tool(
+            name="coaia_fuse_observations_list",
+            description="List observations using v2 API with cursor-based pagination and filters (trace, name, type, environment).",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "limit": {"type": "integer", "description": "Max items (default 50)"},
+                    "cursor": {"type": "string", "description": "Pagination cursor from previous response"},
+                    "name": {"type": "string", "description": "Filter by observation name"},
+                    "user_id": {"type": "string", "description": "Filter by user ID"},
+                    "trace_id": {"type": "string", "description": "Filter by trace ID"},
+                    "observation_type": {"type": "string", "enum": ["SPAN", "EVENT", "GENERATION"], "description": "Filter by type"},
+                    "parent_observation_id": {"type": "string", "description": "Filter by parent observation"},
+                    "from_start_time": {"type": "string", "description": "ISO 8601 start time filter"},
+                    "to_start_time": {"type": "string", "description": "ISO 8601 end time filter"},
+                    "version": {"type": "string", "description": "Filter by version"},
+                    "environment": {"type": "string", "description": "Filter by environment"},
+                },
             }
         ))
 

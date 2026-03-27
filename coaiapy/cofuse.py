@@ -841,6 +841,30 @@ def update_prompt_version_labels(prompt_name, version, new_labels):
     r = requests.patch(url, json={"newLabels": new_labels}, auth=auth)
     return r.text
 
+def delete_prompt(prompt_name, version=None, label=None):
+    """
+    Delete a prompt from Langfuse. If version or label is specified, deletes
+    only that specific version/label. Otherwise deletes all versions.
+    
+    Args:
+        prompt_name: Name of the prompt to delete
+        version: Optional specific version number to delete
+        label: Optional label to delete
+    
+    Returns:
+        JSON string with result
+    """
+    c = read_config()
+    auth = HTTPBasicAuth(c['langfuse_public_key'], c['langfuse_secret_key'])
+    url = f"{c['langfuse_base_url']}/api/public/v2/prompts/{prompt_name}"
+    params = {}
+    if version is not None:
+        params['version'] = int(version)
+    if label:
+        params['label'] = label
+    r = requests.delete(url, auth=auth, params=params)
+    return r.text
+
 def list_datasets():
     c = read_config()
     auth = HTTPBasicAuth(c['langfuse_public_key'], c['langfuse_secret_key'])
@@ -1514,6 +1538,22 @@ def list_scores(debug=False, user_id=None, name=None, from_timestamp=None, to_ti
     
     return json.dumps(all_scores, indent=2)
 
+def get_score_by_id(score_id):
+    """
+    Get a specific score by its ID from Langfuse.
+    
+    Args:
+        score_id: The score ID to retrieve
+    
+    Returns:
+        JSON string with score data
+    """
+    c = read_config()
+    auth = HTTPBasicAuth(c['langfuse_public_key'], c['langfuse_secret_key'])
+    url = f"{c['langfuse_base_url']}/api/public/v2/scores/{score_id}"
+    r = requests.get(url, auth=auth)
+    return r.text
+
 def format_scores_table(scores_json):
     """Format scores data as a readable table"""
     try:
@@ -1767,6 +1807,31 @@ def create_score_config(name, data_type, description=None, categories=None, min_
         data["maxValue"] = max_value
     
     r = requests.post(url, json=data, auth=auth)
+    return r.text
+
+def update_score_config(config_id, description=None, is_archived=None):
+    """
+    Update a score config in Langfuse (PATCH).
+    
+    Args:
+        config_id: ID of the score config to update
+        description: Optional new description
+        is_archived: Optional boolean to archive/unarchive the config
+    
+    Returns:
+        JSON string with updated config data
+    """
+    c = read_config()
+    auth = HTTPBasicAuth(c['langfuse_public_key'], c['langfuse_secret_key'])
+    url = f"{c['langfuse_base_url']}/api/public/score-configs/{config_id}"
+    
+    data = {}
+    if description is not None:
+        data["description"] = description
+    if is_archived is not None:
+        data["isArchived"] = is_archived
+    
+    r = requests.patch(url, json=data, auth=auth)
     return r.text
 
 # Built-in preset library of unified score configurations
@@ -2822,6 +2887,130 @@ def list_traces(
                 trace['observations'] = [] # No trace ID
                 
     return json.dumps(traces, indent=2)
+
+def delete_trace(trace_id):
+    """
+    Delete a single trace from Langfuse.
+    
+    Args:
+        trace_id: ID of the trace to delete
+    
+    Returns:
+        JSON string with result
+    """
+    c = read_config()
+    auth = HTTPBasicAuth(c['langfuse_public_key'], c['langfuse_secret_key'])
+    url = f"{c['langfuse_base_url']}/api/public/traces/{trace_id}"
+    r = requests.delete(url, auth=auth)
+    return r.text
+
+def delete_traces_batch(trace_ids):
+    """
+    Delete multiple traces from Langfuse in a single request.
+    
+    Args:
+        trace_ids: List of trace IDs to delete
+    
+    Returns:
+        JSON string with result
+    """
+    c = read_config()
+    auth = HTTPBasicAuth(c['langfuse_public_key'], c['langfuse_secret_key'])
+    url = f"{c['langfuse_base_url']}/api/public/traces"
+    r = requests.delete(url, json={"traceIds": trace_ids}, auth=auth)
+    return r.text
+
+def list_sessions(page=1, limit=50, from_timestamp=None, to_timestamp=None, environment=None):
+    """
+    List sessions from Langfuse with optional filtering.
+    
+    Args:
+        page: Page number (starts at 1)
+        limit: Items per page
+        from_timestamp: Optional ISO 8601 start filter
+        to_timestamp: Optional ISO 8601 end filter
+        environment: Optional environment filter
+    
+    Returns:
+        JSON string with session list
+    """
+    c = read_config()
+    auth = HTTPBasicAuth(c['langfuse_public_key'], c['langfuse_secret_key'])
+    url = f"{c['langfuse_base_url']}/api/public/sessions"
+    params = {"page": page, "limit": limit}
+    if from_timestamp:
+        params["fromTimestamp"] = from_timestamp
+    if to_timestamp:
+        params["toTimestamp"] = to_timestamp
+    if environment:
+        params["environment"] = environment
+    r = requests.get(url, params=params, auth=auth)
+    return r.text
+
+def get_session(session_id):
+    """
+    Get a specific session by ID from Langfuse.
+    
+    Args:
+        session_id: The session ID to retrieve
+    
+    Returns:
+        JSON string with session data
+    """
+    c = read_config()
+    auth = HTTPBasicAuth(c['langfuse_public_key'], c['langfuse_secret_key'])
+    url = f"{c['langfuse_base_url']}/api/public/sessions/{session_id}"
+    r = requests.get(url, auth=auth)
+    return r.text
+
+def list_observations_v2(limit=50, cursor=None, name=None, user_id=None, 
+                         trace_id=None, observation_type=None, parent_observation_id=None,
+                         from_start_time=None, to_start_time=None, version=None, environment=None):
+    """
+    List observations using the v2 API with cursor-based pagination and enhanced filters.
+    
+    Args:
+        limit: Max items per page (default 50)
+        cursor: Cursor for pagination (from previous response)
+        name: Filter by observation name
+        user_id: Filter by user ID
+        trace_id: Filter by trace ID
+        observation_type: Filter by type (SPAN, EVENT, GENERATION)
+        parent_observation_id: Filter by parent observation
+        from_start_time: ISO 8601 start time filter
+        to_start_time: ISO 8601 end time filter
+        version: Filter by version
+        environment: Filter by environment
+    
+    Returns:
+        JSON string with observations and pagination cursor
+    """
+    c = read_config()
+    auth = HTTPBasicAuth(c['langfuse_public_key'], c['langfuse_secret_key'])
+    url = f"{c['langfuse_base_url']}/api/public/v2/observations"
+    params = {"limit": limit}
+    if cursor:
+        params["cursor"] = cursor
+    if name:
+        params["name"] = name
+    if user_id:
+        params["userId"] = user_id
+    if trace_id:
+        params["traceId"] = trace_id
+    if observation_type:
+        params["type"] = observation_type
+    if parent_observation_id:
+        params["parentObservationId"] = parent_observation_id
+    if from_start_time:
+        params["fromStartTime"] = from_start_time
+    if to_start_time:
+        params["toStartTime"] = to_start_time
+    if version:
+        params["version"] = version
+    if environment:
+        params["environment"] = environment
+    r = requests.get(url, params=params, auth=auth)
+    return r.text
 
 def list_projects():
     c = read_config()

@@ -26,8 +26,16 @@ try:
         get_prompt as cofuse_get_prompt,
         create_prompt as cofuse_create_prompt,
         update_prompt_version_labels as cofuse_update_prompt_version_labels,
+        delete_prompt as cofuse_delete_prompt,
         list_datasets as cofuse_list_datasets,
         get_dataset as cofuse_get_dataset,
+        get_score_by_id as cofuse_get_score_by_id,
+        update_score_config as cofuse_update_score_config,
+        delete_trace as cofuse_delete_trace,
+        delete_traces_batch as cofuse_delete_traces_batch,
+        list_sessions as cofuse_list_sessions,
+        get_session as cofuse_get_session,
+        list_observations_v2 as cofuse_list_observations_v2,
         add_trace,
         add_observation,
         patch_trace_output,
@@ -835,6 +843,17 @@ async def coaia_fuse_prompt_version_labels_update(
         }
 
 
+async def coaia_fuse_prompts_delete(name: str, version: Optional[int] = None, label: Optional[str] = None) -> Dict[str, Any]:
+    """Delete a prompt from Langfuse. If version or label specified, deletes only that version/label."""
+    if not LANGFUSE_AVAILABLE:
+        return {"success": False, "error": "Langfuse is not available. Check credentials in configuration."}
+    try:
+        result = cofuse_delete_prompt(prompt_name=name, version=version, label=label)
+        return {"success": True, "result": result}
+    except Exception as e:
+        return {"success": False, "error": f"Langfuse prompt delete error: {str(e)}"}
+
+
 # ============================================================================
 # Langfuse Datasets Tools
 # ============================================================================
@@ -1022,6 +1041,27 @@ async def coaia_fuse_score_apply(
             "success": False,
             "error": f"Score application error: {str(e)}"
         }
+
+
+async def coaia_fuse_score_get(score_id: str) -> Dict[str, Any]:
+    """Get a specific score by ID from Langfuse."""
+    if not LANGFUSE_AVAILABLE:
+        return {"success": False, "error": "Langfuse is not available. Check credentials in configuration."}
+    try:
+        result = cofuse_get_score_by_id(score_id=score_id)
+        return {"success": True, "score": result}
+    except Exception as e:
+        return {"success": False, "error": f"Langfuse score get error: {str(e)}"}
+
+async def coaia_fuse_score_config_update(config_id: str, description: Optional[str] = None, is_archived: Optional[bool] = None) -> Dict[str, Any]:
+    """Update a score config in Langfuse (description and/or archive status)."""
+    if not LANGFUSE_AVAILABLE:
+        return {"success": False, "error": "Langfuse is not available. Check credentials in configuration."}
+    try:
+        result = cofuse_update_score_config(config_id=config_id, description=description, is_archived=is_archived)
+        return {"success": True, "config": result}
+    except Exception as e:
+        return {"success": False, "error": f"Langfuse score config update error: {str(e)}"}
 
 
 # ============================================================================
@@ -1371,6 +1411,83 @@ async def coaia_fuse_media_get(
 
 
 # ============================================================================
+# Langfuse Trace Delete Tools
+# ============================================================================
+
+async def coaia_fuse_trace_delete(trace_id: str) -> Dict[str, Any]:
+    """Delete a single trace from Langfuse."""
+    if not LANGFUSE_AVAILABLE:
+        return {"success": False, "error": "Langfuse is not available. Check credentials in configuration."}
+    try:
+        result = cofuse_delete_trace(trace_id=trace_id)
+        return {"success": True, "result": result}
+    except Exception as e:
+        return {"success": False, "error": f"Langfuse trace delete error: {str(e)}"}
+
+async def coaia_fuse_traces_delete_batch(trace_ids: List[str]) -> Dict[str, Any]:
+    """Delete multiple traces from Langfuse in a single request."""
+    if not LANGFUSE_AVAILABLE:
+        return {"success": False, "error": "Langfuse is not available. Check credentials in configuration."}
+    try:
+        result = cofuse_delete_traces_batch(trace_ids=trace_ids)
+        return {"success": True, "result": result}
+    except Exception as e:
+        return {"success": False, "error": f"Langfuse traces batch delete error: {str(e)}"}
+
+
+# ============================================================================
+# Langfuse Sessions Tools
+# ============================================================================
+
+async def coaia_fuse_sessions_list(page: int = 1, limit: int = 50, environment: Optional[str] = None) -> Dict[str, Any]:
+    """List sessions from Langfuse with optional filtering."""
+    if not LANGFUSE_AVAILABLE:
+        return {"success": False, "error": "Langfuse is not available. Check credentials in configuration."}
+    try:
+        result = cofuse_list_sessions(page=page, limit=limit, environment=environment)
+        return {"success": True, "sessions": result}
+    except Exception as e:
+        return {"success": False, "error": f"Langfuse sessions list error: {str(e)}"}
+
+async def coaia_fuse_session_get(session_id: str) -> Dict[str, Any]:
+    """Get a specific session by ID from Langfuse."""
+    if not LANGFUSE_AVAILABLE:
+        return {"success": False, "error": "Langfuse is not available. Check credentials in configuration."}
+    try:
+        result = cofuse_get_session(session_id=session_id)
+        return {"success": True, "session": result}
+    except Exception as e:
+        return {"success": False, "error": f"Langfuse session get error: {str(e)}"}
+
+
+# ============================================================================
+# Langfuse Observations v2 Tools
+# ============================================================================
+
+async def coaia_fuse_observations_list(
+    limit: int = 50, cursor: Optional[str] = None, name: Optional[str] = None,
+    user_id: Optional[str] = None, trace_id: Optional[str] = None,
+    observation_type: Optional[str] = None, parent_observation_id: Optional[str] = None,
+    from_start_time: Optional[str] = None, to_start_time: Optional[str] = None,
+    version: Optional[str] = None, environment: Optional[str] = None,
+) -> Dict[str, Any]:
+    """List observations using the v2 API with cursor-based pagination and filters."""
+    if not LANGFUSE_AVAILABLE:
+        return {"success": False, "error": "Langfuse is not available. Check credentials in configuration."}
+    try:
+        result = cofuse_list_observations_v2(
+            limit=limit, cursor=cursor, name=name, user_id=user_id,
+            trace_id=trace_id, observation_type=observation_type,
+            parent_observation_id=parent_observation_id,
+            from_start_time=from_start_time, to_start_time=to_start_time,
+            version=version, environment=environment,
+        )
+        return {"success": True, "observations": result}
+    except Exception as e:
+        return {"success": False, "error": f"Langfuse observations list error: {str(e)}"}
+
+
+# ============================================================================
 # Tool Registry
 # ============================================================================
 
@@ -1395,6 +1512,7 @@ TOOLS = {
     "coaia_fuse_prompts_get": coaia_fuse_prompts_get,
     "coaia_fuse_prompts_create": coaia_fuse_prompts_create,
     "coaia_fuse_prompt_version_labels_update": coaia_fuse_prompt_version_labels_update,
+    "coaia_fuse_prompts_delete": coaia_fuse_prompts_delete,
 
     # Langfuse datasets tools
     "coaia_fuse_datasets_list": coaia_fuse_datasets_list,
@@ -1404,6 +1522,8 @@ TOOLS = {
     "coaia_fuse_score_configs_list": coaia_fuse_score_configs_list,
     "coaia_fuse_score_configs_get": coaia_fuse_score_configs_get,
     "coaia_fuse_score_apply": coaia_fuse_score_apply,
+    "coaia_fuse_score_get": coaia_fuse_score_get,
+    "coaia_fuse_score_config_update": coaia_fuse_score_config_update,
 
     # Langfuse comments tools
     "coaia_fuse_comments_list": coaia_fuse_comments_list,
@@ -1413,6 +1533,17 @@ TOOLS = {
     # Langfuse media tools
     "coaia_fuse_media_upload": coaia_fuse_media_upload,
     "coaia_fuse_media_get": coaia_fuse_media_get,
+
+    # Langfuse trace delete tools
+    "coaia_fuse_trace_delete": coaia_fuse_trace_delete,
+    "coaia_fuse_traces_delete_batch": coaia_fuse_traces_delete_batch,
+
+    # Langfuse sessions tools
+    "coaia_fuse_sessions_list": coaia_fuse_sessions_list,
+    "coaia_fuse_session_get": coaia_fuse_session_get,
+
+    # Langfuse observations v2
+    "coaia_fuse_observations_list": coaia_fuse_observations_list,
 }
 
 __all__ = [
@@ -1431,14 +1562,22 @@ __all__ = [
     "coaia_fuse_prompts_get",
     "coaia_fuse_prompts_create",
     "coaia_fuse_prompt_version_labels_update",
+    "coaia_fuse_prompts_delete",
     "coaia_fuse_datasets_list",
     "coaia_fuse_datasets_get",
     "coaia_fuse_score_configs_list",
     "coaia_fuse_score_configs_get",
     "coaia_fuse_score_apply",
+    "coaia_fuse_score_get",
+    "coaia_fuse_score_config_update",
     "coaia_fuse_comments_list",
     "coaia_fuse_comments_get",
     "coaia_fuse_comments_create",
     "coaia_fuse_media_upload",
     "coaia_fuse_media_get",
+    "coaia_fuse_trace_delete",
+    "coaia_fuse_traces_delete_batch",
+    "coaia_fuse_sessions_list",
+    "coaia_fuse_session_get",
+    "coaia_fuse_observations_list",
 ]

@@ -41,6 +41,7 @@ ALL_TOOLS = {
     "coaia_fuse_prompts_get",
     "coaia_fuse_prompts_create",
     "coaia_fuse_prompt_version_labels_update",
+    "coaia_fuse_prompts_delete",
     # Datasets
     "coaia_fuse_datasets_list",
     "coaia_fuse_datasets_get",
@@ -48,6 +49,16 @@ ALL_TOOLS = {
     "coaia_fuse_score_configs_list",
     "coaia_fuse_score_configs_get",
     "coaia_fuse_score_apply",
+    "coaia_fuse_score_get",
+    "coaia_fuse_score_config_update",
+    # Trace delete
+    "coaia_fuse_trace_delete",
+    "coaia_fuse_traces_delete_batch",
+    # Sessions
+    "coaia_fuse_sessions_list",
+    "coaia_fuse_session_get",
+    # Observations v2
+    "coaia_fuse_observations_list",
     # Media (FULL only)
     "coaia_fuse_media_upload",
     "coaia_fuse_media_get",
@@ -76,6 +87,7 @@ MINIMAL_TOOLS = {
     "coaia_fuse_prompts_get",
     "coaia_fuse_prompts_create",
     "coaia_fuse_prompt_version_labels_update",
+    "coaia_fuse_prompts_delete",
     # Datasets
     "coaia_fuse_datasets_list",
     "coaia_fuse_datasets_get",
@@ -83,6 +95,15 @@ MINIMAL_TOOLS = {
     "coaia_fuse_score_configs_list",
     "coaia_fuse_score_configs_get",
     "coaia_fuse_score_apply",
+    "coaia_fuse_score_get",
+    "coaia_fuse_score_config_update",
+    # Trace delete
+    "coaia_fuse_trace_delete",
+    # Sessions
+    "coaia_fuse_sessions_list",
+    "coaia_fuse_session_get",
+    # Observations v2
+    "coaia_fuse_observations_list",
 }
 
 # Media tools (FULL only)
