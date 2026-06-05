@@ -246,11 +246,23 @@ def read_config(env_path=None):
             else:
                 config["jtaleconf"]["password"] = get_env_value("UPSTASH_PASSWORD", config["jtaleconf"]["password"])
         
-        # Add Langfuse environment variable support
-        config["langfuse_secret_key"] = get_env_value("LANGFUSE_SECRET_KEY", config.get("langfuse_secret_key", ""))
-        config["langfuse_public_key"] = get_env_value("LANGFUSE_PUBLIC_KEY", config.get("langfuse_public_key", ""))
-        config["langfuse_base_url"] = (get_env_value("LANGFUSE_BASE_URL", "") or
-                                       get_env_value("LANGFUSE_HOST", config.get("langfuse_base_url", "https://us.cloud.langfuse.com")))
+        # Add Langfuse environment variable support (uppercase and lowercase variants)
+        config["langfuse_secret_key"] = (
+            get_env_value("LANGFUSE_SECRET_KEY", "") or
+            get_env_value("langfuse_secret_key", "") or
+            config.get("langfuse_secret_key") or config.get("LANGFUSE_SECRET_KEY", "")
+        )
+        config["langfuse_public_key"] = (
+            get_env_value("LANGFUSE_PUBLIC_KEY", "") or
+            get_env_value("langfuse_public_key", "") or
+            config.get("langfuse_public_key") or config.get("LANGFUSE_PUBLIC_KEY", "")
+        )
+        config["langfuse_base_url"] = (
+            get_env_value("LANGFUSE_BASE_URL", "") or
+            get_env_value("LANGFUSE_HOST", "") or
+            get_env_value("langfuse_base_url", "") or
+            config.get("langfuse_base_url") or config.get("LANGFUSE_BASE_URL", "https://us.cloud.langfuse.com")
+        )
         config["langfuse_auth3"] = get_env_value("LANGFUSE_AUTH3", config.get("langfuse_auth3", ""))
 
         # Add GitHub environment variable support
