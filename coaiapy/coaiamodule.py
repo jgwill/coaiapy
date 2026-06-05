@@ -261,7 +261,7 @@ def read_config(env_path=None):
             get_env_value("LANGFUSE_BASE_URL", "") or
             get_env_value("LANGFUSE_HOST", "") or
             get_env_value("langfuse_base_url", "") or
-            config.get("langfuse_base_url") or config.get("LANGFUSE_BASE_URL", "https://us.cloud.langfuse.com")
+            config.get("langfuse_base_url") or config.get("LANGFUSE_BASE_URL", "https://cloud.langfuse.com")
         )
         config["langfuse_auth3"] = get_env_value("LANGFUSE_AUTH3", config.get("langfuse_auth3", ""))
 
