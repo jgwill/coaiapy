@@ -249,7 +249,8 @@ def read_config(env_path=None):
         # Add Langfuse environment variable support
         config["langfuse_secret_key"] = get_env_value("LANGFUSE_SECRET_KEY", config.get("langfuse_secret_key", ""))
         config["langfuse_public_key"] = get_env_value("LANGFUSE_PUBLIC_KEY", config.get("langfuse_public_key", ""))
-        config["langfuse_base_url"] = get_env_value("LANGFUSE_HOST", config.get("langfuse_base_url", "https://us.cloud.langfuse.com"))
+        config["langfuse_base_url"] = (get_env_value("LANGFUSE_BASE_URL", "") or
+                                       get_env_value("LANGFUSE_HOST", config.get("langfuse_base_url", "https://us.cloud.langfuse.com")))
         config["langfuse_auth3"] = get_env_value("LANGFUSE_AUTH3", config.get("langfuse_auth3", ""))
 
         # Add GitHub environment variable support

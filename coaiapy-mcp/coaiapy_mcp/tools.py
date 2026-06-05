@@ -109,7 +109,7 @@ try:
     langfuse_client = Langfuse(
         secret_key=config.get("langfuse_secret_key", os.getenv("LANGFUSE_SECRET_KEY")),
         public_key=config.get("langfuse_public_key", os.getenv("LANGFUSE_PUBLIC_KEY")),
-        host=config.get("langfuse_host", os.getenv("LANGFUSE_HOST", "https://cloud.langfuse.com")),
+        host=config.get("langfuse_base_url", os.getenv("LANGFUSE_BASE_URL") or os.getenv("LANGFUSE_HOST", "https://cloud.langfuse.com")),
     )
     LANGFUSE_AVAILABLE = True
 except Exception as e:
