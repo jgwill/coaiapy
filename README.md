@@ -607,7 +607,7 @@ Contributions are welcome! Please open an issue or submit a pull request for any
 
 - [GitHub Repository](https://github.com/jgwill/coaiapy)
 - [PyPI Package](https://pypi.org/project/coaiapy/)
-- [llms.txt (AI Documentation)](https://coaiapy.jgwill.com/llms.txt)
+- [llms.txt (AI Documentation)](https://docs.coaiapy.jgwill.com/llms.txt)
 - [Documentation Wiki](https://github.com/jgwill/coaiapy/wiki)
 
 ## License
