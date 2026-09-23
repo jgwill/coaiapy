@@ -1,0 +1,4 @@
+# GitHub Pages (Jekyll) settings for coaiapy.jgwill.com
+# Liquid reads `{% for ... %}` in this report as a broken tag and stops the build.
+exclude:
+  - REPORT.GEMINI.250829.md
